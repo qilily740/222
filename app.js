@@ -337,7 +337,7 @@ let modeSettings=false;
 let onlineSettingsTab='user';
 let offlineSettingsTab='presets';
 let systemSettingsTab='api';
-const APP_VERSION='1.0.5';
+const APP_VERSION='1.0.6';
 const compareAppVersions=(left,right)=>{const a=String(left||'0').split('.').map(Number),b=String(right||'0').split('.').map(Number);for(let i=0;i<Math.max(a.length,b.length);i++){const delta=(a[i]||0)-(b[i]||0);if(delta)return Math.sign(delta)}return 0};
 let INSTALLED_APP_VERSION=APP_VERSION;
 try{const saved=localStorage.getItem('iris-installed-version'),requested=window.IRIS_RELEASE;if(saved&&compareAppVersions(saved,INSTALLED_APP_VERSION)>0)INSTALLED_APP_VERSION=saved;if(requested&&compareAppVersions(requested,INSTALLED_APP_VERSION)>=0){INSTALLED_APP_VERSION=requested;localStorage.setItem('iris-installed-version',requested)}else localStorage.setItem('iris-installed-version',INSTALLED_APP_VERSION)}catch{}
@@ -815,11 +815,14 @@ $('#composer').onsubmit=e=>{e.preventDefault();submitMessage()};$('#messageInput
 (function bindAppViewport(){
  const viewport=window.visualViewport;
  const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+ const isStandalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
  const editable=element=>element instanceof HTMLTextAreaElement||(element instanceof HTMLInputElement&&!['button','submit','reset','checkbox','radio','file','range','color','hidden'].includes(element.type));
  let focusFrame=0;
  function readSafeTop(){
   const probe=document.createElement('div');probe.style.cssText='position:fixed;height:env(safe-area-inset-top);visibility:hidden;pointer-events:none';
-  document.body.append(probe);document.documentElement.style.setProperty('--app-safe-top',`${probe.getBoundingClientRect().height}px`);probe.remove();
+  document.body.append(probe);const inset=probe.getBoundingClientRect().height;probe.remove();
+  const statusBarFallback=isStandalone?(isIOS?44:24):0;
+  document.documentElement.style.setProperty('--app-safe-top',`${Math.max(inset,statusBarFallback)}px`);
  }
  const hiddenFocus=new WeakMap();
  function avoidNativePan(input){
