@@ -801,4 +801,7 @@ body{position:fixed;inset:0}
 .conversation .message,.conversation .call-summary-message{animation:none!important}
 
 .version-actions #checkVersion,.version-actions #updateVersion{height:44px;min-height:44px;align-self:stretch}
-.video-call-screen{padding-top:var(--app-safe-top,env(safe-area-inset-top))}
+.video-call-screen{padding-top:0}
+.video-call-header{height:auto;min-height:0;align-items:flex-start;padding:24px clamp(18px,5vw,52px) 9px}
+@media(max-width:480px){.video-call-header{padding-top:var(--app-safe-top,env(safe-area-inset-top));padding-bottom:7px}}
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,textarea:focus,select:focus,input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus-visible,textarea:focus-visible,select:focus-visible{outline:none!important;outline-offset:0!important;box-shadow:none!important;-webkit-tap-highlight-color:transparent}
