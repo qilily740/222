@@ -446,6 +446,10 @@ body{position:fixed;inset:0}
   .feature-page-content{padding-top:10px}
 }
 
+/* Keep the input controls and their SVG artwork centered in the circular buttons. */
+#inputFunctions,#reply{display:flex;align-items:center;justify-content:center;align-self:center;padding:0;margin:0;line-height:0;box-sizing:border-box}
+#inputFunctions svg,#reply svg{display:block;flex:0 0 19px;width:19px;height:19px;margin:0;transform:none}
+
 .global-worldbook-new{flex:none;padding:5px 0 5px 10px;border-bottom:1px solid #ddd;border-radius:0;background:transparent;color:#777;font-size:9px;white-space:nowrap}
 .global-worldbook-book-form,.role-worldbook-name-form,.role-worldbook-entry-form{display:grid;grid-template-columns:1fr auto auto;align-items:end;gap:14px;margin:8px 0;padding:10px 0;border-bottom:1px solid #eee;background:#fff}
 .global-worldbook-book-form[hidden],.role-worldbook-name-form[hidden],.role-worldbook-entry-form[hidden]{display:none!important}
