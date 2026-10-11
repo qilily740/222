@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="iris-app-icon-180.png">
 <title>Iris</title>
-<link rel="stylesheet" href="style.css">
+<script>(()=>{const v=new URLSearchParams(location.search).get('iris-release');window.IRIS_RELEASE=v;const suffix=v?'?iris-release='+encodeURIComponent(v):'';document.write('<link rel="stylesheet" href="style.css'+suffix+'">')})();</script>
 </head>
 <body>
 <main class="phone">
@@ -22,4 +22,4 @@
 <div class="toast" id="toast" role="status" hidden></div>
 <section class="settings-screen" id="settingsScreen" hidden aria-label="Settings"><header class="settings-topbar"><button type="button" id="closeSettings" aria-label="返回聊天">Settings</button></header><div class="settings-content" id="settingsContent"></div></section>
 <section class="feature-screen" id="featureScreen" hidden aria-label="功能页面"><header class="feature-page-topbar"><div id="featurePageTitle"></div></header><div class="feature-page-content" id="featurePageContent"></div></section>
-</main><dialog class="profile-dialog" id="profileDialog" tabindex="-1" aria-labelledby="profileTitle"></dialog><dialog class="profile-dialog character-dialog" id="characterDialog" tabindex="-1" aria-labelledby="characterTitle"></dialog><script src="app.js"></script><script src="profiles.js"></script><script src="importers.js"></script><script src="characters.js"></script></body></html>
+</main><dialog class="profile-dialog" id="profileDialog" tabindex="-1" aria-labelledby="profileTitle"></dialog><dialog class="profile-dialog character-dialog" id="characterDialog" tabindex="-1" aria-labelledby="characterTitle"></dialog><script>const q=window.IRIS_RELEASE?'?iris-release='+encodeURIComponent(window.IRIS_RELEASE):'';document.write(['app.js','profiles.js','importers.js','characters.js'].map(src=>'<script src="'+src+q+'"><\/script>').join(''));</script></body></html>

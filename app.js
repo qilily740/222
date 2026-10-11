@@ -304,7 +304,7 @@ function openVideoComposer(){
  let replyPending=false;
  const requestCallReply=async({retry=false}={})=>{if(replyPending)return;if(!state.offline){const config=state.settings,api=config.apiConfigs.find(item=>item.id===config.activeApiConfigId)||config.apiConfigs[0];if(!api?.url||!api?.key||!api?.model){toast('请先在总设置中连接 API');return}}let userIndex=-1;for(let index=videoCallThread.length-1;index>=0;index--){if(videoCallThread[index].mine){userIndex=index;break}}if(userIndex<0){toast('先发送一条消息，再让角色回复');return}const userMessage=videoCallThread[userIndex];if(retry)videoCallThread.splice(userIndex+1);setVideoCallReplyState(false);renderVideoCallMessages();replyPending=true;sendButton.disabled=true;retryButton.disabled=true;replyButton.disabled=true;status.textContent=retry?'正在重新生成回复…':'角色正在回复…';try{if(!state.offline)await sendOnlineMessage({cameraFrames:userMessage.cameraFrames||[],thread:videoCallThread,ephemeral:true});else{videoCallThread.push({mine:false,text:'[线下模式] 角色重新看向你，认真回应了这条消息。',createdAt:Date.now()});setVideoCallReplyState(true);renderVideoCallMessages()}}finally{replyPending=false;sendButton.disabled=false;retryButton.disabled=false;replyButton.disabled=false;if(videoCallActive&&status.isConnected)status.textContent=''}};
  form.onsubmit=async event=>{event.preventDefault();if(replyPending)return;const text=input.value.trim();if(!text)return;input.value='';const cameraFrames=videoCallStream&&video.readyState>=2?getVideoCallFrameSamples(video):[];videoCallThread.push({mine:true,text,createdAt:Date.now(),cameraFrames});setVideoCallReplyState(false);renderVideoCallMessages();await requestCallReply()};
- retryButton.onclick=()=>requestCallReply({retry:true});replyButton.onclick=()=>requestCallReply();
+ sendButton.addEventListener('pointerdown',event=>event.preventDefault());retryButton.onclick=()=>requestCallReply({retry:true});replyButton.onclick=()=>{input.blur();requestCallReply()};
 }
 function captureVideoCallFrame(video){if(!video.videoWidth||!video.videoHeight)return'';const scale=Math.min(1,768/Math.max(video.videoWidth,video.videoHeight)),canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(video.videoWidth*scale));canvas.height=Math.max(1,Math.round(video.videoHeight*scale));const context=canvas.getContext('2d');if(!context)return'';context.drawImage(video,0,0,canvas.width,canvas.height);return canvas.toDataURL('image/jpeg',.72)}
 function getVideoCallFrameSamples(video){const latest=captureVideoCallFrame(video);if(latest){const last=videoCallFrameBuffer.at(-1);if(!last||Date.now()-last.capturedAt>180)videoCallFrameBuffer.push({data:latest,capturedAt:Date.now()})}return videoCallFrameBuffer.slice(-5).map((frame,index,array)=>({...frame,sequence:index+1,total:array.length}))}
@@ -337,6 +337,7 @@ let modeSettings=false;
 let onlineSettingsTab='user';
 let offlineSettingsTab='presets';
 let systemSettingsTab='api';
+const APP_VERSION='1.0.1';
 let activeFeaturePage=null;
 const defaultOnlineMemory={enabled:true,autoSummary:true,summaryEveryRounds:10,shortTermRounds:40,recentLongCount:5,recallCount:3,coreEveryLongMemories:5,summaryMaxChars:300,coreMaxChars:1200,timeDecayDays:180,contextTokenBudget:12000,semanticRecall:true};
 const localTimezone=Intl.DateTimeFormat().resolvedOptions().timeZone||'Asia/Shanghai';
@@ -721,7 +722,7 @@ function refreshSettings(){
  else if(modeSettings&&section==='offline')$('#closeSettings').innerHTML='<span class="settings-title-main">Offline</span><small class="settings-title-sub offline-settings-title-sub">settings</small>';
  else $('#closeSettings').textContent=modeSettings?backLabels[section]:'Settings';
  $('#closeSettings').setAttribute('aria-label',modeSettings?`Back from ${backLabels[section]||'chat settings'}`:'Back to chat');
- const globalTabs=modeSettings?'':`<nav class="system-setting-tabs" aria-label="Settings categories">${[['api','API'],['storage','Storage'],['background','Background']].map(([id,label])=>`<button type="button" class="system-setting-tab ${systemSettingsTab===id?'active':''}" data-system-tab="${id}">${label}</button>`).join('')}</nav>`;
+ const globalTabs=modeSettings?'':`<nav class="system-setting-tabs" aria-label="Settings categories">${[['api','API'],['storage','Storage'],['background','Background'],['version','Version']].map(([id,label])=>`<button type="button" class="system-setting-tab ${systemSettingsTab===id?'active':''}" data-system-tab="${id}">${label}</button>`).join('')}</nav>`;
  const pageHead='';
  if(section==='api'){
   const current=cfg.apiConfigs.find(config=>config.id===editingApiConfigId)||null;
@@ -742,6 +743,10 @@ function refreshSettings(){
  }else if(section==='storage'){
   content.innerHTML=globalTabs+pageHead+`<div class="settings-page-body"><p class="settings-note">导出或导入用户、角色、聊天记录与设置。备份文件包含已保存的 API Key。</p><div class="settings-button-row"><button type="button" id="exportData" class="settings-secondary"  >导出数据</button><button type="button" id="importDataButton" class="settings-secondary">导入数据</button><input id="importDataFile" type="file" accept="application/json,.json" hidden></div><p id="storageFeedback" class="settings-note" role="status"></p></div>`;
   $('#exportData').onclick=exportData;$('#importDataButton').onclick=()=>$('#importDataFile').click();$('#importDataFile').onchange=event=>importData(event.target.files[0]);
+ }else if(section==='version'){
+  content.innerHTML=globalTabs+pageHead+`<div class="settings-page-body version-page"><div class="version-caption"><span>IRIS</span><i></i><small>版本信息</small></div><div class="version-comparison"><div class="version-current"><small>INSTALLED</small><b>${APP_VERSION}</b><span>当前版本</span></div><i class="version-divider" aria-hidden="true"></i><div class="version-available" data-version-latest><small>LATEST</small><b data-version-number>—</b><span>最新版本</span></div></div><p class="version-status" data-version-status role="status"><i></i><span>查验后显示可用版本。</span></p><div class="version-actions"><button type="button" id="checkVersion"><span class="version-check-icon">${icon('retry')}</span><span>查验版本</span><small>CHECK</small></button><button type="button" id="updateVersion" hidden><span>立即更新</span><i>↗</i></button></div></div>`;
+  $('#checkVersion').onclick=async()=>{const check=$('#checkVersion'),update=$('#updateVersion'),status=$('[data-version-status]'),statusText=status.querySelector('span'),latest=$('[data-version-latest]'),actions=check.parentElement;check.disabled=true;check.textContent='正在查验…';statusText.textContent='正在连接版本信息…';try{const manifestLink=document.querySelector('link[rel="manifest"]'),manifestUrl=new URL(manifestLink?.href||'manifest.webmanifest',location.href),versionUrl=new URL('version.json',manifestUrl);versionUrl.searchParams.set('_',String(Date.now()));const response=await fetch(versionUrl,{cache:'no-store'});if(!response.ok)throw Error(`请求失败（${response.status}）`);const remote=await response.json();if(!remote.version)throw Error('版本信息格式不正确。');$('[data-version-number]').textContent=remote.version;latest.hidden=false;const available=String(remote.version)!==APP_VERSION;update.hidden=!available;actions.classList.toggle('has-update',available);status.classList.toggle('is-update',available);update.dataset.version=String(remote.version);update.dataset.release=String(remote.release||remote.version);statusText.textContent=available?`发现新版本${remote.notes?`：${remote.notes}`:'，可以更新。'}`:'当前已是最新版本。'}catch(error){status.classList.remove('is-update');statusText.textContent=`查验失败：${error.message||'请检查网络后重试。'}`}finally{check.disabled=false;check.textContent='查验版本'}};
+  $('#updateVersion').onclick=()=>{const version=$('#updateVersion').dataset.release;if(!version)return;const url=new URL(location.href);url.searchParams.set('iris-release',version);location.replace(url.href)};
  }else{
   content.innerHTML=globalTabs+pageHead+`<div class="settings-page-body"><label class="settings-switch-row"><span><strong>保持会话</strong><small>后台运行受浏览器和系统限制</small></span><input id="keepAlive" type="checkbox" ${cfg.keepAlive?'checked':''}><i aria-hidden="true"></i></label></div>`;
   $('#keepAlive').onchange=event=>{cfg.keepAlive=event.target.checked;save()};
@@ -808,11 +813,9 @@ $('#composer').onsubmit=e=>{e.preventDefault();submitMessage()};$('#messageInput
   frame=0;
   const root=document.documentElement;
   root.style.setProperty('--app-viewport-height',`${viewport?.height||window.innerHeight}px`);
-  root.style.setProperty('--app-viewport-top',`${viewport?.offsetTop||0}px`);
  }
  function schedule(){if(!frame)frame=requestAnimationFrame(sync)}
  viewport?.addEventListener('resize',schedule);
- viewport?.addEventListener('scroll',schedule);
  window.addEventListener('resize',schedule);
  document.addEventListener('focusin',schedule);
  document.addEventListener('focusout',schedule);
