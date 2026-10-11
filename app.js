@@ -337,7 +337,7 @@ let modeSettings=false;
 let onlineSettingsTab='user';
 let offlineSettingsTab='presets';
 let systemSettingsTab='api';
-const APP_VERSION='1.0.1';
+const APP_VERSION='1.0.2';
 let activeFeaturePage=null;
 const defaultOnlineMemory={enabled:true,autoSummary:true,summaryEveryRounds:10,shortTermRounds:40,recentLongCount:5,recallCount:3,coreEveryLongMemories:5,summaryMaxChars:300,coreMaxChars:1200,timeDecayDays:180,contextTokenBudget:12000,semanticRecall:true};
 const localTimezone=Intl.DateTimeFormat().resolvedOptions().timeZone||'Asia/Shanghai';
@@ -804,20 +804,26 @@ $('#chatTitle').onclick=openModeSettings;$('#chatTitle').onkeydown=event=>{if(ev
 $('#quickFeatures').addEventListener('click',event=>{const button=event.target.closest('[data-quick]');if(button)quickFeature(button.dataset.quick)});
 $('#composer').onsubmit=e=>{e.preventDefault();submitMessage()};$('#messageInput').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();$('#composer').requestSubmit()}};$('#reply').onclick=()=>sendOnlineMessage();document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!videoCallActive)closeSheet()});updateComposerAction();render();
 
-// Follow the visible viewport while the software keyboard resizes or pans it.
-// Never cancel touch events: messages and the input retain native scrolling.
+// iOS pans the visual viewport as well as resizing it when the keyboard opens.
+// Apply its origin and height together, without delaying compensation a frame.
 (function bindAppViewport(){
  const viewport=window.visualViewport;
- let frame=0;
+ let focusFrame=0;
  function sync(){
-  frame=0;
   const root=document.documentElement;
   root.style.setProperty('--app-viewport-height',`${viewport?.height||window.innerHeight}px`);
+  root.style.setProperty('--app-viewport-top',`${Math.max(0,viewport?.offsetTop||0)}px`);
  }
- function schedule(){if(!frame)frame=requestAnimationFrame(sync)}
- viewport?.addEventListener('resize',schedule);
- window.addEventListener('resize',schedule);
- document.addEventListener('focusin',schedule);
- document.addEventListener('focusout',schedule);
+ function followKeyboard(){
+  cancelAnimationFrame(focusFrame);
+  const until=performance.now()+700;
+  function follow(){sync();if(performance.now()<until)focusFrame=requestAnimationFrame(follow)}
+  follow();
+ }
+ viewport?.addEventListener('resize',sync);
+ viewport?.addEventListener('scroll',sync);
+ window.addEventListener('resize',sync);
+ document.addEventListener('focusin',followKeyboard);
+ document.addEventListener('focusout',followKeyboard);
  sync();
 })();
