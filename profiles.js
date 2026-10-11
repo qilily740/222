@@ -1,0 +1,190 @@
+let profileDrafts = null;
+let profilePage = 0;
+let pendingPortraits = 0;
+const profileDialog = document.getElementById('profileDialog');
+
+function openProfiles() {
+  profileDrafts = state.users.map(user => ({ ...user }));
+  profilePage = state.user;
+  drawProfileList();
+  profileDialog.showModal();
+  profileDialog.focus();
+}
+
+function closeProfiles() {
+  profileDialog.close();
+}
+profileDialog.addEventListener('close', () => { profileDrafts = null; if(!document.getElementById('settingsScreen').hidden) refreshSettings(); });
+profileDialog.addEventListener('click', event => {
+  if (event.target !== profileDialog) return;
+  const bounds = profileDialog.getBoundingClientRect();
+  if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) closeProfiles();
+});
+
+function drawEmptyProfiles() {
+  profileDialog.innerHTML = `<header class="profile-heading"><span class="profile-eyebrow">IRIS / USER</span><button type="button" class="profile-close" aria-label="关闭用户面板">×</button></header><section class="empty-profiles"><div class="empty-profile-mark">${icon('user')}</div><h2>还没有用户</h2><p>创建一张个人档案，再开始聊天。</p><button type="button" class="profile-confirm" id="createFirstUser">创建用户 <span aria-hidden="true">＋</span></button></section>`;
+  profileDialog.querySelector('.profile-close').onclick=closeProfiles;
+  document.getElementById('createFirstUser').onclick=()=>{profileDrafts.push({name:'',nickname:'',birthday:'',details:'',avatar:''});profilePage=0;drawProfile();profileDialog.querySelector('[name="name"]').focus()};
+}
+
+function drawProfileList() {
+  const users = profileDrafts || [];
+  const rows = users.map((profile,index) => '<article class="profile-user-row"><button type="button" class="profile-user-select" data-user-select="' + index + '" aria-label="切换到' + esc(profile.name.trim() || '未命名用户') + '"><span class="profile-user-avatar" style="background:' + esc(profile.color || '#ededed') + '">' + (profile.avatar ? '<img src="' + esc(profile.avatar) + '" alt="">' : esc((profile.nickname || profile.name || '').slice(0,1))) + '</span><span class="profile-user-info"><strong>' + esc(profile.name.trim() || '未命名用户') + '</strong><small>' + esc(profile.nickname || '个人档案') + '</small></span><small class="profile-user-current">' + (index === state.user ? '当前使用' : '') + '</small></button><button type="button" class="profile-user-edit" data-user-edit="' + index + '">编辑</button><button type="button" class="profile-roster-delete" data-user-delete="' + index + '" aria-label="删除' + esc(profile.name.trim() || '未命名用户') + '">删除</button></article>').join('');
+  profileDialog.innerHTML = '<header class="profile-heading"><span class="profile-eyebrow">IRIS / USERS</span><button type="button" class="profile-close" aria-label="关闭用户列表">×</button></header><div class="profile-title-row"><h2 id="profileTitle">my users</h2><button type="button" id="addProfile">＋ 新用户</button></div>' + (users.length ? '<section class="profile-roster profile-user-list" aria-label="用户列表">' + rows + '</section>' : '<section class="empty-profiles"><div class="empty-profile-mark">' + icon('user') + '</div><h2>还没有用户</h2><p>创建一张个人档案，再开始聊天。</p></section>');
+  profileDialog.querySelector('.profile-close').onclick = closeProfiles;
+  profileDialog.querySelector('#addProfile').onclick = () => {
+    profileDrafts.push({name:'',nickname:'',birthday:'',details:'',avatar:''});
+    profilePage = profileDrafts.length - 1;
+    drawProfile();
+    profileDialog.querySelector('[name="name"]').focus();
+  };
+  profileDialog.querySelectorAll('[data-user-select]').forEach(button => button.onclick = () => {
+    const index = Number(button.dataset.userSelect);
+    if (!profileDrafts[index].name.trim()) { profilePage = index; drawProfile(); profileDialog.querySelector('[name="name"]').focus(); return; }
+    state.users = profileDrafts.map(profile => ({...profile,name:profile.name.trim(),nickname:profile.nickname.trim()}));
+    state.user = index;
+    save();
+    render();
+    closeProfiles();
+  });
+  profileDialog.querySelectorAll('[data-user-edit]').forEach(button => button.onclick = () => { profilePage = Number(button.dataset.userEdit); drawProfile(); });
+  profileDialog.querySelectorAll('[data-user-delete]').forEach(button => button.onclick = () => deleteProfileAt(Number(button.dataset.userDelete)));
+}
+
+function deleteProfileAt(index) {
+  const user = profileDrafts[index];
+  if (!confirm(`确定删除“${user.name.trim() || '未命名用户'}”吗？此操作无法撤销。`)) return;
+  profileDrafts.splice(index, 1);
+  state.users = profileDrafts.map(profile => ({...profile,name:profile.name.trim(),nickname:profile.nickname.trim()}));
+  if (state.user === index) state.user = state.users.length ? Math.min(index, state.users.length - 1) : -1;
+  else if (state.user > index) state.user--;
+  if (Number.isInteger(state.settings.onlineUserIndex)) {
+    if (state.settings.onlineUserIndex === index) state.settings.onlineUserIndex = null;
+    else if (state.settings.onlineUserIndex > index) state.settings.onlineUserIndex--;
+  }
+  for (const role of state.characters || []) {
+    const settings = role.chatSettings;
+    if (!settings || !Number.isInteger(settings.userIndex)) continue;
+    if (settings.userIndex === index) settings.userIndex = null;
+    else if (settings.userIndex > index) settings.userIndex--;
+  }
+  const remappedMessages = {};
+  for (const [messageKey, value] of Object.entries(state.messages || {})) {
+    const match = messageKey.match(/^(-?\d+)-(-?\d+)-(chat|offline)$/);
+    if (!match) { remappedMessages[messageKey] = value; continue; }
+    const userIndex = Number(match[2]);
+    if (userIndex === index) continue;
+    remappedMessages[`${match[1]}-${userIndex > index ? userIndex - 1 : userIndex}-${match[3]}`] = value;
+  }
+  state.messages = remappedMessages;
+  profilePage = state.users.length ? Math.min(profilePage, state.users.length - 1) : 0;
+  save();
+  render();
+  drawProfileList();
+}
+
+function drawProfile() {
+  if (!profileDrafts.length) { drawEmptyProfiles(); return; }
+  const user = profileDrafts[profilePage];
+  const number = String(profilePage + 1).padStart(2, '0');
+  profileDialog.innerHTML = `
+    <header class="profile-heading">
+      <span class="profile-eyebrow">IRIS / USER</span>
+      <button type="button" class="profile-close" aria-label="关闭用户面板">×</button>
+    </header>
+    <div class="profile-title-row"><h2 id="profileTitle"><span class="sr-only">用户档案</span><span aria-hidden="true">my little world</span></h2><button type="button" id="profileBackToList">返回列表</button></div>
+    <section class="profile-roster" aria-label="用户列表">${profileDrafts.map((profile,i)=>`<div class="profile-roster-row"><button type="button" class="profile-roster-entry${i===profilePage?' active':''}" data-user-edit="${i}"><span>${esc(profile.name.trim()||'未命名用户')}</span><small>${i===profilePage?'正在编辑':'用户 '+String(i+1).padStart(2,'0')}</small></button><button type="button" class="profile-roster-delete" data-user-delete="${i}" aria-label="删除${esc(profile.name.trim()||'未命名用户')}">删除</button></div>`).join('')}</section>
+    <form id="profileForm">
+      <section class="profile-identity">
+        <svg class="angel-wings" viewBox="0 0 240 130" aria-hidden="true"><image href="assets/angel-wings.svg" width="240" height="130"/></svg>
+        <span class="angel-halo" aria-hidden="true"></span>
+        <svg class="star-sticker" viewBox="0 0 60 60" aria-hidden="true"><path d="m30 7 6 16 18 1-14 12 4 18-14-10-16 10 5-18L5 24l18-1Z"/></svg>
+        <span class="music-sticker" aria-hidden="true">${icon('music')}</span>
+        <svg class="little-star" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5Z"/></svg>
+        <div class="portrait-control">
+          <button type="button" class="profile-portrait" id="changePortrait" aria-label="上传用户头像"></button>
+          <span class="portrait-plus" aria-hidden="true">＋</span>
+          <input type="file" id="portraitFile" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+        </div>
+        <div class="profile-preview"><span class="profile-number">user ${number}</span><h3 id="profileDisplayName"></h3><p id="profileDisplayNickname"></p><small id="profileBoundRoleCount"></small><button type="button" id="removePortrait" ${user.avatar ? '' : 'hidden'}>移除头像</button></div>
+      </section>
+      <div class="profile-fields">
+        <label class="name-paper">名字 <span>NAME</span><input name="name" maxlength="40" required autocomplete="off" placeholder="你的名字" value="${esc(user.name)}"></label>
+        <label class="nickname-paper">网名 <span>NICKNAME</span><input name="nickname" maxlength="40" autocomplete="off" placeholder="怎么称呼你" value="${esc(user.nickname)}"></label>
+        <label class="profile-wide birthday-ticket">生日 <span>BIRTHDAY</span><input name="birthday" type="date" value="${esc(user.birthday)}"></label>
+        <label class="profile-wide details-note">具体信息 <span>ABOUT YOU</span><span class="note-decoration" aria-hidden="true">${icon('music')}</span><textarea name="details" maxlength="2000" rows="3" placeholder="性格、喜好，或想被记住的小事…">${esc(user.details)}</textarea></label>
+      </div>
+      <div class="profile-pagination"><button type="button" id="previousProfile" ${profilePage === 0 ? 'disabled' : ''}><span aria-hidden="true">←</span> 上一页</button><span aria-live="polite">${number}<i>/</i>${String(profileDrafts.length).padStart(2, '0')}</span><button type="button" id="nextProfile" ${profilePage === profileDrafts.length - 1 ? 'disabled' : ''}>下一页 <span aria-hidden="true">→</span></button></div>
+      <button type="submit" class="profile-confirm">确认使用此身份 <span aria-hidden="true">↗</span></button>
+      <p class="profile-footnote" id="profileFeedback" role="status">确认后保存资料并切换用户</p>
+    </form>`;
+  profileDialog.querySelector('.profile-roster')?.remove();
+  updateProfilePreview();
+  profileDialog.querySelector('.profile-close').onclick = closeProfiles;
+  document.getElementById('profileBackToList').onclick = drawProfileList;
+  document.getElementById('previousProfile').onclick = () => { profilePage--; drawProfile(); document.getElementById('nextProfile').focus(); };
+  document.getElementById('nextProfile').onclick = () => { profilePage++; drawProfile(); document.getElementById('previousProfile').focus(); };
+  const form = document.getElementById('profileForm');
+  form.addEventListener('input', event => {
+    if (!['name','nickname','birthday','details'].includes(event.target.name)) return;
+    user[event.target.name] = event.target.value;
+    if (event.target.name === 'name' || event.target.name === 'nickname') updateProfilePreview();
+  });
+  form.onsubmit = event => {
+    event.preventDefault();
+    if (pendingPortraits) { profileNotice('头像处理中，请稍候'); return; }
+    const missingName = profileDrafts.findIndex(profile => !profile.name.trim());
+    if (missingName !== -1) {
+      profilePage = missingName;
+      drawProfile();
+      const field = profileDialog.querySelector('[name="name"]');
+      field.setCustomValidity('请填写名字');
+      field.reportValidity();
+      field.oninput = () => field.setCustomValidity('');
+      return;
+    }
+    state.users = profileDrafts.map(profile => ({...profile,name:profile.name.trim(),nickname:profile.nickname.trim()}));
+    state.user = profilePage;
+    save();
+    render();
+    closeProfiles();
+  };
+  document.getElementById('changePortrait').onclick = () => document.getElementById('portraitFile').click();
+  document.getElementById('removePortrait').onclick = () => { user.avatar = ''; updateProfilePreview(); };
+  document.getElementById('portraitFile').onchange = event => uploadPortrait(event.target.files[0], user, profileDrafts);
+}
+
+function updateProfilePreview() {
+  const user = profileDrafts[profilePage];
+  document.getElementById('profileDisplayName').textContent = user.name.trim() || '你的名字';
+  document.getElementById('profileDisplayNickname').textContent = user.nickname.trim() ? `@ ${user.nickname.trim()}` : '点击头像，设置你的模样';
+  const boundRoles = (state.characters || []).filter(character => character.chatSettings && character.chatSettings.userIndex === profilePage).length;
+  document.getElementById('profileBoundRoleCount').textContent = `绑定角色 · ${boundRoles} 个`;
+  document.getElementById('changePortrait').innerHTML = user.avatar ? `<img src="${esc(user.avatar)}" alt="用户头像">` : icon('user');
+  document.getElementById('removePortrait').hidden = !user.avatar;
+}
+
+function profileNotice(message) {
+  const feedback = document.getElementById('profileFeedback');
+  if (feedback) feedback.textContent = message;
+}
+
+async function uploadPortrait(file, user, session) {
+  if (!file) return;
+  if (!/^image\/(png|jpeg|webp|gif)$/.test(file.type)) { profileNotice('请选择 PNG、JPG、WebP 或 GIF 图片'); return; }
+  if (file.size > 12 * 1024 * 1024) { profileNotice('请选择小于 12 MB 的图片'); return; }
+  pendingPortraits++;
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const photo = new Image();
+    await new Promise((resolve, reject) => { photo.onload = resolve; photo.onerror = reject; photo.src = objectUrl; });
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 256;
+    const edge = Math.min(photo.naturalWidth, photo.naturalHeight);
+    canvas.getContext('2d').drawImage(photo, (photo.naturalWidth-edge)/2, (photo.naturalHeight-edge)/2, edge, edge, 0, 0, 256, 256);
+    if (profileDrafts !== session) return;
+    user.avatar = canvas.toDataURL('image/jpeg', .85);
+    if (profileDrafts[profilePage] === user) updateProfilePreview();
+  } catch { profileNotice('这张图片无法读取，请换一张'); }
+  finally { URL.revokeObjectURL(objectUrl); pendingPortraits--; }
+}
