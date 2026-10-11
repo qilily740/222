@@ -96,7 +96,7 @@ function drawProfile() {
     <section class="profile-roster" aria-label="用户列表">${profileDrafts.map((profile,i)=>`<div class="profile-roster-row"><button type="button" class="profile-roster-entry${i===profilePage?' active':''}" data-user-edit="${i}"><span>${esc(profile.name.trim()||'未命名用户')}</span><small>${i===profilePage?'正在编辑':'用户 '+String(i+1).padStart(2,'0')}</small></button><button type="button" class="profile-roster-delete" data-user-delete="${i}" aria-label="删除${esc(profile.name.trim()||'未命名用户')}">删除</button></div>`).join('')}</section>
     <form id="profileForm">
       <section class="profile-identity">
-        <svg class="angel-wings" viewBox="0 0 240 130" aria-hidden="true"><image href="assets/angel-wings.svg" width="240" height="130"/></svg>
+        <img class="angel-wings" src="assets/angel-wings.svg" alt="" aria-hidden="true">
         <span class="angel-halo" aria-hidden="true"></span>
         <svg class="star-sticker" viewBox="0 0 60 60" aria-hidden="true"><path d="m30 7 6 16 18 1-14 12 4 18-14-10-16 10 5-18L5 24l18-1Z"/></svg>
         <span class="music-sticker" aria-hidden="true">${icon('music')}</span>
