@@ -1,0 +1,24 @@
+{
+  "id": "/222/",
+  "name": "Iris",
+  "short_name": "Iris",
+  "description": "Iris — a quiet space for stories and conversation.",
+  "start_url": "/222/",
+  "scope": "/222/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "iris-app-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "iris-app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
