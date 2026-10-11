@@ -428,7 +428,7 @@
 @media(max-width:480px){#settingsContent.is-offline-settings{padding-bottom:8px}.offline-records-list{padding-right:1px;padding-left:1px}.offline-record-note{padding-right:12px;padding-left:12px}}
 
 /* Keep the app viewport fixed; only explicitly scrollable content should move. */
-html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none}
+html,body{width:100%;height:100vh;overflow:hidden;overscroll-behavior:none}
 body{position:fixed;inset:0}
 .phone{height:100dvh;min-height:0;max-height:100dvh;overscroll-behavior:none}
 :where(.conversation,.settings-content,.feature-page-content,.sheet,.profile-dialog,.character-list,.offline-records-list,.offline-preset-entry-list,.global-worldbook-list,.worldbook-entry-list,.quick-features,.video-call-messages,.offline-record-transcript){overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
