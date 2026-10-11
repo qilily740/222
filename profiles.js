@@ -96,7 +96,26 @@ function drawProfile() {
     <section class="profile-roster" aria-label="用户列表">${profileDrafts.map((profile,i)=>`<div class="profile-roster-row"><button type="button" class="profile-roster-entry${i===profilePage?' active':''}" data-user-edit="${i}"><span>${esc(profile.name.trim()||'未命名用户')}</span><small>${i===profilePage?'正在编辑':'用户 '+String(i+1).padStart(2,'0')}</small></button><button type="button" class="profile-roster-delete" data-user-delete="${i}" aria-label="删除${esc(profile.name.trim()||'未命名用户')}">删除</button></div>`).join('')}</section>
     <form id="profileForm">
       <section class="profile-identity">
-        <img class="angel-wings" src="assets/angel-wings.svg" alt="" aria-hidden="true">
+        <svg class="angel-wings" viewBox="0 0 240 130" aria-hidden="true" focusable="false">
+          <g class="angel-wing">
+            <path d="M98 91c-5-12-21-19-38-33C45 45 31 30 23 37c-9 8-4 23 4 34-9-5-12 7-6 18 3 6 9 11 15 14-7 1-5 10 3 13 16 7 43 0 55-12 5-5 6-9 4-13Z" fill="#fafafa" stroke="#d4d4d4" stroke-width="5" stroke-linejoin="round"/>
+            <path d="M98 91c-5-12-21-19-38-33C45 45 31 30 23 37c-9 8-4 23 4 34-9-5-12 7-6 18 3 6 9 11 15 14-7 1-5 10 3 13 16 7 43 0 55-12 5-5 6-9 4-13Z" fill="none" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/>
+            <path d="M27 71q6 9 15 14M36 103q10 4 21 2" fill="none" stroke="#d9d9d9" stroke-width="1.2" stroke-linecap="round"/>
+            <path d="m37 51 1.8 4 4.3.3-3.3 2.9 1.1 4.3-3.9-2.3-3.9 2.3 1.1-4.3-3.3-2.9 4.3-.3Z" fill="#c4c4c4"/>
+            <path d="m60 86 1.4 3.2 3.4.2-2.6 2.3.9 3.4-3.1-1.8-3.1 1.8.9-3.4-2.6-2.3 3.4-.2Z" fill="#dedede"/>
+            <path d="m78 83 1 2.2 2.4.2-1.8 1.6.6 2.4-2.2-1.3-2.2 1.3.6-2.4-1.8-1.6 2.4-.2Z" fill="#bebebe"/>
+            <circle cx="38" cy="90" r=".8" fill="#ccc"/><circle cx="50" cy="72" r=".8" fill="#ccc"/>
+          </g>
+          <g transform="translate(240 0) scale(-1 1)" class="angel-wing">
+            <path d="M98 91c-5-12-21-19-38-33C45 45 31 30 23 37c-9 8-4 23 4 34-9-5-12 7-6 18 3 6 9 11 15 14-7 1-5 10 3 13 16 7 43 0 55-12 5-5 6-9 4-13Z" fill="#fafafa" stroke="#d4d4d4" stroke-width="5" stroke-linejoin="round"/>
+            <path d="M98 91c-5-12-21-19-38-33C45 45 31 30 23 37c-9 8-4 23 4 34-9-5-12 7-6 18 3 6 9 11 15 14-7 1-5 10 3 13 16 7 43 0 55-12 5-5 6-9 4-13Z" fill="none" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/>
+            <path d="M27 71q6 9 15 14M36 103q10 4 21 2" fill="none" stroke="#d9d9d9" stroke-width="1.2" stroke-linecap="round"/>
+            <path d="m37 51 1.8 4 4.3.3-3.3 2.9 1.1 4.3-3.9-2.3-3.9 2.3 1.1-4.3-3.3-2.9 4.3-.3Z" fill="#c4c4c4"/>
+            <path d="m60 86 1.4 3.2 3.4.2-2.6 2.3.9 3.4-3.1-1.8-3.1 1.8.9-3.4-2.6-2.3 3.4-.2Z" fill="#dedede"/>
+            <path d="m78 83 1 2.2 2.4.2-1.8 1.6.6 2.4-2.2-1.3-2.2 1.3.6-2.4-1.8-1.6 2.4-.2Z" fill="#bebebe"/>
+            <circle cx="38" cy="90" r=".8" fill="#ccc"/><circle cx="50" cy="72" r=".8" fill="#ccc"/>
+          </g>
+        </svg>
         <span class="angel-halo" aria-hidden="true"></span>
         <svg class="star-sticker" viewBox="0 0 60 60" aria-hidden="true"><path d="m30 7 6 16 18 1-14 12 4 18-14-10-16 10 5-18L5 24l18-1Z"/></svg>
         <span class="music-sticker" aria-hidden="true">${icon('music')}</span>
