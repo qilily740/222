@@ -426,6 +426,26 @@
 .offline-preset-entry-actions{display:flex;align-items:center;gap:10px}.offline-preset-entry-actions button{padding:1px 0;color:#aaa;font-size:8px;white-space:nowrap}.offline-preset-entry-actions button:hover{color:#555}.offline-preset-entry-empty{display:block;margin-top:5px;color:#bbb;font-size:8px;letter-spacing:.3px}.offline-preset-empty{padding:18px 2px;color:#aaa;font-size:9px}
 @media(max-width:480px){#settingsContent.is-offline-settings{padding-bottom:8px}.offline-records-list{padding-right:1px;padding-left:1px}.offline-record-note{padding-right:12px;padding-left:12px}}
 
+/* Keep the app viewport fixed; only explicitly scrollable content should move. */
+html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none}
+body{position:fixed;inset:0}
+.phone{height:100dvh;min-height:0;max-height:100dvh;overscroll-behavior:none}
+:where(.conversation,.settings-content,.feature-page-content,.sheet,.profile-dialog,.character-list,.offline-records-list,.offline-preset-entry-list,.global-worldbook-list,.worldbook-entry-list,.quick-features,.video-call-messages,.offline-record-transcript){overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.topbar{padding-top:24px;padding-bottom:12px}
+.conversation{padding-top:6px}
+.settings-topbar{padding-top:24px;padding-bottom:8px}
+.settings-content{padding-top:12px}
+.feature-page-topbar{padding-top:24px;padding-bottom:9px}
+.feature-page-content{padding-top:12px}
+@media(min-width:850px){.topbar{padding-top:28px}}
+@media(max-width:480px){
+  .topbar{padding-top:env(safe-area-inset-top);padding-bottom:10px}
+  .settings-topbar{padding-top:env(safe-area-inset-top);padding-bottom:7px}
+  .settings-content{padding-top:10px}
+  .feature-page-topbar{padding-top:env(safe-area-inset-top);padding-bottom:7px}
+  .feature-page-content{padding-top:10px}
+}
+
 .global-worldbook-new{flex:none;padding:5px 0 5px 10px;border-bottom:1px solid #ddd;border-radius:0;background:transparent;color:#777;font-size:9px;white-space:nowrap}
 .global-worldbook-book-form,.role-worldbook-name-form,.role-worldbook-entry-form{display:grid;grid-template-columns:1fr auto auto;align-items:end;gap:14px;margin:8px 0;padding:10px 0;border-bottom:1px solid #eee;background:#fff}
 .global-worldbook-book-form[hidden],.role-worldbook-name-form[hidden],.role-worldbook-entry-form[hidden]{display:none!important}
