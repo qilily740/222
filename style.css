@@ -520,10 +520,10 @@ body{position:fixed;inset:0}
 .feature-page-content{padding-top:12px}
 @media(min-width:850px){.topbar{padding-top:28px}}
 @media(max-width:480px){
-  .topbar{padding-top:env(safe-area-inset-top);padding-bottom:10px}
-  .settings-topbar{padding-top:env(safe-area-inset-top);padding-bottom:7px}
+  .topbar{padding-top:var(--app-safe-top,env(safe-area-inset-top));padding-bottom:10px}
+  .settings-topbar{padding-top:var(--app-safe-top,env(safe-area-inset-top));padding-bottom:7px}
   .settings-content{padding-top:10px}
-  .feature-page-topbar{padding-top:env(safe-area-inset-top);padding-bottom:7px}
+  .feature-page-topbar{padding-top:var(--app-safe-top,env(safe-area-inset-top));padding-bottom:7px}
   .feature-page-content{padding-top:10px}
 }
 
@@ -799,3 +799,6 @@ body{position:fixed;inset:0}
 
 /* Existing chat content stays visible through page changes and updates. */
 .conversation .message,.conversation .call-summary-message{animation:none!important}
+
+.version-actions #checkVersion,.version-actions #updateVersion{height:44px;min-height:44px;align-self:stretch}
+.video-call-screen{padding-top:var(--app-safe-top,env(safe-area-inset-top))}

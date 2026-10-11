@@ -337,7 +337,7 @@ let modeSettings=false;
 let onlineSettingsTab='user';
 let offlineSettingsTab='presets';
 let systemSettingsTab='api';
-const APP_VERSION='1.0.2';
+const APP_VERSION='1.0.3';
 let activeFeaturePage=null;
 const defaultOnlineMemory={enabled:true,autoSummary:true,summaryEveryRounds:10,shortTermRounds:40,recentLongCount:5,recallCount:3,coreEveryLongMemories:5,summaryMaxChars:300,coreMaxChars:1200,timeDecayDays:180,contextTokenBudget:12000,semanticRecall:true};
 const localTimezone=Intl.DateTimeFormat().resolvedOptions().timeZone||'Asia/Shanghai';
@@ -808,11 +808,40 @@ $('#composer').onsubmit=e=>{e.preventDefault();submitMessage()};$('#messageInput
 // Apply its origin and height together, without delaying compensation a frame.
 (function bindAppViewport(){
  const viewport=window.visualViewport;
+ const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+ const editable=element=>element instanceof HTMLTextAreaElement||(element instanceof HTMLInputElement&&!['button','submit','reset','checkbox','radio','file','range','color','hidden'].includes(element.type));
  let focusFrame=0;
+ function readSafeTop(){
+  const probe=document.createElement('div');probe.style.cssText='position:fixed;height:env(safe-area-inset-top);visibility:hidden;pointer-events:none';
+  document.body.append(probe);document.documentElement.style.setProperty('--app-safe-top',`${probe.getBoundingClientRect().height}px`);probe.remove();
+ }
+ const hiddenFocus=new WeakMap();
+ function avoidNativePan(input){
+  if(!isIOS||hiddenFocus.has(input))return;
+  const opacity=input.style.opacity;hiddenFocus.set(input,opacity);input.style.opacity='0';
+  requestAnimationFrame(()=>{input.style.opacity=opacity;hiddenFocus.delete(input)});
+ }
+ // Invisible fields do not trigger Safari's native whole-page focus scroll.
+ // Restore before painting the next frame; retain normal taps on an active field.
+ document.addEventListener('pointerdown',event=>{
+  const input=event.target;
+  if(!isIOS||event.pointerType!=='touch'||!editable(input)||input.disabled||input.readOnly||document.activeElement===input)return;
+  event.preventDefault();avoidNativePan(input);input.focus({preventScroll:true});
+ },{capture:true});
  function sync(){
   const root=document.documentElement;
   root.style.setProperty('--app-viewport-height',`${viewport?.height||window.innerHeight}px`);
   root.style.setProperty('--app-viewport-top',`${Math.max(0,viewport?.offsetTop||0)}px`);
+  const input=document.activeElement;
+  if(!editable(input))return;
+  for(let parent=input.parentElement;parent&&parent!==document.body;parent=parent.parentElement){
+   if(!/auto|scroll/.test(getComputedStyle(parent).overflowY)||parent.scrollHeight<=parent.clientHeight)continue;
+   const field=input.getBoundingClientRect(),area=parent.getBoundingClientRect(),top=area.top+8,bottom=area.bottom-8;
+   if(field.height>bottom-top){if(field.top<top||field.top>bottom)parent.scrollTop+=field.top-top}
+   else if(field.bottom>bottom)parent.scrollTop+=field.bottom-bottom;
+   else if(field.top<top)parent.scrollTop+=field.top-top;
+   break;
+  }
  }
  function followKeyboard(){
   cancelAnimationFrame(focusFrame);
@@ -823,7 +852,9 @@ $('#composer').onsubmit=e=>{e.preventDefault();submitMessage()};$('#messageInput
  viewport?.addEventListener('resize',sync);
  viewport?.addEventListener('scroll',sync);
  window.addEventListener('resize',sync);
- document.addEventListener('focusin',followKeyboard);
+ document.addEventListener('focusin',event=>{if(editable(event.target))avoidNativePan(event.target);followKeyboard()});
  document.addEventListener('focusout',followKeyboard);
+ window.addEventListener('orientationchange',()=>setTimeout(readSafeTop,250));
+ readSafeTop();
  sync();
 })();
