@@ -977,14 +977,51 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="
 /* Keep touch double-taps from zooming or nudging the whole app; vertical scrolling remains available. */
 html,body,.phone{touch-action:manipulation}
 
+/* Long-press message actions and batch selection. */
+.conversation>.message{position:relative}
+.message-action-menu{position:absolute;z-index:5;top:-34px;left:46px;display:flex;align-items:center;gap:2px;padding:4px 5px;border:1px solid #e8e8e8;border-radius:18px;background:rgba(255,255,255,.97);box-shadow:0 5px 18px #00000012;white-space:nowrap}
+.message.mine .message-action-menu{right:0;left:auto}
+.message-action-menu button{min-height:27px;padding:0 9px;border-radius:13px;color:#555;font-size:10px;line-height:1}
+.message-action-menu button:hover{background:#f1f1f1}
+.message-action-menu button:disabled{color:#c6c6c6;cursor:default}
+.message.selection-mode{cursor:pointer}
+.message.selection-mode .message-content{transition:transform .16s ease}
+.message.is-selected .bubble,.message.is-selected .transfer-message-card,.message.is-selected .location-message-card{outline:1px solid #777;outline-offset:2px}
+.message-selection-check{position:absolute;top:50%;right:1px;display:grid;width:19px;height:19px;place-items:center;border:1px solid #c9c9c9;border-radius:50%;background:#fff;color:#fff;font-size:11px;transform:translateY(-50%)}
+.message.is-selected .message-selection-check{border-color:#555;background:#555}
+.message-selection-bar{position:sticky;bottom:0;z-index:4;display:flex;align-items:center;gap:12px;margin:8px -8px 0;padding:12px 14px calc(12px + env(safe-area-inset-bottom));border-top:1px solid #ededed;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);font-size:11px}
+.message-selection-bar span{margin-right:auto;color:#777}
+.message-selection-bar button{padding:8px 11px;border-radius:16px;color:#555;font-size:11px}
+.message-selection-bar [data-selection-delete]{background:#555;color:#fff}
+.message-selection-bar button:disabled{opacity:.4;cursor:default}
+.message-edit-form label{display:block;margin-bottom:15px;color:#777;font-size:11px}
+.sheet.is-message-edit .sheet-head h2{font-family:"Snell Roundhand","Apple Chancery","URW Chancery L",cursive;font-size:27px;font-style:italic;font-weight:400;letter-spacing:.1px;color:#555}
+.message-edit-form textarea{display:block;width:100%;min-height:76px;max-height:35vh;margin-top:8px;padding:10px 12px;border:1px solid #e7e7e7;border-radius:12px;background:#fafafa;color:#444;font-size:13px;line-height:1.65;resize:vertical}
+@media(max-width:480px){.message-action-menu{left:42px;gap:0;padding:3px}.message.mine .message-action-menu{right:0;left:auto}.message-action-menu button{padding:0 7px;font-size:10px}.message-selection-bar{margin-inline:-4px}}
+
+/* Show the quoted source as a distinct inset card in the sent message. */
+.bubble-quote{display:block;margin:0 0 9px;padding:8px 10px;border:0;border-left:2px solid #b6b6b6;border-radius:0 9px 9px 0;background:#ffffffa8;color:#777}
+.bubble-quote-speaker{display:block;margin-bottom:3px;color:#777;font-size:10px;font-weight:500;line-height:1.35}
+.bubble-quote p{display:-webkit-box;margin:0;overflow:hidden;color:#858585;font-size:11px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;-webkit-box-orient:vertical;-webkit-line-clamp:3}
+.bubble-quote small{display:block;margin-top:3px;color:#aaa;font-size:9px;line-height:1.4}
+.bubble-text{white-space:pre-wrap;overflow-wrap:anywhere}
+.quote-composer-preview{display:flex;align-items:flex-start;gap:12px;width:min(100%,560px);margin:0 auto 8px;padding:8px 12px;border-left:2px solid #aaa;background:#f7f7f7;color:#777}
+.quote-composer-preview>div{flex:1;min-width:0}
+.quote-composer-preview span{display:block;margin-bottom:3px;font-size:9px;font-weight:500}
+.quote-composer-preview p{display:-webkit-box;margin:0;overflow:hidden;color:#999;font-size:10px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+.quote-composer-preview button{flex:none;padding:0 3px;color:#999;font-size:18px;line-height:1}
+@media(max-width:480px){.quote-composer-preview{margin-bottom:6px;padding:7px 10px}.bubble-quote{padding:7px 9px}}
+
 .api-saved-url-tabs{display:flex;align-items:stretch;gap:16px;min-width:0;overflow-x:auto;margin:4px 0 0;padding:2px 0 0;border-bottom:1px solid #eee;scrollbar-width:none;-webkit-overflow-scrolling:touch}.api-saved-url-tabs::-webkit-scrollbar{display:none}.api-saved-url-tab{position:relative;flex:none;max-width:45%;padding:8px 2px 9px;overflow:hidden;background:transparent;color:#aaa;font-size:9px;text-overflow:ellipsis;white-space:nowrap}.api-saved-url-tab:after{position:absolute;right:20%;bottom:-1px;left:20%;height:1px;background:#444;content:"";opacity:0}.api-saved-url-tab.active{color:#444}.api-saved-url-tab.active:after{right:0;left:0;opacity:1}.api-config-list>.api-profile-card[hidden]{display:none}.api-profile-card{border-top:0}.api-profile-card.is-default{border-top:0}
 
 /* Unread inner voice appears once, then rests quietly on the avatar. */
 .message .reflection-avatar{position:relative;overflow:visible;padding:0;cursor:pointer}
-.reflection-unread-tag{position:absolute;z-index:2;right:-5px;top:-10px;display:grid;place-items:center;width:31px;height:20px;pointer-events:none;animation:reflection-tag-appear .45s cubic-bezier(.22,.61,.36,1) both}
+.reflection-unread-tag{position:absolute;z-index:2;right:-5px;top:-10px;display:grid;place-items:center;width:31px;height:20px;pointer-events:none}
+.reflection-unread-tag.is-new{animation:reflection-tag-appear .45s cubic-bezier(.22,.61,.36,1) both}
 .reflection-unread-tag>svg{position:absolute;inset:0;display:block;width:31px;height:20px;fill:#f8f8f8;stroke:#aaa;stroke-width:.8;stroke-linejoin:round;filter:drop-shadow(0 1px 1.5px #00000010)}
 .reflection-tag-dots{position:relative;display:flex;align-items:center;gap:3.5px;padding-top:2px}
-.reflection-tag-dots i{display:block;width:2.8px;height:2.8px;border-radius:50%;background:#444;opacity:.5;animation:reflection-tag-dot 1.65s ease-in-out infinite}
+.reflection-tag-dots i{display:block;width:2.8px;height:2.8px;border-radius:50%;background:#444;opacity:.5}
+.reflection-unread-tag.is-new .reflection-tag-dots i{animation:reflection-tag-dot 1.65s ease-in-out 2}
 .reflection-tag-dots i:nth-child(2){animation-delay:.16s}
 .reflection-tag-dots i:nth-child(3){animation-delay:.32s}
 @keyframes reflection-tag-appear{from{opacity:0;transform:translate(-3px,4px) scale(.9)}to{opacity:1;transform:translate(0,0) scale(1)}}
@@ -1198,7 +1235,7 @@ html,body,.phone{touch-action:manipulation}
 
 /* Bundle the Kai font so mobile role names do not depend on installed system fonts. */
 @font-face{font-family:"Iris Kai";src:url("assets/fonts/iris-kai.woff2") format("woff2");font-style:normal;font-weight:400;font-display:swap}
-#chatTitle .chat-character-name,.video-call-brand .chat-character-name{font-family:"Iris Kai","Kaiti SC","STKaiti","KaiTi","楷体-简","楷体",serif!important;font-style:normal;font-weight:400;font-synthesis:none}
+#chatTitle .chat-character-name,.video-call-brand .chat-character-name{font-family:"LXGW WenKai","Iris Kai","Kaiti SC","STKaiti","KaiTi","楷体-简","楷体",serif!important;font-style:normal;font-weight:400;font-synthesis:none}
 .reflection-theme-group-toggle{gap:18px}
 .reflection-theme-group-toggle i{display:block;flex:1;height:1px;background:#dedede;font-size:0;line-height:0}
 .reflection-theme-group-toggle[aria-expanded="true"] i:after{content:none}
