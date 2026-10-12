@@ -992,6 +992,24 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="
 
 .api-manual-model-field[hidden],#apiManualModelField[hidden]{display:none!important}
 
+/* Global worldbook controls: actions stay on one line, books scroll below. */
+.global-worldbook-toolbar{display:flex;flex-wrap:nowrap;align-items:center;gap:clamp(10px,3vw,18px);margin:0;padding:4px 0;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.global-worldbook-toolbar::-webkit-scrollbar,.global-worldbook-library::-webkit-scrollbar{display:none}
+.global-worldbook-toolbar button{flex:none;gap:4px;padding:6px 0;border:0;border-bottom:1px solid #e6e6e6;background:transparent;color:#777;font-size:9px;letter-spacing:0;white-space:nowrap}
+.global-worldbook-toolbar .global-worldbook-import{color:#555}
+.global-worldbook-toolbar .global-worldbook-delete-book{color:#999}
+.global-worldbook-library{display:flex;align-items:center;gap:7px;min-height:42px;padding:7px 0 9px;border-bottom:1px solid #eee;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:none;touch-action:pan-x;-webkit-overflow-scrolling:touch}
+.global-worldbook-book{display:inline-flex;flex:none;align-items:center;gap:7px;min-height:32px;padding:3px 8px;border:1px solid #ededed;border-radius:18px;background:#fff}
+.global-worldbook-book.is-selected{border-color:#cfcfcf;background:#f7f7f7}
+.global-worldbook-book-name{max-width:160px;overflow:hidden;padding:3px 0;background:transparent;color:#888;font-size:9px;text-overflow:ellipsis;white-space:nowrap}
+.global-worldbook-book.is-selected .global-worldbook-book-name{color:#444}
+.global-worldbook-book-toggle{position:relative;flex:none;width:27px;height:16px;padding:0;border:0;border-radius:12px;background:#ddd;transition:background .18s}
+.global-worldbook-book-toggle i{position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #0002;transition:transform .18s}
+.global-worldbook-book-toggle.is-on{background:#555}
+.global-worldbook-book-toggle.is-on i{transform:translateX(11px)}
+.global-worldbook-book-form{grid-template-columns:minmax(0,1fr) auto auto}
+@media(max-width:380px){.global-worldbook-toolbar{gap:12px}.global-worldbook-toolbar button{font-size:8px}.global-worldbook-book{gap:6px;padding-right:7px;padding-left:7px}.global-worldbook-book-name{max-width:130px}}
+
 /* Keep touch double-taps from zooming or nudging the whole app; vertical scrolling remains available. */
 html,body,.phone{touch-action:manipulation}
 
@@ -1552,7 +1570,7 @@ input,textarea{scrollbar-width:thin}
 /* SMS actions share the online chat's quiet gray palette and small type. */
 .sms-bubble-row{position:relative}
 .sms-bubble-row.has-sms-actions{z-index:8}
-.sms-bubble{-webkit-touch-callout:none}
+.conversation .message,.conversation .message .bubble,.sms-bubble-row,.sms-bubble{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .sms-message-actions{position:fixed;z-index:30;visibility:hidden;width:224px;max-width:calc(100vw - 50px);padding:5px;border:1px solid #e8e8e8;border-radius:18px;background:rgba(255,255,255,.98);box-shadow:0 5px 18px #00000012}
 .sms-reaction-picker{display:flex;align-items:center;justify-content:space-between;gap:2px;padding:1px 2px 5px}
 .sms-reaction-picker button{display:grid;place-items:center;flex:1;min-width:0;height:32px;padding:0;border-radius:50%;color:#999;transition:background .15s ease,color .15s ease}
@@ -1601,3 +1619,5 @@ input,textarea{scrollbar-width:thin}
 .input-wrap textarea{display:block;height:22px;min-height:22px;max-height:22px;margin:0;padding:0;align-self:center;line-height:22px;overflow:hidden}
 
 .sms-composer>.sms-attach,.sms-composer>.sms-reply{box-sizing:border-box;flex:0 0 36px;width:36px;min-width:36px;max-width:36px;height:36px;min-height:36px;max-height:36px;padding:0;aspect-ratio:1;border-radius:50%;align-self:flex-end}
+
+.iris-keepalive-audio{display:none!important}.keepalive-card{position:relative;display:flex;align-items:center;justify-content:space-between;gap:16px;margin:8px 0 20px;padding:16px 0;border-top:1px solid #eee;border-bottom:1px solid #eee;cursor:pointer}.keepalive-copy{display:grid;gap:6px;min-width:0}.keepalive-card strong{color:#555;font-size:12px;font-weight:400}.keepalive-card small{max-width:420px;color:#999;font-size:9px;line-height:1.7}.keepalive-card input{position:absolute;opacity:0;pointer-events:none}.keepalive-switch{position:relative;flex:none;width:34px;height:19px;border-radius:12px;background:#ddd;transition:background .18s}.keepalive-switch:after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #0002;transition:transform .18s}.keepalive-card input:checked+.keepalive-switch{background:#555}.keepalive-card input:checked+.keepalive-switch:after{transform:translateX(15px)}.keepalive-status{color:#888;font-size:9px;white-space:nowrap}

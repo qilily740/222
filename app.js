@@ -85,18 +85,19 @@ async function ensureDailyHolidayContext(api,model){
  dailyCalendarLookupPromise=(async()=>{try{const result=await fetchDailyHolidayContext(api,model,date);state.settings.dailyHolidayContext={...pending,...result,checkedAt:Date.now()}}catch{state.settings.dailyHolidayContext={...pending,status:'unavailable',checkedAt:Date.now()}}save();return state.settings.dailyHolidayContext})();
  try{return await dailyCalendarLookupPromise}finally{dailyCalendarLookupPromise=null}
 }
-async function actualTimePromptContext(api,model,thread,more){
+async function actualTimePromptContext(api,model,thread,more,online=false){
+ const timeEnabled=more.timeAwarenessEnabled!==false,holidayEnabled=more.holidayAwarenessEnabled===true||(more.holidayAwarenessEnabled===undefined&&more.actualTimeEnabled===true);
  const userZone=more.timezoneEnabled?more.userTimezone:localTimezone,characterZone=more.timezoneEnabled?more.characterTimezone:localTimezone;
  const pieces=[];
- const latestUserIndex=thread.map(item=>item.mine).lastIndexOf(true),latestUser=thread[latestUserIndex],previousMessage=latestUserIndex>0?thread.slice(0,latestUserIndex).reverse().find(item=>Number(item.createdAt)):null;
- if(previousMessage&&Number(latestUser?.createdAt)){const gap=Math.max(0,Number(latestUser.createdAt)-Number(previousMessage.createdAt));if(gap>=6*60*60*1000){const hours=Math.floor(gap/3600000),days=Math.floor(hours/24),remainder=hours%24;pieces.push(`用户距离上次聊天记录约 ${days?`${days} 天${remainder?` ${remainder} 小时`:''}`:`${hours} 小时`}。可结合角色性格自然承接时间变化；不得替用户编造空档期间的经历、行为或心理。`)}}
- const calendar=await ensureDailyHolidayContext(api,model);
- const now=new Date();
- pieces.push(`本轮请求发起时的现实时间（读取设备当前时钟，不取聊天记录时间）：用户所在地 ${zonedDateTime(now,userZone)}（${userZone}）；角色所在地 ${zonedDateTime(now,characterZone)}（${characterZone}）。时间以此处为准，不要沿用旧消息时间，也不要取整或推测。`);
- if(calendar?.status==='ready')pieces.push(`今日节假日与调休（已联网查询并核对政府来源）：${calendar.text}`);
- else pieces.push('今日节假日与调休未能通过官方来源核实；不要猜测或声称今天是特定节日。');
- pieces.push('只在对话确实相关时自然参考时间和节日，不要每轮报时，不要把日期信息扩写成天气、新闻或其他未提供的实时事实。');
- return`【现实时间感知】\n${pieces.join('\n')}`;
+ if(timeEnabled){
+  const latestUserIndex=thread.map(item=>item.mine).lastIndexOf(true),latestUser=thread[latestUserIndex],previousMessage=latestUserIndex>0?thread.slice(0,latestUserIndex).reverse().find(item=>Number(item.createdAt)):null;
+  if(previousMessage&&Number(latestUser?.createdAt)){const gap=Math.max(0,Number(latestUser.createdAt)-Number(previousMessage.createdAt));if(gap>=10*60*1000){const minutes=Math.floor(gap/60000),hours=Math.floor(minutes/60),days=Math.floor(hours/24),remainder=hours%24,elapsed=days?`${days} 天${remainder?` ${remainder} 小时`:''}`:hours?`${hours} 小时${minutes%60?` ${minutes%60} 分钟`:''}`:`${minutes} 分钟`;pieces.push(`用户这条消息距离上一条实际聊天消息约 ${elapsed}。这是两条记录之间的现实间隔，不代表用户在这段时间里做了什么；可结合角色性格自然承接，但不得编造用户空档期间的经历、行为或心理。`)}}
+  const now=new Date();
+  pieces.push(online?`本轮线上聊天时间统一使用现实用户所在地的时区：${zonedDateTime(now,userZone)}（${userZone}）。读取设备当前时钟，不取聊天记录时间；线上消息时间戳也全部按此时区理解。不要混用角色所在地时间，不要取整或推测。`:`本轮请求发起时的现实时间（读取设备当前时钟，不取聊天记录时间）：用户所在地 ${zonedDateTime(now,userZone)}（${userZone}）；角色所在地 ${zonedDateTime(now,characterZone)}（${characterZone}）。时间以此处为准，不要沿用旧消息时间，也不要取整或推测。`);
+  pieces.push('只在对话确实相关时自然参考时间，不要每轮报时。');
+ }
+ if(holidayEnabled){const holidayDate=localCalendarDate(),calendar=await ensureDailyHolidayContext(api,model);if(calendar?.status==='ready')pieces.push(`中国大陆日期 ${holidayDate} 的节假日与调休（已联网查询并核对政府来源）：${calendar.text}`);else pieces.push(`中国大陆日期 ${holidayDate} 的节假日与调休未能通过官方来源核实；不要猜测或声称当天是特定节日。`);pieces.push('不要把日期信息扩写成天气、新闻或其他未提供的实时事实。')}
+ return pieces.length?`【现实时间感知】\n${pieces.join('\n')}`:'';
 }
 async function fetchApiModelList(baseUrl,key){
  const normalized=String(baseUrl||'').trim().replace(/\/+$/,'');if(!normalized)throw Error('请先填写 API 地址。');
@@ -243,13 +244,13 @@ if(chars[state.char])state.offline=Boolean(chars[state.char].offlineMode);
 state.globalWorldBook=Array.isArray(state.globalWorldBook)?state.globalWorldBook:[];
 state.globalWorldBooks=Array.isArray(state.globalWorldBooks)?state.globalWorldBooks:[];
 if(!state.globalWorldBooks.length)state.globalWorldBooks=[{id:'global-default',name:'默认世界书',entries:state.globalWorldBook}];
-state.globalWorldBooks=state.globalWorldBooks.filter(book=>book&&Array.isArray(book.entries)).map((book,index)=>({...book,id:book.id||`global-book-${index+1}`,name:book.name||`世界书 ${index+1}`}));
+state.globalWorldBooks=state.globalWorldBooks.filter(book=>book&&Array.isArray(book.entries)).map((book,index)=>({...book,id:book.id||`global-book-${index+1}`,name:book.name||`世界书 ${index+1}`,enabled:book.enabled!==false}));
 if(!state.globalWorldBooks.length)state.globalWorldBooks=[{id:'global-default',name:'默认世界书',entries:[]}];
 state.activeGlobalWorldBookId=state.globalWorldBooks.some(book=>book.id===state.activeGlobalWorldBookId)?state.activeGlobalWorldBookId:state.globalWorldBooks[0].id;
 function activeGlobalWorldBook(){return state.globalWorldBooks.find(book=>book.id===state.activeGlobalWorldBookId)||state.globalWorldBooks[0]}
 function resolvePromptVariables(template,values){return String(template||'').replace(/\{\{\s*([a-z_]+)\s*\}\}/gi,(match,name)=>Object.prototype.hasOwnProperty.call(values,name.toLowerCase())?String(values[name.toLowerCase()]??''):match)}
 function worldBookPromptValues(character=chars[state.char],chatSettings=currentRoleChatSettings()){
- const roleBook=character?.worldBooks?.find(book=>book.id===character.activeWorldBookId)||{name:'默认世界书',entries:Array.isArray(character?.worldBook)?character.worldBook:[]},globalBook=activeGlobalWorldBook(),roleEntries=chatSettings.worldBookEnabled===false?[]:(roleBook.entries||[]).filter(entry=>entry.enabled!==false),globalEntries=(globalBook?.entries||[]).filter(entry=>entry.enabled!==false);
+ const roleBook=character?.worldBooks?.find(book=>book.id===character.activeWorldBookId)||{name:'默认世界书',entries:Array.isArray(character?.worldBook)?character.worldBook:[]},globalBook=activeGlobalWorldBook(),roleEntries=chatSettings.worldBookEnabled===false?[]:(roleBook.entries||[]).filter(entry=>entry.enabled!==false),globalEntries=globalBook?.enabled===false?[]:(globalBook?.entries||[]).filter(entry=>entry.enabled!==false);
  const format=(label,book,entries)=>entries.length?`${label}「${book?.name||'世界书'}」：\n${entries.map(entry=>`${entry.name||'条目'}：${entry.content||''}`).join('\n')}`:'';
  const characterWorldbook=format('角色世界书',roleBook,roleEntries),globalWorldbook=format('全局世界书',globalBook,globalEntries);
  return{character_worldbook:characterWorldbook||'暂无已启用的角色世界书内容。',global_worldbook:globalWorldbook||'暂无已启用的全局世界书内容。',world_background:[characterWorldbook,globalWorldbook].filter(Boolean).join('\n\n')||'暂无已启用的世界书内容。'}
@@ -262,6 +263,20 @@ function onlinePromptVariableValues(character,bound,roleSettings,thread){
  return{char_name:characterName,user_name:userName,char_person:'角色以自己的身份自然对话，不添加旁白。',user_person:'用户的语言、动作和心理由用户本人决定。',user_agency_rule:'不得代替用户发言、行动、决定或补写心理。',reply_length:'按当前情境自然回应，不设固定字数。',...worldBookPromptValues(character,roleSettings),writing_style:'保持自然、完整，并贴合当前角色的说话方式。',scene:'依据已发生的聊天内容回应，不擅自补造现场设定。',online_chat:recentOnline,offline_history:'',user_message:lastUser?messagePromptContent(lastUser):'暂无用户新消息。'}
 }
 let storageWarningShown=false;const save=()=>{try{const result=window.IrisStorage?.save(state);if(result&&typeof result.catch==='function')result.catch(()=>{if(!storageWarningShown){storageWarningShown=true;toast('本地存储空间不足，建议先导出数据备份')}})}catch{if(!storageWarningShown){storageWarningShown=true;toast('本地存储不可用，建议先导出数据备份')}}};
+let irisKeepAliveAudio=null,irisKeepAliveAudioUrl='',irisKeepAliveState=state.settings.keepAlive?'paused':'off';
+function irisOtherAudioIsPlaying(){return[...document.querySelectorAll('audio')].some(audio=>audio!==irisKeepAliveAudio&&!audio.paused&&!audio.ended)}
+function irisKeepAliveArtwork(){const icon=document.querySelector('link[rel="apple-touch-icon"]');return new URL(icon?.getAttribute('href')||'assets/iris-app-icon-512.png',document.baseURI).href}
+function updateIrisKeepAliveMediaSession(active){const session=navigator.mediaSession;if(!session)return;if(!active){try{session.playbackState='none';session.metadata=null}catch{}return}try{if(typeof MediaMetadata==='function'){const artwork=irisKeepAliveArtwork();session.metadata=new MediaMetadata({title:'Iris',artist:'后台保持连接',album:'Iris',artwork:[{src:artwork,sizes:'180x180',type:'image/png'}]})}session.playbackState='playing';[['play',()=>void syncIrisKeepAlive()],['pause',()=>void stopIrisKeepAliveAudio()],['stop',()=>void stopIrisKeepAliveAudio()]].forEach(([action,handler])=>{try{session.setActionHandler(action,handler)}catch{}})}catch{}}
+function ensureIrisKeepAliveAudio(){if(irisKeepAliveAudio)return irisKeepAliveAudio;const sampleRate=8000,sampleCount=80000,bytes=new Uint8Array(44+sampleCount),view=new DataView(bytes.buffer),write=(offset,value)=>[...value].forEach((character,index)=>view.setUint8(offset+index,character.charCodeAt(0)));write(0,'RIFF');view.setUint32(4,36+sampleCount,true);write(8,'WAVE');write(12,'fmt ');view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,1,true);view.setUint32(24,sampleRate,true);view.setUint32(28,sampleRate,true);view.setUint16(32,1,true);view.setUint16(34,8,true);write(36,'data');view.setUint32(40,sampleCount,true);bytes.fill(128,44);irisKeepAliveAudioUrl=URL.createObjectURL(new Blob([bytes],{type:'audio/wav'}));irisKeepAliveAudio=document.createElement('audio');irisKeepAliveAudio.className='iris-keepalive-audio';irisKeepAliveAudio.preload='auto';irisKeepAliveAudio.loop=true;irisKeepAliveAudio.playsInline=true;irisKeepAliveAudio.volume=1;irisKeepAliveAudio.muted=false;irisKeepAliveAudio.src=irisKeepAliveAudioUrl;irisKeepAliveAudio.addEventListener('play',()=>{irisKeepAliveState='running';updateIrisKeepAliveMediaSession(true);renderIrisKeepAliveStatus()});irisKeepAliveAudio.addEventListener('pause',()=>{if(state.settings.keepAlive&&irisKeepAliveState==='running'){irisKeepAliveState='paused';updateIrisKeepAliveMediaSession(false);renderIrisKeepAliveStatus()}});document.body.appendChild(irisKeepAliveAudio);return irisKeepAliveAudio}
+function renderIrisKeepAliveStatus(){const status=$('#keepAliveStatus');if(!status)return;status.textContent=!state.settings.keepAlive?'已关闭':irisKeepAliveState==='running'?'系统播放中':irisKeepAliveState==='media'?'其他音频播放中，已让位':irisKeepAliveState==='blocked'?'请点开关授权播放':irisKeepAliveState==='paused'?'已暂停':'已开启'}
+async function stopIrisKeepAliveAudio(){if(irisKeepAliveAudio&&!irisKeepAliveAudio.paused)irisKeepAliveAudio.pause();updateIrisKeepAliveMediaSession(false);irisKeepAliveState=state.settings.keepAlive?'paused':'off';renderIrisKeepAliveStatus()}
+async function syncIrisKeepAlive(){if(!state.settings.keepAlive){await stopIrisKeepAliveAudio();return false}if(irisOtherAudioIsPlaying()){if(irisKeepAliveAudio&&!irisKeepAliveAudio.paused)irisKeepAliveAudio.pause();updateIrisKeepAliveMediaSession(false);irisKeepAliveState='media';renderIrisKeepAliveStatus();return false}const audio=ensureIrisKeepAliveAudio();if(!audio.paused&&!audio.ended){irisKeepAliveState='running';updateIrisKeepAliveMediaSession(true);renderIrisKeepAliveStatus();return true}try{audio.muted=false;await audio.play();irisKeepAliveState='running';updateIrisKeepAliveMediaSession(true);renderIrisKeepAliveStatus();return true}catch{irisKeepAliveState='blocked';renderIrisKeepAliveStatus();return false}}
+window.IrisKeepAlive={sync:syncIrisKeepAlive,async setEnabled(enabled){state.settings.keepAlive=Boolean(enabled);save();await syncIrisKeepAlive();return irisKeepAliveState==='running'}};
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&state.settings.keepAlive)void syncIrisKeepAlive()});
+document.addEventListener('play',event=>{if(event.target!==irisKeepAliveAudio&&state.settings.keepAlive)void syncIrisKeepAlive()},true);
+document.addEventListener('pause',event=>{if(event.target!==irisKeepAliveAudio&&state.settings.keepAlive&&!irisOtherAudioIsPlaying())setTimeout(()=>void syncIrisKeepAlive(),250)},true);
+document.addEventListener('ended',event=>{if(event.target!==irisKeepAliveAudio&&state.settings.keepAlive&&!irisOtherAudioIsPlaying())setTimeout(()=>void syncIrisKeepAlive(),250)},true);
+document.addEventListener('click',()=>{if(state.settings.keepAlive&&irisKeepAliveState!=='running')void syncIrisKeepAlive()},{once:true});
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const avatar=(c,active=false)=>{c=c||{};return `<span class="avatar${active?' is-active':''}" style="background:${esc(c.color||'#ededed')}">${c.avatar?`<img src="${esc(c.avatar)}" alt="">`:esc(c.initial||(c.name||'').slice(0,1))}</span>`};
 const key=()=>`${state.char}-${state.user}-${state.offline?'offline':'chat'}`;
@@ -379,7 +394,7 @@ function selectReplyVersion(threadKey,userIndex,direction){
  const next=(turn.activeVersion+direction+turn.versions.length)%turn.versions.length,version=cloneReplyMessages(turn.versions[next]);thread.splice(turn.userIndex+1,turn.activeReplies.length,...version);turn.user.activeReplyVersion=next;save();render();
 }
 function advanceReplyVersionOrGenerate(threadKey,userIndex){if(key()!==threadKey)return;const turn=latestReplyTurn(state.messages[threadKey]||[]);if(!turn||turn.userIndex!==userIndex)return;void requestChatReply(threadKey,'variant')}
-function formatMessageTime(value,mine=false){if(!value)return'';const more=chars[state.char]?.chatSettings?.more;const zone=more?.timezoneEnabled?(mine?more.userTimezone:more.characterTimezone):undefined;try{return new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',...(zone?{timeZone:zone}:{})}).format(new Date(value))}catch{return new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit'}).format(new Date(value))}}
+function formatMessageTime(value,mine=false){if(!value)return'';const more=chars[state.char]?.chatSettings?.more;const zone=more?.timezoneEnabled?more.userTimezone:undefined;try{return new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',...(zone?{timeZone:zone}:{})}).format(new Date(value))}catch{return new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit'}).format(new Date(value))}}
 function drawnLocationMap(seed){
  let randomState=(Number(seed)||1)>>>0;const random=()=>{randomState=(randomState*1664525+1013904223)>>>0;return randomState/4294967296};
  const roads=[];
@@ -907,22 +922,22 @@ let modeSettings=false;
 let onlineSettingsTab='user';
 let offlineSettingsTab='presets';
 let systemSettingsTab='api';
-const APP_VERSION='1.2.1';
+const APP_VERSION='1.2.2';
 const compareAppVersions=(left,right)=>{const a=String(left||'0').split('.').map(Number),b=String(right||'0').split('.').map(Number);for(let i=0;i<Math.max(a.length,b.length);i++){const delta=(a[i]||0)-(b[i]||0);if(delta)return Math.sign(delta)}return 0};
 let INSTALLED_APP_VERSION=APP_VERSION;
 try{const saved=localStorage.getItem('iris-installed-version'),requested=window.IRIS_RELEASE;if(saved&&compareAppVersions(saved,INSTALLED_APP_VERSION)>0)INSTALLED_APP_VERSION=saved;if(requested&&compareAppVersions(requested,INSTALLED_APP_VERSION)>=0){INSTALLED_APP_VERSION=requested;localStorage.setItem('iris-installed-version',requested)}else localStorage.setItem('iris-installed-version',INSTALLED_APP_VERSION)}catch{}
 let activeFeaturePage=null;
 const defaultOnlineMemory={enabled:true,autoSummary:true,summaryEveryRounds:10,shortTermRounds:40,recentLongCount:5,recallCount:3,coreEveryLongMemories:5,summaryMaxChars:300,coreMaxChars:1200,timeDecayDays:180,contextTokenBudget:12000,semanticRecall:true};
 const localTimezone=Intl.DateTimeFormat().resolvedOptions().timeZone||'Asia/Shanghai';
-const defaultOnlineMore={bilingual:false,sourceLang:'ko',targetLang:'zh-Hans',autoExpand:false,timezoneEnabled:false,actualTimeEnabled:false,userTimezone:localTimezone,characterTimezone:localTimezone,emojiGroups:{}};
+const defaultOnlineMore={bilingual:false,sourceLang:'ko',targetLang:'zh-Hans',autoExpand:false,timezoneEnabled:false,timeAwarenessEnabled:true,holidayAwarenessEnabled:false,userTimezone:localTimezone,characterTimezone:localTimezone,emojiGroups:{}};
 let onlineMemoryDraft={...defaultOnlineMemory};
 let onlineMemoryEntries=[];
 let memoryScopeFilter='all';
 let emojiManagementOpen=false;
 let onlineMoreDraft={...defaultOnlineMore,emojiGroups:{}};
 function currentRoleChatSettings(){const role=chars[state.char];if(!role)return{userIndex:null,userExperience:'',worldBookEnabled:true,memory:{...defaultOnlineMemory,entries:[]},more:{...defaultOnlineMore,emojiGroups:{}}};role.chatSettings||={};role.chatSettings.memory||={...defaultOnlineMemory};if(!Array.isArray(role.chatSettings.memory.entries))role.chatSettings.memory.entries=[];role.chatSettings.more||={...defaultOnlineMore,emojiGroups:{}};return role.chatSettings}
-function loadRoleChatSettings(){const roleSettings=currentRoleChatSettings(),{entries=[],...memorySettings}=roleSettings.memory||{};onlineMemoryDraft={...defaultOnlineMemory,...memorySettings};onlineMemoryEntries=Array.isArray(entries)?entries.map(entry=>({...entry})):[];memoryScopeFilter='all';onlineMoreDraft={...defaultOnlineMore,...roleSettings.more,emojiGroups:{...(roleSettings.more?.emojiGroups||{})}}}
-function persistRoleChatSettings(){const role=chars[state.char];if(!role)return;role.chatSettings||={};role.chatSettings.memory={...(role.chatSettings.memory||{}),...onlineMemoryDraft,entries:onlineMemoryEntries.map(entry=>({...entry}))};role.chatSettings.more={...onlineMoreDraft,emojiGroups:{...onlineMoreDraft.emojiGroups}};save()}
+function loadRoleChatSettings(){const roleSettings=currentRoleChatSettings(),{entries=[],...memorySettings}=roleSettings.memory||{},storedMore=roleSettings.more||{};onlineMemoryDraft={...defaultOnlineMemory,...memorySettings};onlineMemoryEntries=Array.isArray(entries)?entries.map(entry=>({...entry})):[];memoryScopeFilter='all';onlineMoreDraft={...defaultOnlineMore,...storedMore,holidayAwarenessEnabled:Object.prototype.hasOwnProperty.call(storedMore,'holidayAwarenessEnabled')?storedMore.holidayAwarenessEnabled:storedMore.actualTimeEnabled===true,emojiGroups:{...(storedMore.emojiGroups||{})}}}
+function persistRoleChatSettings(){const role=chars[state.char];if(!role)return;role.chatSettings||={};role.chatSettings.memory={...(role.chatSettings.memory||{}),...onlineMemoryDraft,entries:onlineMemoryEntries.map(entry=>({...entry}))};const{actualTimeEnabled,...moreSettings}=onlineMoreDraft;role.chatSettings.more={...moreSettings,emojiGroups:{...onlineMoreDraft.emojiGroups}};save()}
 const bilingualLanguages=[['ko','韩语'],['en','英语'],['ja','日语'],['yue','粤语'],['zh-Hans','简体中文'],['zh-Hant','繁体中文'],['fr','法语'],['de','德语'],['es','西班牙语'],['it','意大利语'],['pt','葡萄牙语'],['ru','俄语'],['th','泰语'],['vi','越南语'],['id','印尼语'],['ar','阿拉伯语']];
 const timezoneCountries=[
  {code:'CN',name:'中国 · China',cities:[['Asia/Shanghai','上海 · Shanghai'],['Asia/Urumqi','乌鲁木齐 · Ürümqi']]},
@@ -951,9 +966,487 @@ const timezoneCountries=[
  {code:'ZA',name:'南非 · South Africa',cities:[['Africa/Johannesburg','约翰内斯堡 · Johannesburg']]},
  {code:'UTC',name:'协调世界时 · UTC',cities:[['UTC','协调世界时 · UTC']]}
 ];
+const timezoneZoneCountries=[
+ ['AD','Europe/Andorra'],
+ ['AE','Asia/Dubai'],
+ ['AF','Asia/Kabul'],
+ ['AG','America/Antigua'],
+ ['AI','America/Anguilla'],
+ ['AL','Europe/Tirane'],
+ ['AM','Asia/Yerevan'],
+ ['AO','Africa/Luanda'],
+ ['AQ','Antarctica/McMurdo'],
+ ['AQ','Antarctica/Casey'],
+ ['AQ','Antarctica/Davis'],
+ ['AQ','Antarctica/DumontDUrville'],
+ ['AQ','Antarctica/Mawson'],
+ ['AQ','Antarctica/Palmer'],
+ ['AQ','Antarctica/Rothera'],
+ ['AQ','Antarctica/Syowa'],
+ ['AQ','Antarctica/Troll'],
+ ['AQ','Antarctica/Vostok'],
+ ['AR','America/Argentina/Buenos_Aires'],
+ ['AR','America/Argentina/Cordoba'],
+ ['AR','America/Argentina/Salta'],
+ ['AR','America/Argentina/Jujuy'],
+ ['AR','America/Argentina/Tucuman'],
+ ['AR','America/Argentina/Catamarca'],
+ ['AR','America/Argentina/La_Rioja'],
+ ['AR','America/Argentina/San_Juan'],
+ ['AR','America/Argentina/Mendoza'],
+ ['AR','America/Argentina/San_Luis'],
+ ['AR','America/Argentina/Rio_Gallegos'],
+ ['AR','America/Argentina/Ushuaia'],
+ ['AS','Pacific/Pago_Pago'],
+ ['AT','Europe/Vienna'],
+ ['AU','Australia/Lord_Howe'],
+ ['AU','Antarctica/Macquarie'],
+ ['AU','Australia/Hobart'],
+ ['AU','Australia/Melbourne'],
+ ['AU','Australia/Sydney'],
+ ['AU','Australia/Broken_Hill'],
+ ['AU','Australia/Brisbane'],
+ ['AU','Australia/Lindeman'],
+ ['AU','Australia/Adelaide'],
+ ['AU','Australia/Darwin'],
+ ['AU','Australia/Perth'],
+ ['AU','Australia/Eucla'],
+ ['AW','America/Aruba'],
+ ['AX','Europe/Mariehamn'],
+ ['AZ','Asia/Baku'],
+ ['BA','Europe/Sarajevo'],
+ ['BB','America/Barbados'],
+ ['BD','Asia/Dhaka'],
+ ['BE','Europe/Brussels'],
+ ['BF','Africa/Ouagadougou'],
+ ['BG','Europe/Sofia'],
+ ['BH','Asia/Bahrain'],
+ ['BI','Africa/Bujumbura'],
+ ['BJ','Africa/Porto-Novo'],
+ ['BL','America/St_Barthelemy'],
+ ['BM','Atlantic/Bermuda'],
+ ['BN','Asia/Brunei'],
+ ['BO','America/La_Paz'],
+ ['BQ','America/Kralendijk'],
+ ['BR','America/Noronha'],
+ ['BR','America/Belem'],
+ ['BR','America/Fortaleza'],
+ ['BR','America/Recife'],
+ ['BR','America/Araguaina'],
+ ['BR','America/Maceio'],
+ ['BR','America/Bahia'],
+ ['BR','America/Sao_Paulo'],
+ ['BR','America/Campo_Grande'],
+ ['BR','America/Cuiaba'],
+ ['BR','America/Santarem'],
+ ['BR','America/Porto_Velho'],
+ ['BR','America/Boa_Vista'],
+ ['BR','America/Manaus'],
+ ['BR','America/Eirunepe'],
+ ['BR','America/Rio_Branco'],
+ ['BS','America/Nassau'],
+ ['BT','Asia/Thimphu'],
+ ['BW','Africa/Gaborone'],
+ ['BY','Europe/Minsk'],
+ ['BZ','America/Belize'],
+ ['CA','America/St_Johns'],
+ ['CA','America/Halifax'],
+ ['CA','America/Glace_Bay'],
+ ['CA','America/Moncton'],
+ ['CA','America/Goose_Bay'],
+ ['CA','America/Blanc-Sablon'],
+ ['CA','America/Toronto'],
+ ['CA','America/Iqaluit'],
+ ['CA','America/Atikokan'],
+ ['CA','America/Winnipeg'],
+ ['CA','America/Resolute'],
+ ['CA','America/Rankin_Inlet'],
+ ['CA','America/Regina'],
+ ['CA','America/Swift_Current'],
+ ['CA','America/Edmonton'],
+ ['CA','America/Cambridge_Bay'],
+ ['CA','America/Inuvik'],
+ ['CA','America/Vancouver'],
+ ['CA','America/Creston'],
+ ['CA','America/Dawson_Creek'],
+ ['CA','America/Fort_Nelson'],
+ ['CA','America/Whitehorse'],
+ ['CA','America/Dawson'],
+ ['CC','Indian/Cocos'],
+ ['CD','Africa/Kinshasa'],
+ ['CD','Africa/Lubumbashi'],
+ ['CF','Africa/Bangui'],
+ ['CG','Africa/Brazzaville'],
+ ['CH','Europe/Zurich'],
+ ['CI','Africa/Abidjan'],
+ ['CK','Pacific/Rarotonga'],
+ ['CL','America/Santiago'],
+ ['CL','America/Coyhaique'],
+ ['CL','America/Punta_Arenas'],
+ ['CL','Pacific/Easter'],
+ ['CM','Africa/Douala'],
+ ['CN','Asia/Shanghai'],
+ ['CN','Asia/Urumqi'],
+ ['CO','America/Bogota'],
+ ['CR','America/Costa_Rica'],
+ ['CU','America/Havana'],
+ ['CV','Atlantic/Cape_Verde'],
+ ['CW','America/Curacao'],
+ ['CX','Indian/Christmas'],
+ ['CY','Asia/Nicosia'],
+ ['CY','Asia/Famagusta'],
+ ['CZ','Europe/Prague'],
+ ['DE','Europe/Berlin'],
+ ['DE','Europe/Busingen'],
+ ['DJ','Africa/Djibouti'],
+ ['DK','Europe/Copenhagen'],
+ ['DM','America/Dominica'],
+ ['DO','America/Santo_Domingo'],
+ ['DZ','Africa/Algiers'],
+ ['EC','America/Guayaquil'],
+ ['EC','Pacific/Galapagos'],
+ ['EE','Europe/Tallinn'],
+ ['EG','Africa/Cairo'],
+ ['EH','Africa/El_Aaiun'],
+ ['ER','Africa/Asmara'],
+ ['ES','Europe/Madrid'],
+ ['ES','Africa/Ceuta'],
+ ['ES','Atlantic/Canary'],
+ ['ET','Africa/Addis_Ababa'],
+ ['FI','Europe/Helsinki'],
+ ['FJ','Pacific/Fiji'],
+ ['FK','Atlantic/Stanley'],
+ ['FM','Pacific/Chuuk'],
+ ['FM','Pacific/Pohnpei'],
+ ['FM','Pacific/Kosrae'],
+ ['FO','Atlantic/Faroe'],
+ ['FR','Europe/Paris'],
+ ['GA','Africa/Libreville'],
+ ['GB','Europe/London'],
+ ['GD','America/Grenada'],
+ ['GE','Asia/Tbilisi'],
+ ['GF','America/Cayenne'],
+ ['GG','Europe/Guernsey'],
+ ['GH','Africa/Accra'],
+ ['GI','Europe/Gibraltar'],
+ ['GL','America/Nuuk'],
+ ['GL','America/Danmarkshavn'],
+ ['GL','America/Scoresbysund'],
+ ['GL','America/Thule'],
+ ['GM','Africa/Banjul'],
+ ['GN','Africa/Conakry'],
+ ['GP','America/Guadeloupe'],
+ ['GQ','Africa/Malabo'],
+ ['GR','Europe/Athens'],
+ ['GS','Atlantic/South_Georgia'],
+ ['GT','America/Guatemala'],
+ ['GU','Pacific/Guam'],
+ ['GW','Africa/Bissau'],
+ ['GY','America/Guyana'],
+ ['HK','Asia/Hong_Kong'],
+ ['HN','America/Tegucigalpa'],
+ ['HR','Europe/Zagreb'],
+ ['HT','America/Port-au-Prince'],
+ ['HU','Europe/Budapest'],
+ ['ID','Asia/Jakarta'],
+ ['ID','Asia/Pontianak'],
+ ['ID','Asia/Makassar'],
+ ['ID','Asia/Jayapura'],
+ ['IE','Europe/Dublin'],
+ ['IL','Asia/Jerusalem'],
+ ['IM','Europe/Isle_of_Man'],
+ ['IN','Asia/Kolkata'],
+ ['IO','Indian/Chagos'],
+ ['IQ','Asia/Baghdad'],
+ ['IR','Asia/Tehran'],
+ ['IS','Atlantic/Reykjavik'],
+ ['IT','Europe/Rome'],
+ ['JE','Europe/Jersey'],
+ ['JM','America/Jamaica'],
+ ['JO','Asia/Amman'],
+ ['JP','Asia/Tokyo'],
+ ['KE','Africa/Nairobi'],
+ ['KG','Asia/Bishkek'],
+ ['KH','Asia/Phnom_Penh'],
+ ['KI','Pacific/Tarawa'],
+ ['KI','Pacific/Kanton'],
+ ['KI','Pacific/Kiritimati'],
+ ['KM','Indian/Comoro'],
+ ['KN','America/St_Kitts'],
+ ['KP','Asia/Pyongyang'],
+ ['KR','Asia/Seoul'],
+ ['KW','Asia/Kuwait'],
+ ['KY','America/Cayman'],
+ ['KZ','Asia/Almaty'],
+ ['KZ','Asia/Qyzylorda'],
+ ['KZ','Asia/Qostanay'],
+ ['KZ','Asia/Aqtobe'],
+ ['KZ','Asia/Aqtau'],
+ ['KZ','Asia/Atyrau'],
+ ['KZ','Asia/Oral'],
+ ['LA','Asia/Vientiane'],
+ ['LB','Asia/Beirut'],
+ ['LC','America/St_Lucia'],
+ ['LI','Europe/Vaduz'],
+ ['LK','Asia/Colombo'],
+ ['LR','Africa/Monrovia'],
+ ['LS','Africa/Maseru'],
+ ['LT','Europe/Vilnius'],
+ ['LU','Europe/Luxembourg'],
+ ['LV','Europe/Riga'],
+ ['LY','Africa/Tripoli'],
+ ['MA','Africa/Casablanca'],
+ ['MC','Europe/Monaco'],
+ ['MD','Europe/Chisinau'],
+ ['ME','Europe/Podgorica'],
+ ['MF','America/Marigot'],
+ ['MG','Indian/Antananarivo'],
+ ['MH','Pacific/Majuro'],
+ ['MH','Pacific/Kwajalein'],
+ ['MK','Europe/Skopje'],
+ ['ML','Africa/Bamako'],
+ ['MM','Asia/Yangon'],
+ ['MN','Asia/Ulaanbaatar'],
+ ['MN','Asia/Hovd'],
+ ['MO','Asia/Macau'],
+ ['MP','Pacific/Saipan'],
+ ['MQ','America/Martinique'],
+ ['MR','Africa/Nouakchott'],
+ ['MS','America/Montserrat'],
+ ['MT','Europe/Malta'],
+ ['MU','Indian/Mauritius'],
+ ['MV','Indian/Maldives'],
+ ['MW','Africa/Blantyre'],
+ ['MX','America/Mexico_City'],
+ ['MX','America/Cancun'],
+ ['MX','America/Merida'],
+ ['MX','America/Monterrey'],
+ ['MX','America/Matamoros'],
+ ['MX','America/Chihuahua'],
+ ['MX','America/Ciudad_Juarez'],
+ ['MX','America/Ojinaga'],
+ ['MX','America/Mazatlan'],
+ ['MX','America/Bahia_Banderas'],
+ ['MX','America/Hermosillo'],
+ ['MX','America/Tijuana'],
+ ['MY','Asia/Kuala_Lumpur'],
+ ['MY','Asia/Kuching'],
+ ['MZ','Africa/Maputo'],
+ ['NA','Africa/Windhoek'],
+ ['NC','Pacific/Noumea'],
+ ['NE','Africa/Niamey'],
+ ['NF','Pacific/Norfolk'],
+ ['NG','Africa/Lagos'],
+ ['NI','America/Managua'],
+ ['NL','Europe/Amsterdam'],
+ ['NO','Europe/Oslo'],
+ ['NP','Asia/Kathmandu'],
+ ['NR','Pacific/Nauru'],
+ ['NU','Pacific/Niue'],
+ ['NZ','Pacific/Auckland'],
+ ['NZ','Pacific/Chatham'],
+ ['OM','Asia/Muscat'],
+ ['PA','America/Panama'],
+ ['PE','America/Lima'],
+ ['PF','Pacific/Tahiti'],
+ ['PF','Pacific/Marquesas'],
+ ['PF','Pacific/Gambier'],
+ ['PG','Pacific/Port_Moresby'],
+ ['PG','Pacific/Bougainville'],
+ ['PH','Asia/Manila'],
+ ['PK','Asia/Karachi'],
+ ['PL','Europe/Warsaw'],
+ ['PM','America/Miquelon'],
+ ['PN','Pacific/Pitcairn'],
+ ['PR','America/Puerto_Rico'],
+ ['PS','Asia/Gaza'],
+ ['PS','Asia/Hebron'],
+ ['PT','Europe/Lisbon'],
+ ['PT','Atlantic/Madeira'],
+ ['PT','Atlantic/Azores'],
+ ['PW','Pacific/Palau'],
+ ['PY','America/Asuncion'],
+ ['QA','Asia/Qatar'],
+ ['RE','Indian/Reunion'],
+ ['RO','Europe/Bucharest'],
+ ['RS','Europe/Belgrade'],
+ ['RU','Europe/Kaliningrad'],
+ ['RU','Europe/Moscow'],
+ ['UA','Europe/Simferopol'],
+ ['RU','Europe/Kirov'],
+ ['RU','Europe/Volgograd'],
+ ['RU','Europe/Astrakhan'],
+ ['RU','Europe/Saratov'],
+ ['RU','Europe/Ulyanovsk'],
+ ['RU','Europe/Samara'],
+ ['RU','Asia/Yekaterinburg'],
+ ['RU','Asia/Omsk'],
+ ['RU','Asia/Novosibirsk'],
+ ['RU','Asia/Barnaul'],
+ ['RU','Asia/Tomsk'],
+ ['RU','Asia/Novokuznetsk'],
+ ['RU','Asia/Krasnoyarsk'],
+ ['RU','Asia/Irkutsk'],
+ ['RU','Asia/Chita'],
+ ['RU','Asia/Yakutsk'],
+ ['RU','Asia/Khandyga'],
+ ['RU','Asia/Vladivostok'],
+ ['RU','Asia/Ust-Nera'],
+ ['RU','Asia/Magadan'],
+ ['RU','Asia/Sakhalin'],
+ ['RU','Asia/Srednekolymsk'],
+ ['RU','Asia/Kamchatka'],
+ ['RU','Asia/Anadyr'],
+ ['RW','Africa/Kigali'],
+ ['SA','Asia/Riyadh'],
+ ['SB','Pacific/Guadalcanal'],
+ ['SC','Indian/Mahe'],
+ ['SD','Africa/Khartoum'],
+ ['SE','Europe/Stockholm'],
+ ['SG','Asia/Singapore'],
+ ['SH','Atlantic/St_Helena'],
+ ['SI','Europe/Ljubljana'],
+ ['SJ','Arctic/Longyearbyen'],
+ ['SK','Europe/Bratislava'],
+ ['SL','Africa/Freetown'],
+ ['SM','Europe/San_Marino'],
+ ['SN','Africa/Dakar'],
+ ['SO','Africa/Mogadishu'],
+ ['SR','America/Paramaribo'],
+ ['SS','Africa/Juba'],
+ ['ST','Africa/Sao_Tome'],
+ ['SV','America/El_Salvador'],
+ ['SX','America/Lower_Princes'],
+ ['SY','Asia/Damascus'],
+ ['SZ','Africa/Mbabane'],
+ ['TC','America/Grand_Turk'],
+ ['TD','Africa/Ndjamena'],
+ ['TF','Indian/Kerguelen'],
+ ['TG','Africa/Lome'],
+ ['TH','Asia/Bangkok'],
+ ['TJ','Asia/Dushanbe'],
+ ['TK','Pacific/Fakaofo'],
+ ['TL','Asia/Dili'],
+ ['TM','Asia/Ashgabat'],
+ ['TN','Africa/Tunis'],
+ ['TO','Pacific/Tongatapu'],
+ ['TR','Europe/Istanbul'],
+ ['TT','America/Port_of_Spain'],
+ ['TV','Pacific/Funafuti'],
+ ['TW','Asia/Taipei'],
+ ['TZ','Africa/Dar_es_Salaam'],
+ ['UA','Europe/Kyiv'],
+ ['UG','Africa/Kampala'],
+ ['UM','Pacific/Midway'],
+ ['UM','Pacific/Wake'],
+ ['US','America/New_York'],
+ ['US','America/Detroit'],
+ ['US','America/Kentucky/Louisville'],
+ ['US','America/Kentucky/Monticello'],
+ ['US','America/Indiana/Indianapolis'],
+ ['US','America/Indiana/Vincennes'],
+ ['US','America/Indiana/Winamac'],
+ ['US','America/Indiana/Marengo'],
+ ['US','America/Indiana/Petersburg'],
+ ['US','America/Indiana/Vevay'],
+ ['US','America/Chicago'],
+ ['US','America/Indiana/Tell_City'],
+ ['US','America/Indiana/Knox'],
+ ['US','America/Menominee'],
+ ['US','America/North_Dakota/Center'],
+ ['US','America/North_Dakota/New_Salem'],
+ ['US','America/North_Dakota/Beulah'],
+ ['US','America/Denver'],
+ ['US','America/Boise'],
+ ['US','America/Phoenix'],
+ ['US','America/Los_Angeles'],
+ ['US','America/Anchorage'],
+ ['US','America/Juneau'],
+ ['US','America/Sitka'],
+ ['US','America/Metlakatla'],
+ ['US','America/Yakutat'],
+ ['US','America/Nome'],
+ ['US','America/Adak'],
+ ['US','Pacific/Honolulu'],
+ ['UY','America/Montevideo'],
+ ['UZ','Asia/Samarkand'],
+ ['UZ','Asia/Tashkent'],
+ ['VA','Europe/Vatican'],
+ ['VC','America/St_Vincent'],
+ ['VE','America/Caracas'],
+ ['VG','America/Tortola'],
+ ['VI','America/St_Thomas'],
+ ['VN','Asia/Ho_Chi_Minh'],
+ ['VU','Pacific/Efate'],
+ ['WF','Pacific/Wallis'],
+ ['WS','Pacific/Apia'],
+ ['YE','Asia/Aden'],
+ ['YT','Indian/Mayotte'],
+ ['ZA','Africa/Johannesburg'],
+ ['ZM','Africa/Lusaka'],
+ ['ZW','Africa/Harare']
+];
+const timezoneCityLabels={
+ 'Asia/Shanghai':'上海 · Shanghai',
+ 'Asia/Urumqi':'乌鲁木齐 · Ürümqi',
+ 'Asia/Tokyo':'东京 · Tokyo',
+ 'Asia/Seoul':'首尔 · Seoul',
+ 'America/New_York':'纽约 · New York',
+ 'America/Chicago':'芝加哥 · Chicago',
+ 'America/Denver':'丹佛 · Denver',
+ 'America/Los_Angeles':'洛杉矶 · Los Angeles',
+ 'Pacific/Honolulu':'檀香山 · Honolulu',
+ 'America/St_Johns':'圣约翰斯 · St. John’s',
+ 'America/Toronto':'多伦多 · Toronto',
+ 'America/Winnipeg':'温尼伯 · Winnipeg',
+ 'America/Edmonton':'埃德蒙顿 · Edmonton',
+ 'America/Vancouver':'温哥华 · Vancouver',
+ 'Europe/London':'伦敦 · London',
+ 'Europe/Paris':'巴黎 · Paris',
+ 'Europe/Berlin':'柏林 · Berlin',
+ 'Europe/Rome':'罗马 · Rome',
+ 'Europe/Madrid':'马德里 · Madrid',
+ 'Atlantic/Canary':'加那利群岛 · Canary Islands',
+ 'Europe/Lisbon':'里斯本 · Lisbon',
+ 'Atlantic/Azores':'亚速尔群岛 · Azores',
+ 'Europe/Moscow':'莫斯科 · Moscow',
+ 'Asia/Yekaterinburg':'叶卡捷琳堡 · Yekaterinburg',
+ 'Asia/Novosibirsk':'新西伯利亚 · Novosibirsk',
+ 'Asia/Vladivostok':'符拉迪沃斯托克 · Vladivostok',
+ 'Australia/Perth':'珀斯 · Perth',
+ 'Australia/Adelaide':'阿德莱德 · Adelaide',
+ 'Australia/Sydney':'悉尼 · Sydney',
+ 'Pacific/Auckland':'奥克兰 · Auckland',
+ 'Asia/Kolkata':'加尔各答 · Kolkata',
+ 'Asia/Singapore':'新加坡 · Singapore',
+ 'Asia/Bangkok':'曼谷 · Bangkok',
+ 'Asia/Ho_Chi_Minh':'胡志明市 · Ho Chi Minh City',
+ 'Asia/Jakarta':'雅加达 · Jakarta',
+ 'Asia/Makassar':'望加锡 · Makassar',
+ 'Asia/Jayapura':'查亚普拉 · Jayapura',
+ 'Asia/Dubai':'迪拜 · Dubai',
+ 'Europe/Istanbul':'伊斯坦布尔 · Istanbul',
+ 'America/Sao_Paulo':'圣保罗 · São Paulo',
+ 'America/Manaus':'马瑙斯 · Manaus',
+ 'America/Mexico_City':'墨西哥城 · Mexico City',
+ 'America/Tijuana':'蒂华纳 · Tijuana',
+ 'Africa/Johannesburg':'约翰内斯堡 · Johannesburg',
+ 'UTC':'协调世界时 · UTC'
+};
+const timezoneRegionNameZh=typeof Intl.DisplayNames==='function'?new Intl.DisplayNames(['zh-CN'],{type:'region'}):null,timezoneRegionNameEn=typeof Intl.DisplayNames==='function'?new Intl.DisplayNames(['en'],{type:'region'}):null;
+for(const[code,zone]of timezoneZoneCountries){
+ let country=timezoneCountries.find(item=>item.code===code);
+ if(!country){const zh=timezoneRegionNameZh?.of(code)||code,en=timezoneRegionNameEn?.of(code)||code;country={code,name:zh===en?zh:`${zh} · ${en}`,cities:[]};timezoneCountries.push(country)}
+ if(!country.cities.some(city=>city[0]===zone)){const city=zone.split('/').at(-1).replaceAll('_',' ');country.cities.push([zone,timezoneCityLabels[zone]||city])}
+}
+
 function countryForTimezone(zone){return timezoneCountries.find(country=>country.cities.some(city=>city[0]===zone))||timezoneCountries[0]}
 function countryOptions(selected){return timezoneCountries.map(country=>`<option value="${country.code}" ${selected===country.code?'selected':''}>${esc(country.name)}</option>`).join('')}
-function cityOptions(countryCode,selected){const country=timezoneCountries.find(item=>item.code===countryCode)||timezoneCountries[0];let cities=country.cities;if(selected&&!cities.some(city=>city[0]===selected))cities=[[selected,selected.split('/').pop().replaceAll('_',' ')],...cities];return cities.map(([zone,label])=>`<option value="${esc(zone)}" ${selected===zone?'selected':''}>${esc(label)}</option>`).join('')}
+let timezoneRegionDataPromise=null;
+async function loadTimezoneRegions(countryCode){if(!timezoneRegionDataPromise)timezoneRegionDataPromise=fetch('assets/timezone-regions.json').then(response=>{if(!response.ok)throw Error('行政区列表加载失败');return response.json()}).catch(error=>{timezoneRegionDataPromise=null;throw error});const regions=await timezoneRegionDataPromise;return Array.isArray(regions?.[countryCode])?regions[countryCode]:[]}
+const timezoneRegionNamesZh={'CN.01':'安徽','CN.02':'浙江','CN.03':'江西','CN.04':'江苏','CN.05':'吉林','CN.06':'青海','CN.07':'福建','CN.08':'黑龙江','CN.09':'河南','CN.10':'河北','CN.11':'湖南','CN.12':'湖北','CN.13':'新疆','CN.14':'西藏','CN.15':'甘肃','CN.16':'广西','CN.18':'贵州','CN.19':'辽宁','CN.20':'内蒙古','CN.21':'宁夏','CN.22':'北京','CN.23':'上海','CN.24':'山西','CN.25':'山东','CN.26':'陕西','CN.28':'天津','CN.29':'云南','CN.30':'广东','CN.31':'海南','CN.32':'四川','CN.33':'重庆'};
+function timezoneRegionLabel(record,countryCode){const local=record[5]||timezoneRegionNamesZh[`${countryCode}.${record[0]}`],city=String(record[3]||'');if(local)return `${local}${city&&/[\u3400-\u9fff]/.test(city)?` · ${city}`:''} (${record[1]})`;return city&&/[\u3400-\u9fff]/.test(city)?`${record[1]} · ${city}`:record[1]}
+function timezoneRegionPickerMarkup(person){return `<select aria-label="选择省份、州或行政区" data-timezone-region="${person}"><option value="">加载省/州…</option></select><input type="hidden" data-timezone-value="${person}">`}
 function timezoneOffset(zone,date=new Date()){try{const label=new Intl.DateTimeFormat('en',{timeZone:zone,timeZoneName:'longOffset'}).formatToParts(date).find(part=>part.type==='timeZoneName')?.value||'GMT';const match=label.match(/GMT([+-])(\d{2}):(\d{2})/);if(!match)return 0;return (match[1]==='-'?-1:1)*(Number(match[2])*60+Number(match[3]))}catch{return 0}}
 function timezoneDifference(){const delta=timezoneOffset(onlineMoreDraft.characterTimezone)-timezoneOffset(onlineMoreDraft.userTimezone);if(!delta)return'两地时差 · 目前相同';const hours=Math.abs(delta)/60,amount=Number.isInteger(hours)?`${hours} 小时`:`${hours.toFixed(1)} 小时`;return `两地时差 · 角色${delta>0?'快':'慢'} ${amount}`}
 function renderMemoryPanel(){
@@ -1029,8 +1522,8 @@ function onlineSettingsPanel(tab){
  return `<section class="online-setting-section more-page"><p class="online-section-kicker">聊天偏好</p><h2>更多设置</h2>
  <section class="more-preference-card emoji-preference"><div class="more-card-heading"><span><strong>表情包</strong><small>管理当前聊天可使用的表情分组</small></span><button type="button" class="subtle-action">${emojiManagementOpen?'完成':'管理'}</button></div><div class="emoji-management-content" ${emojiManagementOpen?'':'hidden'}>${emojiGroupsMarkup}</div></section>
  <section class="more-preference-card translation-preference"><label class="settings-switch-row more-main-toggle"><span><strong>双语模式</strong><small>在同一条消息中显示原文与译文</small></span><input type="checkbox" data-more-toggle="bilingual" ${onlineMoreDraft.bilingual?'checked':''}><i aria-hidden="true"></i></label><div class="translation-fields" ${onlineMoreDraft.bilingual?'':'hidden'}><div class="translation-language-grid"><label><span>原文语言</span><select data-more-value="sourceLang">${sourceOptions}</select></label><i>→</i><label><span>译文语言</span><select data-more-value="targetLang">${languageOptions}</select></label></div><label class="settings-switch-row more-auto-expand"><span><strong>默认自动展开译文</strong><small>打开聊天时直接显示译文</small></span><input type="checkbox" data-more-toggle="autoExpand" ${onlineMoreDraft.autoExpand?'checked':''}><i aria-hidden="true"></i></label></div></section>
- <section class="more-preference-card timezone-preference"><div class="more-card-heading timezone-card-heading"><span><strong>实际时区</strong><small>分别设置用户与角色所在时区</small></span><label class="timezone-inline-toggle" aria-label="启用实际时区"><input type="checkbox" data-more-toggle="timezoneEnabled" ${onlineMoreDraft.timezoneEnabled?'checked':''}><i aria-hidden="true"></i></label></div><div class="timezone-fields" ${onlineMoreDraft.timezoneEnabled?'':'hidden'}><div class="timezone-person-row"><span><i class="timezone-dot user-dot"></i>用户时区</span><div class="timezone-selects"><select aria-label="选择用户国家" data-timezone-country="user">${countryOptions(countryForTimezone(onlineMoreDraft.userTimezone).code)}</select><select aria-label="选择用户城市" data-timezone-city="user">${cityOptions(countryForTimezone(onlineMoreDraft.userTimezone).code,onlineMoreDraft.userTimezone)}</select></div></div><div class="timezone-person-row"><span><i class="timezone-dot role-dot"></i>角色时区</span><div class="timezone-selects"><select aria-label="选择角色国家" data-timezone-country="character">${countryOptions(countryForTimezone(onlineMoreDraft.characterTimezone).code)}</select><select aria-label="选择角色城市" data-timezone-city="character">${cityOptions(countryForTimezone(onlineMoreDraft.characterTimezone).code,onlineMoreDraft.characterTimezone)}</select></div></div><div class="timezone-footer"><div class="timezone-difference" data-timezone-difference>${timezoneDifference()}</div><button type="button" class="timezone-reset" data-timezone-reset><span aria-hidden="true">↺</span>恢复默认</button></div></div></section>
- <section class="more-preference-card actual-time-preference"><label class="settings-switch-row more-main-toggle"><span><strong>感知实际时间</strong><small>每天联网查询一次中国大陆节假日与调休，并结合当前时间及聊天间隔回应</small></span><input type="checkbox" data-more-toggle="actualTimeEnabled" ${onlineMoreDraft.actualTimeEnabled?'checked':''}><i aria-hidden="true"></i></label><p class="actual-time-note">使用当前聊天的 API 搜索能力；若 API 不支持联网搜索，则只提供实际时间。</p></section>
+ <section class="more-preference-card timezone-preference"><div class="more-card-heading timezone-card-heading"><span><strong>实际时区</strong><small>地区来自 <a href="https://www.geonames.org" target="_blank" rel="noopener">GeoNames</a>，省州和城市尽量显示中文；线上聊天时间按用户所在地</small></span><label class="timezone-inline-toggle" aria-label="启用实际时区"><input type="checkbox" data-more-toggle="timezoneEnabled" ${onlineMoreDraft.timezoneEnabled?'checked':''}><i aria-hidden="true"></i></label></div><div class="timezone-fields" ${onlineMoreDraft.timezoneEnabled?'':'hidden'}><div class="timezone-person-row"><span><i class="timezone-dot user-dot"></i>用户时区</span><div class="timezone-selects"><select aria-label="选择用户国家" data-timezone-country="user">${countryOptions(countryForTimezone(onlineMoreDraft.userTimezone).code)}</select>${timezoneRegionPickerMarkup('user')}</div></div><div class="timezone-person-row"><span><i class="timezone-dot role-dot"></i>角色时区</span><div class="timezone-selects"><select aria-label="选择角色国家" data-timezone-country="character">${countryOptions(countryForTimezone(onlineMoreDraft.characterTimezone).code)}</select>${timezoneRegionPickerMarkup('character')}</div></div><div class="timezone-footer"><div class="timezone-difference" data-timezone-difference>${timezoneDifference()}</div><button type="button" class="timezone-reset" data-timezone-reset><span aria-hidden="true">↺</span>恢复默认</button></div></div></section>
+ <section class="more-preference-card actual-time-preference"><label class="settings-switch-row more-main-toggle"><span><strong>时间感知</strong><small>默认开启，使用角色时区、消息时间和互动间隔；不需要联网</small></span><input type="checkbox" data-more-toggle="timeAwarenessEnabled" ${onlineMoreDraft.timeAwarenessEnabled?'checked':''}><i aria-hidden="true"></i></label><label class="settings-switch-row more-main-toggle holiday-awareness-toggle"><span><strong>节假日感知</strong><small>每天联网查询一次中国大陆节假日与调休</small></span><input type="checkbox" data-more-toggle="holidayAwarenessEnabled" ${onlineMoreDraft.holidayAwarenessEnabled?'checked':''}><i aria-hidden="true"></i></label></section>
  </section>`;
 }
 function bindOnlineSettingsInputs(panel){
@@ -1045,10 +1538,11 @@ function bindOnlineSettingsInputs(panel){
  bindExperienceNotes(panel);
  panel.querySelectorAll('[data-worldbook-toggle]').forEach(input=>input.onchange=()=>{currentRoleChatSettings().worldBookEnabled=input.checked;persistRoleChatSettings()});
  if(panel.querySelector('.character-worldbook-page'))bindCharacterWorldBookInputs(panel);
- const syncTimezone=(person,zone)=>{const field=person==='user'?'userTimezone':'characterTimezone';onlineMoreDraft[field]=zone;const difference=panel.querySelector('[data-timezone-difference]');if(difference)difference.textContent=timezoneDifference();persistRoleChatSettings()};
- panel.querySelectorAll('[data-timezone-country]').forEach(country=>country.onchange=()=>{const person=country.dataset.timezoneCountry,city=panel.querySelector(`[data-timezone-city="${person}"]`),selectedCountry=timezoneCountries.find(item=>item.code===country.value)||timezoneCountries[0];city.innerHTML=cityOptions(selectedCountry.code,selectedCountry.cities[0][0]);syncTimezone(person,selectedCountry.cities[0][0])});
- panel.querySelectorAll('[data-timezone-city]').forEach(city=>city.onchange=()=>syncTimezone(city.dataset.timezoneCity,city.value));
- panel.querySelectorAll('[data-timezone-reset]').forEach(button=>button.onclick=()=>{onlineMoreDraft.timezoneEnabled=false;onlineMoreDraft.userTimezone=localTimezone;onlineMoreDraft.characterTimezone=localTimezone;const toggle=panel.querySelector('[data-more-toggle="timezoneEnabled"]');if(toggle)toggle.checked=false;const fields=panel.querySelector('.timezone-fields');if(fields)fields.hidden=true;for(const person of ['user','character']){const country=panel.querySelector(`[data-timezone-country="${person}"]`),city=panel.querySelector(`[data-timezone-city="${person}"]`);if(country&&city){const selected=countryForTimezone(localTimezone);country.value=selected.code;city.innerHTML=cityOptions(selected.code,localTimezone);city.value=localTimezone}}const difference=panel.querySelector('[data-timezone-difference]');if(difference)difference.textContent=timezoneDifference();persistRoleChatSettings()});
+ const syncTimezone=(person,zone)=>{const field=person==='user'?'userTimezone':'characterTimezone';onlineMoreDraft[field]=zone;const value=panel.querySelector(`[data-timezone-value="${person}"]`);if(value)value.value=zone;const difference=panel.querySelector('[data-timezone-difference]');if(difference)difference.textContent=timezoneDifference();persistRoleChatSettings()};
+ const fillTimezoneRegions=async(person,countryCode,preferredZone,preferredCode='')=>{const select=panel.querySelector(`[data-timezone-region="${person}"]`);if(!select)return;select.innerHTML='<option value="">加载中…</option>';try{const records=await loadTimezoneRegions(countryCode),country=timezoneCountries.find(item=>item.code===countryCode),fallback=country?.cities[0]?.[0]||'UTC';select.innerHTML=records.map(record=>{const zone=record[2]||fallback,label=timezoneRegionLabel(record,countryCode);return `<option value="${esc(record[0])}" data-zone="${esc(zone)}" title="${esc(label)}">${esc(label)}${record[2]?'': ' · '+esc(zone)}</option>`}).join('')||'<option value="">没有省/州数据</option>';const preferred=records.find(record=>record[0]===preferredCode)||records.find(record=>record[2]===preferredZone)||records.reduce((best,record)=>Number(record[4]||0)>Number(best?.[4]||0)?record:best,null);if(preferred)select.value=preferred[0];select._timezoneRegions=records}catch{select.innerHTML='<option value="">行政区列表无法加载</option>'}};
+ panel.querySelectorAll('[data-timezone-country]').forEach(country=>{const person=country.dataset.timezoneCountry,zone=person==='user'?onlineMoreDraft.userTimezone:onlineMoreDraft.characterTimezone;void fillTimezoneRegions(person,country.value,zone);country.onchange=async()=>{const selectedCountry=timezoneCountries.find(item=>item.code===country.value)||timezoneCountries[0];await fillTimezoneRegions(person,selectedCountry.code,'');const region=panel.querySelector(`[data-timezone-region="${person}"]`),option=region?.selectedOptions[0],fallback=selectedCountry.cities[0]?.[0]||'UTC';syncTimezone(person,option?.dataset.zone||fallback)}});
+ panel.querySelectorAll('[data-timezone-region]').forEach(select=>select.onchange=()=>{const zone=select.selectedOptions[0]?.dataset.zone;if(zone)syncTimezone(select.dataset.timezoneRegion,zone)});
+ panel.querySelectorAll('[data-timezone-reset]').forEach(button=>button.onclick=()=>{onlineMoreDraft.timezoneEnabled=false;onlineMoreDraft.userTimezone=localTimezone;onlineMoreDraft.characterTimezone=localTimezone;const toggle=panel.querySelector('[data-more-toggle="timezoneEnabled"]');if(toggle)toggle.checked=false;const fields=panel.querySelector('.timezone-fields');if(fields)fields.hidden=true;for(const person of ['user','character']){const country=panel.querySelector(`[data-timezone-country="${person}"]`),region=panel.querySelector(`[data-timezone-region="${person}"]`),value=panel.querySelector(`[data-timezone-value="${person}"]`);if(country&&region){const selected=countryForTimezone(localTimezone);country.value=selected.code;if(value)value.value=localTimezone;void fillTimezoneRegions(person,selected.code,localTimezone)}}const difference=panel.querySelector('[data-timezone-difference]');if(difference)difference.textContent=timezoneDifference();persistRoleChatSettings()});
  if(panel.querySelector('.memory-page'))bindMemoryPanel(panel);
 }
 function bindMemoryPanel(panel){
@@ -1209,8 +1703,10 @@ function smsMessagePayload(answer,bilingual){
 async function requestSmsRoleReply({roleIndex,userIndex,proactive=false,failedMessages=[],reroll=false}){
  const character=chars[roleIndex],user=state.users[userIndex];if(!character||!user)throw Error('短信联系人或用户不存在');if(!character.phoneNumber)throw Error('请先为角色开通短信号码');
  const config=apiConfigForFeature('sms'),model=apiModelForFeature('sms',config);if(!config?.url||!config?.key||!model)throw Error('请先在总设置中连接短信 API');
- const thread=smsThreadMessages(roleIndex,userIndex),lastUserIndex=reroll?[...thread].map((item,index)=>item.mine?index:-1).filter(index=>index>=0).at(-1):-1,contextThread=reroll&&lastUserIndex>=0?thread.slice(0,lastUserIndex+1):thread,recent=contextThread.slice(-30).map(item=>`${item.mine?(user.nickname||user.name||'用户'):character.name||'角色'}：${item.text||''}`).join('\n')||'暂无短信往来。';
- const roleSettings=character.chatSettings||{},bilingual=Boolean(roleSettings.more?.bilingual),targetLang=roleSettings.more?.targetLang||'zh-Hans';
+ const thread=smsThreadMessages(roleIndex,userIndex),lastUserIndex=reroll?[...thread].map((item,index)=>item.mine?index:-1).filter(index=>index>=0).at(-1):-1,contextThread=reroll&&lastUserIndex>=0?thread.slice(0,lastUserIndex+1):thread;
+ const roleSettings=character.chatSettings||{},more=roleSettings.more||defaultOnlineMore,timeAware=more.timeAwarenessEnabled!==false,holidayAware=more.holidayAwarenessEnabled===true||(more.holidayAwarenessEnabled===undefined&&more.actualTimeEnabled===true),bilingual=Boolean(more.bilingual),targetLang=more.targetLang||'zh-Hans';
+ const recent=contextThread.slice(-30).map(item=>`${timeAware&&Number(item.createdAt)?`[${zonedDateTime(new Date(item.createdAt),more.timezoneEnabled?more.characterTimezone:localTimezone)}] `:''}${item.mine?(user.nickname||user.name||'用户'):character.name||'角色'}：${item.text||''}`).join('\n')||'暂无短信往来。';
+ const temporalContext=timeAware||holidayAware?await actualTimePromptContext(config,model,thread,more):'';
  const crossChannelContext=crossChannelMemoryContext(roleIndex,userIndex,'sms',proactive);
  const smsChatInstructions=`【短信聊天】
 短信是独立于线上聊天的私人通讯渠道，既可用于日常交流，也可用于原聊天渠道被拉黑后的联系。角色应依据人设、双方关系、已有经历及当前情境自然使用短信，不将短信默认视为挽回、告白或情感宣泄工具。
@@ -1241,7 +1737,7 @@ async function requestSmsRoleReply({roleIndex,userIndex,proactive=false,failedMe
  const task=proactive?`你正在扮演${character.name||'角色'}，通过短信主动联系${user.nickname||user.name||'用户'}。当前情境已明确告知你：你发现自己的线上消息无法送达，且对方已拉黑你。本次已决定通过短信联系对方，请按人物设定生成实际发送的短信；本次短信是角色主动发出的内容，不是对用户刚发线上消息的回复，不要复述或猜测那条线上消息。结合短信记录保持连续。`:`你正在扮演${character.name||'角色'}，通过短信和${user.nickname||user.name||'用户'}交流。根据角色设定和短信上下文自然回复用户最新发来的短信；不要写旁白，不要把短信写成线上聊天气泡。`;
  const format=`只返回 JSON：{"messages":[{"text":"一条短信","translation":"译文；未开启双语时留空"}]}。每个 messages 项只写一句独立完整的话；同话题的补充和追问也要拆成不同项，不要把多句话塞进一条短信。messages 必须至少包含一条非空短信，通常发送 1 至 3 条，按情境自然决定。${bilingual?`双语开启：每条短信都必须同时提供原文 text 和${targetLang}译文 translation。`:'双语关闭：translation 留空。'}不要提及 API、系统或提示词。`;
  const system=[smsChatInstructions,task,format].join('\n\n');
- const context=`角色资料：${character.details||character.desc||'暂无补充'}\n角色所在地：${characterResidence(character)||'未设定'}\n短信号码：${character.phoneCarrier||''} ${character.phoneNumber}\n用户姓名：${user.name||'用户'}\n用户昵称：${user.nickname||''}\n已有短信记录：\n${recent}${crossChannelContext?`\n\n${crossChannelContext}`:''}${proactive?`\n角色刚才未能送达的线上消息（仅供理解角色自己的行为，不是用户发来的内容）：\n${failedMessages.map(item=>`${character.name||'角色'}：${item.text||''}`).join('\n')||'（空）'}\n注意：本次主动短信不得回应任何用户刚发的线上内容；跨渠道记忆只提供此前的共同经历，当前线上回复的内容仅作为角色自己的行为参考。`:''}`;
+ const context=`角色资料：${character.details||character.desc||'暂无补充'}\n角色所在地：${characterResidence(character)||'未设定'}\n短信号码：${character.phoneCarrier||''} ${character.phoneNumber}\n用户姓名：${user.name||'用户'}\n用户昵称：${user.nickname||''}\n${temporalContext?`${temporalContext}\n`:''}已有短信记录：\n${recent}${crossChannelContext?`\n\n${crossChannelContext}`:''}${proactive?`\n角色刚才未能送达的线上消息（仅供理解角色自己的行为，不是用户发来的内容）：\n${failedMessages.map(item=>`${character.name||'角色'}：${item.text||''}`).join('\n')||'（空）'}\n注意：本次主动短信不得回应任何用户刚发的线上内容；跨渠道记忆只提供此前的共同经历，当前线上回复的内容仅作为角色自己的行为参考。`:''}`;
  const base=config.url.replace(/\/+$/,'').replace(/\/chat\/completions$/,'');const response=await fetch(`${base}/chat/completions`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${config.key}`},body:JSON.stringify({model,messages:[{role:'system',content:system},{role:'user',content:context}]})});if(!response.ok)throw Error(`短信 API 请求失败（${response.status}）`);
  const result=await response.json();let answer=result.choices?.[0]?.message?.content;if(Array.isArray(answer))answer=answer.map(part=>part.text||'').join('');const generated=smsMessagePayload(answer,bilingual);if(!generated.length)throw Error('短信 API 没有返回可显示的内容');if(reroll&&lastUserIndex>=0)thread.splice(lastUserIndex+1);
  save();if(activeFeaturePage==='sms')renderFeaturePage('sms');
@@ -1363,7 +1859,7 @@ function renderFeaturePage(page){
 }
 function renderGlobalWorldBookPanel(){
  const selectedBook=activeGlobalWorldBook(),entries=selectedBook.entries;
- return `<section class="global-worldbook"><div class="global-worldbook-library"><label><span>当前世界书</span><select data-global-worldbook-select aria-label="选择要查看的世界书">${state.globalWorldBooks.map(book=>`<option value="${esc(book.id)}" ${book.id===selectedBook.id?'selected':''}>${esc(book.name||'未命名世界书')}</option>`).join('')}</select></label><small>${entries.length} 条</small></div><div class="global-worldbook-toolbar"><button type="button" class="global-worldbook-import" data-global-worldbook-import>导入世界书 <span>＋</span></button><button type="button" class="global-worldbook-add" data-global-worldbook-add>新建条目 <span>＋</span></button><input type="file" data-global-worldbook-file accept=".json,.txt,.docx,application/json,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden></div><p class="global-worldbook-import-status" data-global-worldbook-status aria-live="polite"></p><form class="global-worldbook-editor" data-global-worldbook-form hidden><label>名称<input name="name" maxlength="100" required placeholder="输入条目名称"></label><label>关键词<input name="keys" maxlength="300" placeholder="多个关键词用逗号分隔"></label><label>内容<textarea name="content" rows="5" required placeholder="填写这条世界书内容"></textarea></label><div><button type="button" data-global-worldbook-cancel>取消</button><button type="submit">保存条目</button></div></form><div class="global-worldbook-list">${entries.length?entries.map((entry,index)=>`<article class="global-worldbook-entry"><div class="global-worldbook-entry-top"><details><summary><strong>${esc(entry.name||`条目 ${index+1}`)}</strong><small>${esc((entry.keys||[]).join(' · '))}</small></summary><p>${esc(entry.content||'')}</p></details><button type="button" data-global-worldbook-enabled="${index}" class="global-worldbook-toggle ${entry.enabled===false?'':'is-on'}" aria-label="${entry.enabled===false?'启用':'停用'}${esc(entry.name||'条目')}"><i></i></button><div class="global-worldbook-actions"><button type="button" data-global-worldbook-edit="${index}">编辑</button><button type="button" data-global-worldbook-delete="${index}">删除</button></div></div></article>`).join(''):`<div class="global-worldbook-empty">还没有全局世界书条目。</div>`}</div></section>`;
+ return `<section class="global-worldbook"><div class="global-worldbook-toolbar"><button type="button" class="global-worldbook-import" data-global-worldbook-import>导入世界书 <span>＋</span></button><button type="button" data-global-worldbook-new-book>新建世界书 <span>＋</span></button><button type="button" class="global-worldbook-delete-book" data-global-worldbook-delete-book>删除世界书</button><button type="button" class="global-worldbook-add" data-global-worldbook-add>新建条目 <span>＋</span></button><button type="button" data-global-worldbook-edit-book>编辑</button><input type="file" data-global-worldbook-file accept=".json,.txt,.docx,application/json,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden></div><form class="global-worldbook-book-form" data-global-worldbook-book-form hidden><label>世界书名称<input name="name" required maxlength="80" placeholder="给这本世界书命名"></label><button type="button" data-global-book-cancel>取消</button><button type="submit">创建</button></form><form class="global-worldbook-book-form" data-global-worldbook-rename-form hidden><label>修改世界书名称<input name="name" required maxlength="80" placeholder="输入新的世界书名称"></label><button type="button" data-global-book-rename-cancel>取消</button><button type="submit">保存</button></form><div class="global-worldbook-library" role="group" aria-label="已有世界书">${state.globalWorldBooks.map(book=>`<div class="global-worldbook-book ${book.id===selectedBook.id?'is-selected':''}"><button type="button" aria-pressed="${book.id===selectedBook.id}" class="global-worldbook-book-name" data-global-worldbook-select="${esc(book.id)}">${esc(book.name||'未命名世界书')}</button><button type="button" role="switch" aria-checked="${book.enabled!==false}" aria-label="${book.enabled===false?'启用':'停用'}${esc(book.name||'未命名世界书')}" title="${book.enabled===false?'未启用':'已启用'}" class="global-worldbook-book-toggle ${book.enabled===false?'':'is-on'}" data-global-worldbook-book-enabled="${esc(book.id)}"><i></i></button></div>`).join('')}</div><p class="global-worldbook-import-status" data-global-worldbook-status aria-live="polite"></p><form class="global-worldbook-editor" data-global-worldbook-form hidden><label>名称<input name="name" maxlength="100" required placeholder="输入条目名称"></label><label>关键词<input name="keys" maxlength="300" placeholder="多个关键词用逗号分隔"></label><label>内容<textarea name="content" rows="5" required placeholder="填写这条世界书内容"></textarea></label><div><button type="button" data-global-worldbook-cancel>取消</button><button type="submit">保存条目</button></div></form><div class="global-worldbook-list">${entries.length?entries.map((entry,index)=>`<article class="global-worldbook-entry"><div class="global-worldbook-entry-top"><details><summary><strong>${esc(entry.name||`条目 ${index+1}`)}</strong><small>${esc((entry.keys||[]).join(' · '))}</small></summary><p>${esc(entry.content||'')}</p></details><button type="button" data-global-worldbook-enabled="${index}" class="global-worldbook-toggle ${entry.enabled===false?'':'is-on'}" aria-label="${entry.enabled===false?'启用':'停用'}${esc(entry.name||'条目')}"><i></i></button><div class="global-worldbook-actions"><button type="button" data-global-worldbook-edit="${index}">编辑</button><button type="button" data-global-worldbook-delete="${index}">删除</button></div></div></article>`).join(''):`<div class="global-worldbook-empty">还没有全局世界书条目。</div>`}</div></section>`;
 }
 function parseGlobalWorldBookText(text){
  const normalized=text.replace(/\r\n?/g,'\n').trim();if(!normalized)return [];
@@ -1403,11 +1899,19 @@ async function parseGlobalWorldBookFile(file){
 }
 function bindGlobalWorldBookPanel(){
  const content=$('#featurePageContent'),redraw=()=>{renderFeaturePage('worldbook')};
- const library=content.querySelector('.global-worldbook-library'),newBookButton=document.createElement('button'),bookForm=document.createElement('form');newBookButton.type='button';newBookButton.className='global-worldbook-new';newBookButton.textContent='新建世界书 ＋';library.append(newBookButton);bookForm.className='global-worldbook-book-form';bookForm.hidden=true;bookForm.innerHTML='<label>世界书名称<input name="name" required maxlength="80" placeholder="给这本世界书命名"></label><button type="button" data-global-book-cancel>取消</button><button type="submit">创建</button>';library.after(bookForm);newBookButton.onclick=()=>{bookForm.hidden=false;bookForm.elements.name.focus()};const deleteBookButton=document.createElement('button');deleteBookButton.type='button';deleteBookButton.className='global-worldbook-delete-book';deleteBookButton.textContent='删除世界书';library.append(deleteBookButton);deleteBookButton.onclick=()=>{const book=activeGlobalWorldBook();if(!book||!window.confirm(`删除「${book.name||'未命名世界书'}」及其中 ${book.entries.length} 条内容？`))return;const index=state.globalWorldBooks.findIndex(item=>item.id===book.id);if(index>=0)state.globalWorldBooks.splice(index,1);if(!state.globalWorldBooks.length)state.globalWorldBooks.push({id:`global-${Date.now()}`,name:'默认世界书',entries:[]});state.activeGlobalWorldBookId=state.globalWorldBooks[Math.min(Math.max(index,0),state.globalWorldBooks.length-1)].id;save();redraw()};bookForm.querySelector('[data-global-book-cancel]').onclick=()=>{bookForm.hidden=true;bookForm.reset()};bookForm.onsubmit=event=>{event.preventDefault();const book={id:'global-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name:bookForm.elements.name.value.trim(),entries:[]};state.globalWorldBooks.push(book);state.activeGlobalWorldBookId=book.id;save();redraw()};
- content.querySelector('[data-global-worldbook-select]')?.addEventListener('change',event=>{state.activeGlobalWorldBookId=event.target.value;save();redraw()});
+ const bookForm=content.querySelector('[data-global-worldbook-book-form]'),renameForm=content.querySelector('[data-global-worldbook-rename-form]');
+ content.querySelector('[data-global-worldbook-new-book]')?.addEventListener('click',()=>{bookForm.hidden=false;bookForm.elements.name.focus()});
+ content.querySelector('[data-global-book-cancel]')?.addEventListener('click',()=>{bookForm.hidden=true;bookForm.reset()});
+ content.querySelector('[data-global-worldbook-edit-book]')?.addEventListener('click',()=>{renameForm.elements.name.value=activeGlobalWorldBook()?.name||'';renameForm.hidden=false;renameForm.elements.name.focus();renameForm.elements.name.select()});
+ content.querySelector('[data-global-book-rename-cancel]')?.addEventListener('click',()=>{renameForm.hidden=true;renameForm.reset()});
+ renameForm.onsubmit=event=>{event.preventDefault();const book=activeGlobalWorldBook(),name=renameForm.elements.name.value.trim();if(!book||!name)return;book.name=name;save();redraw()};
+ content.querySelector('[data-global-worldbook-delete-book]')?.addEventListener('click',()=>{const book=activeGlobalWorldBook();if(!book||!window.confirm(`删除「${book.name||'未命名世界书'}」及其中 ${book.entries.length} 条内容？`))return;const index=state.globalWorldBooks.findIndex(item=>item.id===book.id);if(index>=0)state.globalWorldBooks.splice(index,1);if(!state.globalWorldBooks.length)state.globalWorldBooks.push({id:`global-${Date.now()}`,name:'默认世界书',entries:[]});state.activeGlobalWorldBookId=state.globalWorldBooks[Math.min(Math.max(index,0),state.globalWorldBooks.length-1)].id;save();redraw()});
+ bookForm.onsubmit=event=>{event.preventDefault();const book={id:'global-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name:bookForm.elements.name.value.trim(),entries:[],enabled:true};state.globalWorldBooks.push(book);state.activeGlobalWorldBookId=book.id;save();redraw()};
+ content.querySelectorAll('[data-global-worldbook-select]').forEach(button=>button.addEventListener('click',()=>{state.activeGlobalWorldBookId=button.dataset.globalWorldbookSelect;save();redraw()}));
+ content.querySelectorAll('[data-global-worldbook-book-enabled]').forEach(button=>button.addEventListener('click',()=>{const book=state.globalWorldBooks.find(item=>item.id===button.dataset.globalWorldbookBookEnabled);if(!book)return;book.enabled=book.enabled===false;save();redraw()}));
  const fileInput=content.querySelector('[data-global-worldbook-file]'),status=content.querySelector('[data-global-worldbook-status]');
  content.querySelector('[data-global-worldbook-import]')?.addEventListener('click',()=>fileInput.click());
- fileInput.onchange=async()=>{const file=fileInput.files?.[0];if(!file)return;status.textContent='正在读取世界书……';try{const imported=await parseGlobalWorldBookFile(file),book={id:`global-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,name:file.name.replace(/\.[^.]+$/,'')||'导入的世界书',entries:imported};state.globalWorldBooks.push(book);state.activeGlobalWorldBookId=book.id;save();redraw();$('#featurePageContent').querySelector('[data-global-worldbook-status]').textContent=`已导入「${book.name}」，共 ${imported.length} 条。`}catch(error){status.textContent=error.message||'导入失败，请检查文件内容。'}finally{fileInput.value=''}};
+ fileInput.onchange=async()=>{const file=fileInput.files?.[0];if(!file)return;status.textContent='正在读取世界书……';try{const imported=await parseGlobalWorldBookFile(file),book={id:`global-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,name:file.name.replace(/\.[^.]+$/,'')||'导入的世界书',entries:imported,enabled:true};state.globalWorldBooks.push(book);state.activeGlobalWorldBookId=book.id;save();redraw();$('#featurePageContent').querySelector('[data-global-worldbook-status]').textContent=`已导入「${book.name}」，共 ${imported.length} 条。`}catch(error){status.textContent=error.message||'导入失败，请检查文件内容。'}finally{fileInput.value=''}};
 
  content.querySelector('[data-global-worldbook-add]')?.addEventListener('click',()=>{const form=content.querySelector('[data-global-worldbook-form]');form.reset();delete form.dataset.entryIndex;form.hidden=false;form.elements.name.focus()});
  content.querySelector('[data-global-worldbook-cancel]')?.addEventListener('click',()=>{const form=content.querySelector('[data-global-worldbook-form]');form.hidden=true;delete form.dataset.entryIndex});
@@ -1589,8 +2093,8 @@ function refreshSettings(){
   $('#checkVersion').onclick=async()=>{const check=$('#checkVersion'),update=$('#updateVersion'),status=$('[data-version-status]'),statusText=status.querySelector('span'),latest=$('[data-version-latest]'),actions=check.parentElement;check.disabled=true;check.querySelector('span:nth-child(2)').textContent='正在查验…';statusText.textContent='正在连接版本信息…';try{const manifestLink=document.querySelector('link[rel="manifest"]'),manifestUrl=new URL(manifestLink?.href||'manifest.webmanifest',location.href),versionUrl=new URL('version.json',manifestUrl);versionUrl.searchParams.set('_',String(Date.now()));const response=await fetch(versionUrl,{cache:'no-store'});if(!response.ok)throw Error(`请求失败（${response.status}）`);const remote=await response.json();if(!remote.version)throw Error('版本信息格式不正确。');const checked={version:String(remote.version),release:String(remote.release||remote.version),notes:String(remote.notes||'')};try{localStorage.setItem('iris-last-version-check',JSON.stringify(checked))}catch{}$('[data-version-number]').textContent=checked.version;latest.hidden=false;const available=compareAppVersions(checked.version,INSTALLED_APP_VERSION)>0;update.hidden=!available;actions.classList.toggle('has-update',available);status.classList.toggle('is-update',available);update.dataset.version=checked.version;update.dataset.release=checked.release;statusText.textContent=available?`发现新版本${checked.notes?`：${checked.notes}`:'，可以更新。'}`:'当前已是最新版本。'}catch(error){status.classList.remove('is-update');statusText.textContent=`查验失败：${error.message||'请检查网络后重试。'}`}finally{check.disabled=false;check.querySelector('span:nth-child(2)').textContent='查验版本'}};
   $('#updateVersion').onclick=()=>{const version=$('#updateVersion').dataset.release;if(!version)return;try{localStorage.setItem('iris-installed-version',version)}catch{}const url=new URL(location.href);url.searchParams.set('iris-release',version);location.replace(url.href)};
  }else{
-  content.innerHTML=globalTabs+pageHead+`<div class="settings-page-body"><label class="settings-switch-row"><span><strong>保持会话</strong><small>后台运行受浏览器和系统限制</small></span><input id="keepAlive" type="checkbox" ${cfg.keepAlive?'checked':''}><i aria-hidden="true"></i></label></div>`;
-  $('#keepAlive').onchange=event=>{cfg.keepAlive=event.target.checked;save()};
+  content.innerHTML=globalTabs+pageHead+`<div class="settings-page-body"><label class="keepalive-card"><span class="keepalive-copy"><strong>静音音频保活</strong><small>使用系统媒体播放会话尽量保持 Iris 在后台运行；锁屏播放卡片显示 Iris 图标。系统仍可能暂停网页。</small><span class="keepalive-status" id="keepAliveStatus" role="status"></span></span><input id="keepAlive" type="checkbox" ${cfg.keepAlive?'checked':''}><i class="keepalive-switch" aria-hidden="true"></i></label></div>`;
+  $('#keepAlive').onchange=event=>{void window.IrisKeepAlive.setEnabled(event.target.checked)};renderIrisKeepAliveStatus();
  }
  content.querySelectorAll('[data-system-tab]').forEach(button=>button.onclick=()=>{const nextTab=button.dataset.systemTab;if(nextTab===systemSettingsTab)return;systemSettingsTab=nextTab;refreshSettings()});
 }
@@ -1732,6 +2236,7 @@ function buildOnlineSystemPrompt({character,bound,roleSettings,thread,temporalCo
   `【当前角色绑定世界书】\n${worldbooks.character_worldbook}`,
   `【当前角色已启用的表情包名称】\n${stickerNames.length?stickerNames.join('、'):'当前没有启用表情包。'}`,
   priorReflection?`【上一轮角色状态连续性参考｜内部资料，不是聊天内容】\n状态：${priorReflection.status||'未记录'}\n心声：${priorReflection.thought||'未记录'}\n只用于理解角色状态，不得照抄、复述或输出这段资料。`:'',
+  temporalContext?'【聊天时间轴说明】\n聊天记录中的方括号时间是每条消息真实发送时刻，统一按现实用户所在地时区显示。请据此区分刚刚、几小时前或隔了几天；不要把旧消息当成现在，也不要仅因时间间隔推断用户期间的行为。':'',
   temporalContext,
   crossChannelContext,
   memory.enabled&&memory.summaryText?`【当前角色的线上长期记忆摘要】\n${memory.summaryText}`:'',
@@ -1788,7 +2293,7 @@ messages 是逐条发送的消息列表，不能把整个列表写成一个字�
  const priorNotes=[...thread].reverse().find(message=>message.reflection?.panels?.notes)?.reflection.panels.notes;
  return [context,instructions,optional,reflectionPanelInstructions,priorNotes?'【此前备忘录，保留未完成事项并依据本轮事实更新】\n'+JSON.stringify(priorNotes):''].filter(Boolean).join('\n\n');
 }
-async function sendOnlineMessage(options={}){const cameraFrames=options.cameraFrames||(options.cameraFrame?[{data:options.cameraFrame,capturedAt:Date.now()}]:[]);const cfg=state.settings,feature=options.ephemeral?'videoCall':state.offline?'offlineStory':'onlineChat',api=apiConfigForFeature(feature),model=apiModelForFeature(feature,api);if(!api?.url||!api?.key||!model){toast('请先在总设置中连接 API');return false}const character=chars[state.char],roleSettings=currentRoleChatSettings(),bound=state.users[Number.isInteger(roleSettings.userIndex)?roleSettings.userIndex:state.user],conversationItems=options.thread||messages(),stickerCatalog=enabledRoleStickers(roleSettings),transferDefaults={currency:characterTransferCurrency(character),fromName:character?.name||'角色',toName:bound?.nickname||bound?.name||'用户'};const recent=conversationItems.slice(-36).map(item=>({role:item.mine?'user':'assistant',content:messagePromptContent(item)}));if(options.roleInitiated)recent.push({role:'user',content:'（角色主动联系指令）当前线上聊天已恢复正常。请依据你的性格、关系和过往对话，自主决定此刻自然发出的一条线上消息；这是你主动开启的新话题，不是在回复用户刚发送的内容。只输出实际会发送的聊天内容。'});const temporalContext=!state.offline&&!options.ephemeral&&roleSettings.more?.actualTimeEnabled?await actualTimePromptContext(api,model,conversationItems,roleSettings.more):'';if(cameraFrames.length&&recent.length){const latest=recent[recent.length-1];if(latest.role==='user'){latest.content=[{type:'text',text:latest.content},{type:'text',text:`以下是发送消息前约 2 秒内按时间顺序采样的 ${cameraFrames.length} 帧画面。请综合判断其中可见的动作变化；只描述画面能支持的内容。`},...cameraFrames.flatMap((frame,index)=>[{type:'text',text:`画面 ${index+1}（时间顺序）`},{type:'image_url',image_url:{url:frame.data}}])]}}const promptParts=[cameraFrames.length?`用户正在视频通话并已开启摄像头。本轮附带了最近约 2 秒内的 ${cameraFrames.length} 张按时间排序的画面。请把它们当作连续关键帧，判断可确认的动作变化；如果变化不明确，就说明只看清了什么，不要推测。`:'',
+async function sendOnlineMessage(options={}){const cameraFrames=options.cameraFrames||(options.cameraFrame?[{data:options.cameraFrame,capturedAt:Date.now()}]:[]);const cfg=state.settings,feature=options.ephemeral?'videoCall':state.offline?'offlineStory':'onlineChat',api=apiConfigForFeature(feature),model=apiModelForFeature(feature,api);if(!api?.url||!api?.key||!model){toast('请先在总设置中连接 API');return false}const character=chars[state.char],roleSettings=currentRoleChatSettings(),bound=state.users[Number.isInteger(roleSettings.userIndex)?roleSettings.userIndex:state.user],conversationItems=options.thread||messages(),stickerCatalog=enabledRoleStickers(roleSettings),transferDefaults={currency:characterTransferCurrency(character),fromName:character?.name||'角色',toName:bound?.nickname||bound?.name||'用户'};const timeAware=!state.offline&&!options.ephemeral&&roleSettings.more?.timeAwarenessEnabled!==false;const recent=conversationItems.slice(-36).map(item=>({role:item.mine?'user':'assistant',content:`${timeAware&&Number(item.createdAt)?`[${zonedDateTime(new Date(item.createdAt),roleSettings.more?.timezoneEnabled?roleSettings.more.userTimezone:localTimezone)}] `:''}${messagePromptContent(item)}`}));if(options.roleInitiated)recent.push({role:'user',content:'（角色主动联系指令）当前线上聊天已恢复正常。请依据你的性格、关系和过往对话，自主决定此刻自然发出的一条线上消息；这是你主动开启的新话题，不是在回复用户刚发送的内容。只输出实际会发送的聊天内容。'});const holidayAware=!state.offline&&!options.ephemeral&&(roleSettings.more?.holidayAwarenessEnabled===true||(roleSettings.more?.holidayAwarenessEnabled===undefined&&roleSettings.more?.actualTimeEnabled===true));const temporalContext=timeAware||holidayAware?await actualTimePromptContext(api,model,conversationItems,roleSettings.more,true):'';if(cameraFrames.length&&recent.length){const latest=recent[recent.length-1];if(latest.role==='user'){latest.content=[{type:'text',text:latest.content},{type:'text',text:`以下是发送消息前约 2 秒内按时间顺序采样的 ${cameraFrames.length} 帧画面。请综合判断其中可见的动作变化；只描述画面能支持的内容。`},...cameraFrames.flatMap((frame,index)=>[{type:'text',text:`画面 ${index+1}（时间顺序）`},{type:'image_url',image_url:{url:frame.data}}])]}}const promptParts=[cameraFrames.length?`用户正在视频通话并已开启摄像头。本轮附带了最近约 2 秒内的 ${cameraFrames.length} 张按时间排序的画面。请把它们当作连续关键帧，判断可确认的动作变化；如果变化不明确，就说明只看清了什么，不要推测。`:'',
   state.offline&&!options.ephemeral?'Act as Iris, the story medium, and continue the offline story using the supplied character and user context.': 'You are roleplaying the selected character in a private chat. Keep the character consistent with the supplied profile and conversation.',
   `Character: {{char_name}}\nGender: ${character?.gender||''}\nBirthday: ${character?.birthday||''}\nProfile: ${character?.details||character?.desc||''}`,
   `Bound user: {{user_name}}\nUser details: ${bound?.details||''}`,
@@ -1837,6 +2342,32 @@ $('#composer').onsubmit=e=>{e.preventDefault();submitMessage()};$('#messageInput
   document.documentElement.style.setProperty('--app-safe-top',`${Math.max(inset,statusBarFallback)}px`);
  }
  const hiddenFocus=new WeakMap();
+ let worldBookTouch=null;
+ const isWorldBookEditor=input=>input instanceof HTMLElement&&input.matches('.role-worldbook-entry-form input,.role-worldbook-entry-form textarea,.role-worldbook-name-form input,.global-worldbook-editor input,.global-worldbook-editor textarea,.global-worldbook-book-form input');
+ // Let a touch that turns into a drag scroll the worldbook editor without
+ // opening the mobile keyboard. A tap is restored before the browser's click
+ // default, so Safari still places the caret at the tapped position.
+ document.addEventListener('pointerdown',event=>{
+  const input=event.target;
+  if(event.pointerType!=='touch'||!editable(input)||!isWorldBookEditor(input)||input.disabled||input.readOnly)return;
+  worldBookTouch={input,pointerId:event.pointerId,x:event.clientX,y:event.clientY,moved:false,wasReadOnly:input.readOnly};
+  input.readOnly=true;
+ },{capture:true});
+ document.addEventListener('pointermove',event=>{
+  const touch=worldBookTouch;
+  if(!touch||touch.pointerId!==event.pointerId)return;
+  if(Math.hypot(event.clientX-touch.x,event.clientY-touch.y)>8)touch.moved=true;
+ },{capture:true,passive:true});
+ function finishWorldBookTouch(event){
+  const touch=worldBookTouch;
+  if(!touch||touch.pointerId!==event.pointerId)return;
+  worldBookTouch=null;
+  const {input,moved,wasReadOnly}=touch;
+  if(moved&&document.activeElement===input)input.blur();
+  input.readOnly=wasReadOnly;
+ }
+ document.addEventListener('pointerup',finishWorldBookTouch,{capture:true});
+ document.addEventListener('pointercancel',finishWorldBookTouch,{capture:true});
  function avoidNativePan(input){
   if(!isIOS||hiddenFocus.has(input))return;
   const opacity=input.style.opacity;hiddenFocus.set(input,opacity);input.style.opacity='0';
@@ -1846,6 +2377,7 @@ $('#composer').onsubmit=e=>{e.preventDefault();submitMessage()};$('#messageInput
  // Restore before painting the next frame; retain normal taps on an active field.
  document.addEventListener('pointerdown',event=>{
   const input=event.target;
+  if(event.pointerType==='touch'&&isWorldBookEditor(input))return;
   if(!isIOS||event.pointerType!=='touch'||!editable(input)||input.disabled||input.readOnly||document.activeElement===input)return;
   event.preventDefault();avoidNativePan(input);input.focus({preventScroll:true});
  },{capture:true});
