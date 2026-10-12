@@ -1013,12 +1013,20 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="
 .reflection-generate:disabled{opacity:.5;cursor:wait}
 .reflection-error{font-size:11px;color:#a65d5d}
 /* Apple Notes: white page, gold navigation and four evenly spaced tools. */
-.reflection-panel[data-panel="notes"] .reflection-header{color:#c8a333;padding:17px 15px;gap:2px}
+.reflection-panel[data-panel="notes"] .reflection-header{color:#d9b84f;padding:17px 15px;gap:2px}
 .reflection-panel[data-panel="notes"] .reflection-header strong{text-align:left;font-size:17px;font-weight:400}
 .reflection-panel[data-panel="notes"] .reflection-header-actions{gap:15px}
 .reflection-panel[data-panel="notes"] .reflection-header .reflection-tools{gap:15px}
 .reflection-panel[data-panel="notes"] .reflection-more-button{border:0;border-radius:0;min-width:24px;width:24px;height:24px;padding:0;margin-left:0}
 .reflection-panel[data-panel="notes"] .reflection-back{padding:0;min-width:17px}
+.reflection-panel[data-panel="notes"] .reflection-back,
+.reflection-panel[data-panel="notes"] .reflection-back:hover,
+.reflection-panel[data-panel="notes"] .reflection-back:active,
+.reflection-panel[data-panel="notes"] .reflection-back:focus,
+.reflection-panel[data-panel="notes"] .reflection-back:focus-visible{
+ appearance:none!important;-webkit-appearance:none!important;background:transparent!important;border:0!important;border-radius:0!important;outline:0!important;outline-offset:0!important;box-shadow:none!important;filter:none!important;-webkit-tap-highlight-color:rgba(0,0,0,0)!important;touch-action:manipulation
+}
+.reflection-panel[data-panel="notes"] .reflection-back .reflection-notes-icon{opacity:.78;pointer-events:none}
 .reflection-panel[data-panel="notes"] .reflection-notes-icon{display:block;flex:none;object-fit:contain}
 .reflection-panel[data-panel="notes"] .reflection-header .reflection-notes-icon{width:clamp(20px,5.7vw,24px);height:clamp(20px,5.7vw,24px)}
 .reflection-panel[data-panel="notes"] .reflection-footer .reflection-notes-icon{width:clamp(26px,7.5vw,31px);height:clamp(26px,7.5vw,31px)}
@@ -1390,3 +1398,8 @@ input,textarea{scrollbar-width:thin}
  appearance:none!important;-webkit-appearance:none!important;background:transparent!important;border:0!important;border-radius:0!important;outline:0!important;outline-offset:0!important;box-shadow:none!important;filter:none!important;-webkit-tap-highlight-color:rgba(0,0,0,0)!important;touch-action:manipulation
 }
 .reflection-panel[data-panel="notes"] .reflection-more-button img{pointer-events:none}
+
+/* Thin the extracted GPT toolbar artwork instead of changing its display size. */
+.reflection-panel[data-panel="gpt"] .reflection-response-tools .reflection-gpt-icon{opacity:1}
+.reflection-panel[data-panel="gpt"] .reflection-gpt-feedback{width:clamp(23px,6.4vw,29px);height:clamp(24px,6.6vw,30px)}
+.reflection-panel[data-panel="gpt"] .reflection-gpt-feedback .reflection-gpt-icon{width:100%;height:100%;filter:none}
