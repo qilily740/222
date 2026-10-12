@@ -549,6 +549,11 @@ function keepLatestChatMessageVisible(duration=0){
  const follow=()=>{const conversation=$('#conversation');if(conversation)conversation.scrollTop=conversation.scrollHeight;if(performance.now()-started<duration)requestAnimationFrame(follow)};
  requestAnimationFrame(follow);
 }
+function keepLatestSmsMessageVisible(duration=0){
+ const started=performance.now();
+ const follow=()=>{const messages=activeFeaturePage==='sms'?$('#featurePageContent [data-sms-messages]'):null;if(messages)messages.scrollTop=messages.scrollHeight;if(performance.now()-started<duration)requestAnimationFrame(follow)};
+ requestAnimationFrame(follow);
+}
 function render(){const c=chars[state.char];if(c){if(typeof c.offlineMode!=='boolean')c.offlineMode=false;state.offline=c.offlineMode;}if(messageSelectionMode&&messageSelectionThreadKey!==key()){messageSelectionMode=false;selectedMessageIndices.clear();messageSelectionThreadKey=''}const roleSettings=currentRoleChatSettings(),boundIndex=roleSettings.userIndex,user=state.users[Number.isInteger(boundIndex)?boundIndex:state.user];renderHeaderAvatars();$('#chatTitle').innerHTML=`${state.offline?'Offline':'Chat'}${c?.name?`<span class="chat-character-name">${esc(c.name)}</span>`:''}`;updateChatReplyIndicator();updateComposerAction();$('#chatTitle').setAttribute('aria-label',state.offline?'Open offline settings':'Open chat settings');document.documentElement.style.setProperty('--surface',state.offline?state.settings.offlineSurface:(state.settings.surface||'#f4f4f4'));const modeButton=$('[data-nav="2"]');modeButton.innerHTML=icon(state.offline?'online':'dockStory')+`<span>${state.offline?'Online':'Offline'}</span>`;modeButton.setAttribute('aria-label',state.offline?'Switch to online':'Switch to offline');modeButton.title=state.offline?'Switch to online':'Switch to offline';modeButton.classList.toggle('is-current',state.offline);$('[data-nav="1"]').classList.toggle('is-current',!state.offline);$('#conversation').classList.toggle('is-offline-story',state.offline);updateChatConversation(renderConversation(user,c)+(chatReplyTyping.has(key())?replyTypingMarkup(c):''));if(!state.offline&&(pendingReplyKeys.has(key())||hasUnansweredUserMessage())&&!chatReplyInFlight.has(key()))scheduleChatReply(false,key());if(!state.offline)resumeUnblockProactiveChat(state.char);if(videoCallActive)renderVideoCallMessages();}
 
 function stopVideoCallCamera(){if(videoCallFrameTimer)clearInterval(videoCallFrameTimer);videoCallFrameTimer=null;videoCallFrameBuffer=[];videoCallStream?.getTracks().forEach(track=>track.stop());videoCallStream=null}
@@ -902,7 +907,7 @@ let modeSettings=false;
 let onlineSettingsTab='user';
 let offlineSettingsTab='presets';
 let systemSettingsTab='api';
-const APP_VERSION='1.1.10';
+const APP_VERSION='1.2.1';
 const compareAppVersions=(left,right)=>{const a=String(left||'0').split('.').map(Number),b=String(right||'0').split('.').map(Number);for(let i=0;i<Math.max(a.length,b.length);i++){const delta=(a[i]||0)-(b[i]||0);if(delta)return Math.sign(delta)}return 0};
 let INSTALLED_APP_VERSION=APP_VERSION;
 try{const saved=localStorage.getItem('iris-installed-version'),requested=window.IRIS_RELEASE;if(saved&&compareAppVersions(saved,INSTALLED_APP_VERSION)>0)INSTALLED_APP_VERSION=saved;if(requested&&compareAppVersions(requested,INSTALLED_APP_VERSION)>=0){INSTALLED_APP_VERSION=requested;localStorage.setItem('iris-installed-version',requested)}else localStorage.setItem('iris-installed-version',INSTALLED_APP_VERSION)}catch{}
@@ -1851,6 +1856,7 @@ $('#composer').onsubmit=e=>{e.preventDefault();submitMessage()};$('#messageInput
   root.style.setProperty('--app-viewport-top',`${Math.max(0,viewport?.offsetTop||0)}px`);
   if(wasNearBottom)requestAnimationFrame(()=>{if(conversation?.isConnected)conversation.scrollTop=conversation.scrollHeight});
   const input=document.activeElement;
+  if(input instanceof HTMLTextAreaElement&&input.closest('.sms-composer')){const messages=$('#featurePageContent [data-sms-messages]');if(messages)messages.scrollTop=messages.scrollHeight}
   if(!editable(input))return;
   for(let parent=input.parentElement;parent&&parent!==document.body;parent=parent.parentElement){
    if(!/auto|scroll/.test(getComputedStyle(parent).overflowY)||parent.scrollHeight<=parent.clientHeight)continue;
@@ -1882,7 +1888,7 @@ $('#composer').onsubmit=e=>{e.preventDefault();submitMessage()};$('#messageInput
  viewport?.addEventListener('resize',sync);
  viewport?.addEventListener('scroll',sync);
  window.addEventListener('resize',sync);
- document.addEventListener('focusin',event=>{if(editable(event.target))avoidNativePan(event.target);if(event.target===$('#messageInput'))keepLatestChatMessageVisible(750);followKeyboard()});
+ document.addEventListener('focusin',event=>{if(editable(event.target))avoidNativePan(event.target);if(event.target===$('#messageInput'))keepLatestChatMessageVisible(750);else if(event.target.matches?.('.sms-composer textarea'))keepLatestSmsMessageVisible(850);followKeyboard()});
  document.addEventListener('focusout',followKeyboard);
  window.addEventListener('orientationchange',()=>setTimeout(readSafeTop,250));
  readSafeTop();
