@@ -1477,9 +1477,10 @@ input,textarea{scrollbar-width:thin}
 .sms-notification-copy{display:flex;flex:1;flex-direction:column;gap:3px;min-width:0}.sms-notification-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}.sms-notification-heading strong{min-width:0;color:#555;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sms-notification-heading time{flex:none;color:#aaa;font-size:9px;white-space:nowrap}.sms-notification-name{color:#aaa;font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sms-notification-text{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;color:#666;font-size:12px;line-height:1.6;overflow-wrap:anywhere;white-space:pre-wrap}.sms-notification-dismiss{position:absolute;top:6px;right:5px;display:grid;place-items:center;width:25px;height:25px;padding:0;color:#aaa;font-size:17px}
 @keyframes sms-banner-arrive{from{opacity:0;transform:translate(-50%,-12px)}to{opacity:1;transform:translate(-50%,0)}}
 @media(prefers-reduced-motion:reduce){.sms-notification,.sms-typing>i{animation:none}}
-.character-row-info strong,.profile-user-info strong{display:flex;align-items:baseline;flex-wrap:nowrap;gap:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.roster-name{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:inherit}
-.roster-phone{flex:0 1 auto;min-width:0;margin-left:7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#999;font-size:8px;font-weight:400;letter-spacing:0;line-height:1.5;overflow-wrap:normal}
+.character-row-info strong,.profile-user-info strong{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.roster-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:inherit}
+.roster-phone{display:block;min-width:0;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#999;font-size:8px;font-weight:400;letter-spacing:0;line-height:1.5;overflow-wrap:normal}
+.character-row-info small.roster-phone{margin-top:3px}
 .character-phone-action,.profile-phone-action{flex:none;padding:5px 6px;border-bottom:1px solid #e7e7e7;color:#888;font-size:8px;white-space:nowrap}
 .character-phone-action:disabled{opacity:.5}
 .profile-user-row{flex-wrap:wrap}
@@ -1598,3 +1599,5 @@ input,textarea{scrollbar-width:thin}
 
 /* Keep the online and offline composer text centered inside its pill. */
 .input-wrap textarea{display:block;height:22px;min-height:22px;max-height:22px;margin:0;padding:0;align-self:center;line-height:22px;overflow:hidden}
+
+.sms-composer>.sms-attach,.sms-composer>.sms-reply{box-sizing:border-box;flex:0 0 36px;width:36px;min-width:36px;max-width:36px;height:36px;min-height:36px;max-height:36px;padding:0;aspect-ratio:1;border-radius:50%;align-self:flex-end}
