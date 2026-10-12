@@ -114,6 +114,7 @@ function drawCharacterEditor(index) {
   document.getElementById('previousCharacter').onclick=()=>{drawCharacterEditor(index-1);document.getElementById('nextCharacter').focus()};
   document.getElementById('nextCharacter').onclick=()=>{drawCharacterEditor(index+1);document.getElementById('previousCharacter').focus()};
   const form=document.getElementById('characterForm');
+  bindProfileDetailsAutoGrow(form.querySelector('[name="details"]'));
   form.oninput=event=>{if(['name','nickname','gender','birthday','details'].includes(event.target.name)){c[event.target.name]=event.target.value;if(['name','nickname'].includes(event.target.name))refreshCharacterPortrait()}};
   form.onsubmit=event=>{
     event.preventDefault();if(characterPending){characterNotice('文件处理中，请稍候');return}

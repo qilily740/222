@@ -144,6 +144,7 @@ function drawProfile() {
   document.getElementById('previousProfile').onclick = () => { profilePage--; drawProfile(); document.getElementById('nextProfile').focus(); };
   document.getElementById('nextProfile').onclick = () => { profilePage++; drawProfile(); document.getElementById('previousProfile').focus(); };
   const form = document.getElementById('profileForm');
+  bindProfileDetailsAutoGrow(form.querySelector('[name="details"]'));
   form.addEventListener('input', event => {
     if (!['name','nickname','birthday','details'].includes(event.target.name)) return;
     user[event.target.name] = event.target.value;
