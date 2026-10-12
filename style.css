@@ -114,7 +114,7 @@
 .is-world-settings .lore-character-card{border-top:0}
 .is-online-settings .more-page>.more-preference-card:first-of-type{border-top:0}
 .is-online-settings .lore-character-card .avatar{overflow:hidden;border-radius:50%}
-.is-online-settings .lore-character-card .avatar img{display:block;width:100%;height:100%;border-radius:50%;object-fit:cover;filter:grayscale(1)}
+.is-online-settings .lore-character-card .avatar img{display:block;width:100%;height:100%;border-radius:50%;object-fit:cover;filter:none}
 .role-worldbook-add-entry{display:flex;align-items:center;gap:3px;flex:none;padding:5px 0;border-bottom:1px solid #ddd;background:transparent;color:#666;font-size:9px;white-space:nowrap}
 .role-worldbook-add-entry span{font-size:14px}
 .worldbook-entry-list{min-height:0;margin-top:0;overflow-y:auto;overscroll-behavior:contain;overflow-anchor:none;scrollbar-width:thin}
@@ -233,9 +233,11 @@
 .global-worldbook-add{display:block;margin:10px 0;padding:8px 0;color:#666;font-size:10px}
 .global-worldbook-editor{display:grid;gap:12px;margin:4px 0 16px;padding:14px;border:1px solid #eee;border-radius:14px;background:#fafafa}
 .global-worldbook-editor[hidden]{display:none!important}
+.global-worldbook-editor:focus-within{max-height:min(42vh,calc(var(--app-viewport-height,100dvh) - 150px));overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .global-worldbook-editor label{display:block;color:#777;font-size:9px}
 .global-worldbook-editor input,.global-worldbook-editor textarea{display:block;width:100%;margin-top:6px;padding:9px 2px;border:0;border-bottom:1px solid #e6e6e6;border-radius:0;background:transparent;color:#444;font-size:11px;resize:vertical}
 .global-worldbook-editor>div{display:flex;justify-content:flex-end;gap:16px;padding-top:3px}
+.global-worldbook-editor>div,.role-worldbook-entry-form>div{position:sticky;bottom:0;z-index:1;background:#fff;padding-bottom:3px}
 .global-worldbook-editor>div button{color:#777;font-size:9px}
 .global-worldbook-editor>div button[type=submit]{color:#333}
 .global-worldbook-entry{padding:12px 2px;border-bottom:1px solid #eee}
@@ -671,7 +673,7 @@ body{position:fixed;inset:0}
 .role-worldbook-status:empty{display:none}
 .role-worldbook-name-form{grid-template-columns:1fr auto auto;flex:none}
 .role-worldbook-entry-form{grid-template-columns:1fr;flex:none;max-height:42vh;overflow:auto;padding:12px 9px;overscroll-behavior:contain;background:#fafafa;scrollbar-width:thin}
-.role-worldbook-entry-form>div{display:flex;justify-content:flex-end;gap:16px}
+.role-worldbook-entry-form>div{display:flex;justify-content:flex-end;gap:16px;margin:0 -9px -12px;padding:9px 9px 12px;background:#fafafa}
 .role-worldbook-entry-form textarea{min-height:170px;max-height:45vh;resize:vertical;line-height:1.7;overflow-y:auto}
 .role-worldbook-entry-actions{display:flex;gap:14px;margin:5px 0 0;padding-right:38px}
 .role-worldbook-entry-actions button{padding:3px 0;color:#aaa;font-size:8px}
@@ -890,6 +892,7 @@ body{position:fixed;inset:0}
 .global-worldbook-library>button{flex:none;padding:5px 0;border-bottom:1px solid #ddd;background:transparent;color:#777;font-size:9px;white-space:nowrap}
 .global-worldbook-library>.global-worldbook-delete-book{color:#999}
 .global-worldbook-editor textarea,.role-worldbook-entry-form textarea{min-height:170px;max-height:45vh;line-height:1.7;overflow-y:auto}
+@media(pointer:coarse){.global-worldbook-editor input,.global-worldbook-editor textarea,.role-worldbook-entry-form input,.role-worldbook-entry-form textarea,.role-worldbook-name-form input,.global-worldbook-book-form input{font-size:16px;line-height:1.5}}
 .global-worldbook-entry-top{position:relative;display:block;padding-right:0}
 .global-worldbook-entry details{width:100%;min-width:0}
 .global-worldbook-entry summary{padding-right:88px}
@@ -998,6 +1001,8 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="
 .reflection-content{flex:1;min-height:0;padding:20px;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;overflow-wrap:anywhere}
 .reflection-label{color:#969696;font-size:11px;line-height:1.6}
 .reflection-text{margin:8px 0 0;white-space:pre-wrap;font-size:15px;line-height:1.85;overflow-wrap:anywhere}
+.reflection-translation{display:block;margin:4px 0 0;color:#999;font-size:clamp(9px,2.7vw,11px);line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
+.reflection-title-translation{margin-top:-16px;margin-bottom:18px}
 .reflection-item+.reflection-item{margin-top:26px}
 .reflection-meta{font-size:11px;color:#969696;line-height:1.7}
 .reflection-footer{flex:none;padding:15px 20px 22px}
@@ -1022,10 +1027,12 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="
 .reflection-title{font-size:27px;line-height:1.35;letter-spacing:-.7px;margin:0 0 28px;font-weight:700}
 .reflection-group+.reflection-group{margin-top:28px}
 .reflection-group>.reflection-label{color:#242424;font-size:17px;font-weight:600;margin-bottom:12px}
-.reflection-panel[data-panel="notes"] .reflection-item{display:flex;align-items:flex-start;gap:11px;margin:0;padding:7px 0}
-.reflection-panel[data-panel="notes"] .reflection-item>.reflection-label{flex:0 0 20px;width:20px;height:20px;border:1.5px solid #dbb43f;border-radius:50%;margin-top:4px;line-height:17px;text-align:center;color:#fff}
-.reflection-panel[data-panel="notes"] .reflection-text{margin:0;font-size:15px;line-height:1.8}
-.reflection-panel[data-panel="notes"] [data-state="done"]>.reflection-label{background:#dcb53e}
+.reflection-panel[data-panel="notes"] .reflection-item{display:grid;grid-template-columns:20px minmax(0,1fr);grid-template-rows:auto auto;align-items:start;column-gap:11px;row-gap:0;margin:0;padding:7px 0}
+.reflection-panel[data-panel="notes"] .reflection-item>.reflection-label{flex:0 0 20px;width:20px;height:20px;border:1.5px solid #e6be4a;border-radius:50%;margin-top:4px;line-height:17px;text-align:center;color:#fff}
+.reflection-panel[data-panel="notes"] .reflection-item>.reflection-label{grid-column:1;grid-row:1 / span 2}
+.reflection-panel[data-panel="notes"] .reflection-item>.reflection-text{grid-column:2;grid-row:1;margin:0;font-size:15px;line-height:1.8}
+.reflection-panel[data-panel="notes"] .reflection-item>.reflection-translation{grid-column:2;grid-row:2;margin-top:3px}
+.reflection-panel[data-panel="notes"] [data-state="done"]>.reflection-label{background:#e6be4a}
 .reflection-panel[data-panel="notes"] [data-state="done"] .reflection-text{color:#989898}
 .reflection-panel[data-panel="notes"] .reflection-footer{color:#d5ad36;padding:16px 26px 23px}
 .reflection-panel[data-panel="notes"] .reflection-footer svg{width:26px;height:26px}
@@ -1170,8 +1177,9 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="
 .reflection-editor-scroll .reflection-editor{max-width:620px;margin:0 auto}
 @media(min-width:700px){.reflection-editor-scroll{padding-right:48px;padding-left:48px}}
 
-/* Use the platform's native Kai font for the role name in both chat modes and calls. */
-#chatTitle .chat-character-name,.video-call-brand .chat-character-name{font-family:"KaiTi","STKaiti","Kaiti SC","楷体",serif!important;font-style:normal}
+/* Bundle the Kai font so mobile role names do not depend on installed system fonts. */
+@font-face{font-family:"Iris Kai";src:url("assets/fonts/iris-kai.woff2") format("woff2");font-style:normal;font-weight:400;font-display:swap}
+#chatTitle .chat-character-name,.video-call-brand .chat-character-name{font-family:"Iris Kai","Kaiti SC","STKaiti","KaiTi","楷体-简","楷体",serif!important;font-style:normal;font-weight:400;font-synthesis:none}
 .reflection-theme-group-toggle{gap:18px}
 .reflection-theme-group-toggle i{display:block;flex:1;height:1px;background:#dedede;font-size:0;line-height:0}
 .reflection-theme-group-toggle[aria-expanded="true"] i:after{content:none}
@@ -1331,6 +1339,17 @@ input,textarea{scrollbar-width:thin}
 .reflection-panel[data-panel="gpt"] .reflection-response-tools{margin-top:6px}
 .reflection-gpt-icon{pointer-events:none}
 .reflection-gpt-feedback>button{z-index:1}
+/* Keep the four GPT artwork controls at the image size; never draw a focus box around the cutouts. */
+.reflection-panel[data-panel="gpt"] .reflection-response-tools>button{width:clamp(17px,4.8vw,21px);height:clamp(17px,4.8vw,21px);min-width:0;min-height:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;outline:none;-webkit-tap-highlight-color:transparent}
+.reflection-panel[data-panel="gpt"] .reflection-response-tools>button:focus,.reflection-panel[data-panel="gpt"] .reflection-response-tools>button:focus-visible,.reflection-panel[data-panel="gpt"] .reflection-response-tools>button:active{border:0;border-radius:0;background:transparent;box-shadow:none;outline:none}
+.reflection-panel[data-panel="gpt"] .reflection-response-tools>button[aria-pressed="true"]{background:transparent;border-radius:0;box-shadow:none}
+.reflection-panel[data-panel="gpt"] .reflection-gpt-feedback>button:focus,.reflection-panel[data-panel="gpt"] .reflection-gpt-feedback>button:focus-visible,.reflection-panel[data-panel="gpt"] .reflection-gpt-feedback>button:active,.reflection-panel[data-panel="gpt"] .reflection-gpt-feedback>button[aria-pressed="true"]{border:0;border-radius:0;background:transparent;box-shadow:none;outline:none}
+.reflection-panel .reflection-more-button,.reflection-panel .reflection-more-button:focus,.reflection-panel .reflection-more-button:focus-visible,.reflection-panel .reflection-more-button:active{border:0;outline:none;box-shadow:none;-webkit-tap-highlight-color:transparent}
+
+/* Avoid mobile double-tap zoom/jump while keeping settings vertically scrollable. */
+.settings-screen{touch-action:pan-y}
+.system-setting-tabs,.system-setting-tabs button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.system-setting-tabs button{-webkit-user-select:none;user-select:none}
 
 /* Keep inner-voice typography compact and responsive to the available screen width. */
 .reflection-panel .reflection-header strong{font-size:clamp(15px,4.2vw,17px)}
@@ -1351,3 +1370,23 @@ input,textarea{scrollbar-width:thin}
 .reflection-panel[data-panel="x"] .reflection-npc-heading span{font-size:clamp(10px,2.9vw,11px)}
 .reflection-panel[data-panel="gpt"] .reflection-composer{font-size:14px}
 .reflection-panel[data-panel="gpt"] .reflection-gpt-compose .reflection-gpt-icon,.reflection-panel[data-panel="gpt"] .reflection-more-button svg{width:clamp(20px,6vw,23px);height:clamp(20px,6vw,23px)}
+
+.memory-summary-card{margin:12px 0;padding:13px;border:1px solid #ededed;border-radius:12px;background:#fff}
+.memory-summary-heading{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.memory-summary-heading strong{color:#555;font-size:10px;font-weight:500}
+.memory-summary-heading small,.memory-summary-error{color:#aaa;font-size:8px;line-height:1.6;text-align:right}
+.memory-summary-card>p{margin:9px 0 0;color:#777;font-size:9px;line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere}
+.memory-summary-card>p.memory-summary-empty{color:#aaa}
+.memory-summary-error{display:block;margin-top:6px;color:#a77777;text-align:left}
+.is-online-settings .memory-summary-card{margin:0 0 12px;padding:11px 2px;border:0;border-bottom:1px solid #eee;border-radius:0;background:transparent}
+.is-online-settings .memory-summary-heading small{white-space:nowrap}
+
+/* Keep the Notes toolbar's more control free of the browser's pressed/focus tile. */
+.reflection-panel[data-panel="notes"] .reflection-more-button,
+.reflection-panel[data-panel="notes"] .reflection-more-button:hover,
+.reflection-panel[data-panel="notes"] .reflection-more-button:active,
+.reflection-panel[data-panel="notes"] .reflection-more-button:focus,
+.reflection-panel[data-panel="notes"] .reflection-more-button:focus-visible{
+ appearance:none!important;-webkit-appearance:none!important;background:transparent!important;border:0!important;border-radius:0!important;outline:0!important;outline-offset:0!important;box-shadow:none!important;filter:none!important;-webkit-tap-highlight-color:rgba(0,0,0,0)!important;touch-action:manipulation
+}
+.reflection-panel[data-panel="notes"] .reflection-more-button img{pointer-events:none}
