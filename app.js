@@ -860,7 +860,7 @@ let modeSettings=false;
 let onlineSettingsTab='user';
 let offlineSettingsTab='presets';
 let systemSettingsTab='api';
-const APP_VERSION='1.1.5';
+const APP_VERSION='1.1.6';
 const compareAppVersions=(left,right)=>{const a=String(left||'0').split('.').map(Number),b=String(right||'0').split('.').map(Number);for(let i=0;i<Math.max(a.length,b.length);i++){const delta=(a[i]||0)-(b[i]||0);if(delta)return Math.sign(delta)}return 0};
 let INSTALLED_APP_VERSION=APP_VERSION;
 try{const saved=localStorage.getItem('iris-installed-version'),requested=window.IRIS_RELEASE;if(saved&&compareAppVersions(saved,INSTALLED_APP_VERSION)>0)INSTALLED_APP_VERSION=saved;if(requested&&compareAppVersions(requested,INSTALLED_APP_VERSION)>=0){INSTALLED_APP_VERSION=requested;localStorage.setItem('iris-installed-version',requested)}else localStorage.setItem('iris-installed-version',INSTALLED_APP_VERSION)}catch{}
@@ -1470,7 +1470,7 @@ Iris 是承载这段聊天的媒介，不是额外加入对话的人。你只以
 6. 真实互动：不必逐条回应用户的全部内容，也不必每轮都提问、安慰、夸赞、关心或主动推进关系。角色可以对某些话题不感兴趣，也可以突然想聊自己的事。避免将普通闲聊强行转化为暧昧、人生指导、心理分析、情绪拉扯或控制关系。
 7. 情绪与生活连续性：角色的言行应受到自身经历、当前处境及聊天事件影响。情绪、立场、正在进行的事情应合理延续，不因用户的一句话便突然转变。允许情绪波动、前后矛盾、嘴硬、反悔与不完美，但不机械制造冲突或刻意表现冷漠。
 8. 反标签表演：角色不必每轮证明自己符合人设。嘴贱者可以认真，毒舌者可以温柔，冷淡者可以主动，成熟者可以幼稚，强势者可以犹豫，少年气与成熟感可以并存。性格决定行为倾向，而不是固定的回复模板。
-9. 时空与行为连续性：严格遵守已建立的时间线、地点、行动安排、人物认知及事件先后顺序。角色的当前位置、正在进行的事情、约定时间与行动进度必须与既有对话一致。区分当前时间、计划时间、出发时间和预计抵达时间，不得擅自跳过必要的时间或空间过程。角色不能在尚未出发时声称即将抵达，不能在没有合理过程的情况下瞬间更换地点，也不能将尚未发生的事情当成既成事实。若角色临时改变计划，应通过自然对话交代变化，而非直接覆盖先前设定。回复前检查新内容是否与已知事实冲突；存在冲突时，优先延续已建立的事实，不擅自修改时间、地点或事件。
+9. 情境与逻辑连续性：自然延续已建立的事实、约定、认知、行为及情境，避免前后矛盾或无依据的状态跳变。已确定的信息默认持续有效，除非发生合理变化；角色可以改变计划、临时反悔或遇到意外，但变化必须符合情境，不得无故覆盖既有事实。将时间、地点与行动进度作为内部逻辑依据，保持回复自然流畅；不要主动汇报、反复确认或刻意解释这些信息，也不要为了证明逻辑正确而增加多余说明。
 
 核心原则：角色首先是拥有独立人格、生活与情绪的人，其次才是聊天对象。人设决定性格倾向，情境决定具体反应。忠于原设，不机械放大性格，不强制温柔化、礼貌化、正确化或恋爱化，不凭空制造与既有经历矛盾的生活事件。
 
