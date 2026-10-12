@@ -964,6 +964,13 @@ body{position:fixed;inset:0}
 @media(max-width:480px){.video-call-header{padding-top:var(--app-safe-top,env(safe-area-inset-top));padding-bottom:7px}}
 input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,textarea:focus,select:focus,input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus-visible,textarea:focus-visible,select:focus-visible{outline:none!important;outline-offset:0!important;box-shadow:none!important;-webkit-tap-highlight-color:transparent}
 
+/* Keep worldbook editors and their save controls inside the visible area above mobile keyboards. */
+@media(pointer:coarse){
+ .role-worldbook-entry-form:focus-within,.role-worldbook-name-form:focus-within,.global-worldbook-editor:focus-within,.global-worldbook-book-form:focus-within{max-height:min(42vh,max(148px,calc(var(--app-viewport-height,100dvh) - 250px)));overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scroll-padding-block:10px}
+ .role-worldbook-entry-form:focus-within textarea,.global-worldbook-editor:focus-within textarea{min-height:88px;max-height:min(45vh,max(88px,calc(var(--app-viewport-height,100dvh) - 350px)));overflow-y:auto}
+ .role-worldbook-entry-form:focus-within>div,.global-worldbook-editor:focus-within>div{position:sticky;bottom:0;z-index:2}
+}
+
 .api-manual-model-field[hidden],#apiManualModelField[hidden]{display:none!important}
 
 .api-saved-url-tabs{display:flex;align-items:stretch;gap:16px;min-width:0;overflow-x:auto;margin:4px 0 0;padding:2px 0 0;border-bottom:1px solid #eee;scrollbar-width:none;-webkit-overflow-scrolling:touch}.api-saved-url-tabs::-webkit-scrollbar{display:none}.api-saved-url-tab{position:relative;flex:none;max-width:45%;padding:8px 2px 9px;overflow:hidden;background:transparent;color:#aaa;font-size:9px;text-overflow:ellipsis;white-space:nowrap}.api-saved-url-tab:after{position:absolute;right:20%;bottom:-1px;left:20%;height:1px;background:#444;content:"";opacity:0}.api-saved-url-tab.active{color:#444}.api-saved-url-tab.active:after{right:0;left:0;opacity:1}.api-config-list>.api-profile-card[hidden]{display:none}.api-profile-card{border-top:0}.api-profile-card.is-default{border-top:0}
