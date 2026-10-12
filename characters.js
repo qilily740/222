@@ -3,6 +3,7 @@ let characterDrafts = null;
 let characterPage = 0;
 let characterPending = 0;
 let characterImportNote = '';
+const characterPhonePending = new Set();
 
 function openCharacters() {
   characterDrafts = chars.map(c => ({...c}));
@@ -27,10 +28,26 @@ function characterNotice(text) {
   const el=characterDialog.querySelector('.character-feedback');
   if(el)el.textContent=text;
 }
+async function generateCharacterPhone(character) {
+  const config=apiConfigForFeature('onlineChat'),model=apiModelForFeature('onlineChat',config);
+  if(!config?.url||!config?.key||!model)throw new Error('请先在设置中连接聊天 API');
+  const location=[characterResidence(character),character?.details||character?.desc||''].filter(Boolean).join('\n');
+  const base=config.url.replace(/\/+$/,'').replace(/\/chat\/completions$/,'');
+  const response=await fetch(`${base}/chat/completions`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${config.key}`},body:JSON.stringify({model,messages:[{role:'system',content:'为虚构角色生成一个符合其所在地的手机运营商和电话号码。根据角色资料判断国家/地区与当地常见运营商，号码格式按当地习惯；号码仅用于虚构聊天档案，不得生成真实人物的号码。只返回 JSON：{"carrier":"运营商名称","number":"含国家区号的电话号码"}。不要输出解释、Markdown 或其他字段。'},{role:'user',content:`角色：${character?.name||'未命名角色'}\n所在地与资料：${location||'资料未写明，请根据角色设定合理判断'}`} ]})});
+  if(!response.ok)throw new Error(`API 请求失败（${response.status}）`);
+  const result=await response.json();let content=result.choices?.[0]?.message?.content;
+  if(Array.isArray(content))content=content.map(part=>part.text||'').join('');
+  const raw=String(content||'').trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');let data;
+  try{data=JSON.parse(raw)}catch{const start=raw.indexOf('{'),end=raw.lastIndexOf('}');if(start<0||end<=start)throw new Error('API 没有返回有效号码');try{data=JSON.parse(raw.slice(start,end+1))}catch{throw new Error('API 返回的号码格式无法识别')}}
+  const carrier=String(data.carrier||'').trim().slice(0,80),number=String(data.number||'').trim().slice(0,40);
+  if(!carrier||number.replace(/\D/g,'').length<6)throw new Error('API 返回的运营商或号码不完整');
+  return{carrier,number};
+}
 function deleteCharacterAt(index) {
   const character=characterDrafts[index];
   if(!confirm(`确定删除“${character.name.trim()||'未命名角色'}”吗？该角色的聊天记录也会删除。此操作无法撤销。`))return;
   characterDrafts.splice(index,1);
+  remapSmsThreadsForRoleDeletion(index);
   chars.splice(0,chars.length,...characterDrafts);
   state.characters=chars;
   if(state.char===index)state.char=chars.length?Math.min(index,chars.length-1):-1;
@@ -52,7 +69,7 @@ function characterHeader(title) {
 function bindCharacterClose() {characterDialog.querySelector('.profile-close').onclick=()=>characterDialog.close()}
 function drawCharacterList() {
   characterDialog.innerHTML=characterHeader('my characters')+`
-    <div class="character-list${characterDrafts.length?'':' is-empty'}" aria-label="角色列表">${characterDrafts.length?'':`<div class="empty-characters"><span>${icon('user')}</span><strong>还没有角色</strong><small>导入角色卡，或手动新建一个</small></div>`}${characterDrafts.map((c,i)=>`<div class="character-row"> <button type="button" class="character-row-main" data-role="${i}">${avatar(c)}<span class="character-row-info"><strong>${esc(c.name||'未命名角色')}</strong><small>${esc([c.gender,c.birthday].filter(Boolean).join(' · ')||'点击查看角色资料')}</small></span>${state.char===i?'<span class="character-current">当前</span>':icon('arrow')}</button><button type="button" class="character-row-delete" data-delete-role="${i}" aria-label="删除${esc(c.name||'未命名角色')}">删除</button></div>`).join('')}</div>
+    <div class="character-list${characterDrafts.length?'':' is-empty'}" aria-label="角色列表">${characterDrafts.length?'':`<div class="empty-characters"><span>${icon('user')}</span><strong>还没有角色</strong><small>导入角色卡，或手动新建一个</small></div>`}${characterDrafts.map((c,i)=>`<div class="character-row"><button type="button" class="character-row-main" data-role="${i}">${avatar(c)}<span class="character-row-info"><strong><span class="roster-name">${esc(c.name||'未命名角色')}</span>${c.phoneNumber?`<span class="roster-phone">${esc([c.phoneCarrier,c.phoneNumber].filter(Boolean).join(' '))}</span>`:''}</strong><small>${esc([c.gender,c.birthday].filter(Boolean).join(' · ')||'点击查看角色资料')}</small></span>${state.char===i?'<span class="character-current">当前</span>':icon('arrow')}</button>${c.phoneNumber?'':`<button type="button" class="character-phone-action" data-character-phone="${i}" ${characterPhonePending.has(i)?'disabled':''}>${characterPhonePending.has(i)?'开通中…':'开通号码'}</button>`}<button type="button" class="character-row-delete" data-delete-role="${i}" aria-label="删除${esc(c.name||'未命名角色')}" ${characterPhonePending.size?'disabled':''}>删除</button></div>`).join('')}</div>
     <div class="character-import-actions"><button type="button" id="importCharacter">${icon('plus')}<span>导入角色</span></button><button type="button" id="newCharacter">手动新建</button></div>
     <button type="button" class="character-header-arrange" id="arrangeHeaderAvatars">编辑顶部头像排列</button>
     <input id="characterFile" type="file" accept=".json,.png,.txt,.docx" hidden>
@@ -61,6 +78,15 @@ function drawCharacterList() {
   document.getElementById('characterBack').hidden=true;
   document.getElementById('arrangeHeaderAvatars').onclick=()=>{characterDialog.close();openHeaderAvatars()};
   characterDialog.querySelectorAll('[data-role]').forEach(button=>button.onclick=()=>drawCharacterEditor(+button.dataset.role));
+  characterDialog.querySelectorAll('[data-character-phone]').forEach(button=>button.onclick=async()=>{
+    const index=Number(button.dataset.characterPhone),session=characterDrafts;if(!session||characterPhonePending.has(index))return;
+    characterPhonePending.add(index);characterImportNote=`正在为${session[index]?.name||'角色'}开通号码…`;drawCharacterList();
+    try{
+      const phone=await generateCharacterPhone(session[index]);if(characterDrafts!==session)return;
+      const savedPhone={phoneCarrier:phone.carrier,phoneNumber:phone.number};Object.assign(session[index],savedPhone);if(chars[index])Object.assign(chars[index],savedPhone);state.characters=chars;characterImportNote=`已为${session[index].name||'角色'}开通号码`;save();
+    }catch(error){if(characterDrafts===session)characterImportNote=`号码开通失败：${error.message||'请检查 API 后重试'}`}
+    finally{characterPhonePending.delete(index);if(characterDrafts===session)drawCharacterList()}
+  });
   characterDialog.querySelectorAll('[data-delete-role]').forEach(button=>button.onclick=()=>deleteCharacterAt(+button.dataset.deleteRole));
   document.getElementById('newCharacter').onclick=()=>{
     characterDrafts.push({name:'',nickname:'',gender:'',birthday:'',details:'',avatar:'',initial:'',color:'#ededed'});
@@ -121,7 +147,7 @@ function drawCharacterEditor(index) {
     const unnamed=characterDrafts.findIndex(role=>!role.name.trim());
     if(unnamed>=0){drawCharacterEditor(unnamed);characterNotice('请先填写角色名字');characterDialog.querySelector('[name=name]').focus();return}
     for(const role of characterDrafts){role.name=role.name.trim();role.initial=role.initial||role.name.slice(0,1);role.birthday=CharacterImport.normalizeDate(role.birthday)}
-    chars.splice(0,chars.length,...characterDrafts);state.characters=chars;state.char=index;save();render();characterDialog.close();
+    chars.splice(0,chars.length,...characterDrafts);state.characters=chars;state.char=index;const boundUser=chars[index]?.chatSettings?.userIndex;if(Number.isInteger(boundUser)&&state.users[boundUser])state.user=boundUser;save();render();characterDialog.close();
   };
   document.getElementById('characterPortrait').onclick=()=>document.getElementById('characterPortraitFile').click();
   document.getElementById('removeCharacterPortrait').onclick=()=>{c.avatar='';refreshCharacterPortrait()};

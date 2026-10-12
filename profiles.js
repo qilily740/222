@@ -1,11 +1,29 @@
 let profileDrafts = null;
 let profilePage = 0;
 let pendingPortraits = 0;
+let userPhoneSetupIndex = null;
+const userPhoneCarriers=['中国移动','中国联通','中国电信','中国广电','自定义运营商'];
 const profileDialog = document.getElementById('profileDialog');
+
+function randomUserPhone(carrier){
+  const prefixes={
+    '中国移动':['134','135','136','137','138','139','147','150','151','152','157','158','159','178','182','183','184','187','188','195','197','198'],
+    '中国联通':['130','131','132','145','155','156','166','175','176','185','186','196'],
+    '中国电信':['133','149','153','173','177','180','181','189','190','199'],
+    '中国广电':['192']
+  };
+  const pool=prefixes[carrier]||prefixes['中国移动'],prefix=pool[Math.floor(Math.random()*pool.length)];
+  let suffix='';for(let digit=0;digit<8;digit++)suffix+=Math.floor(Math.random()*10);
+  return `${prefix} ${suffix.slice(0,4)} ${suffix.slice(4)}`;
+}
+function phoneCarrierOptions(selected=''){
+  return userPhoneCarriers.map(carrier=>`<option value="${esc(carrier)}" ${carrier===selected?'selected':''}>${esc(carrier)}</option>`).join('');
+}
 
 function openProfiles() {
   profileDrafts = state.users.map(user => ({ ...user }));
   profilePage = state.user;
+  userPhoneSetupIndex = null;
   drawProfileList();
   profileDialog.showModal();
   profileDialog.focus();
@@ -29,7 +47,7 @@ function drawEmptyProfiles() {
 
 function drawProfileList() {
   const users = profileDrafts || [];
-  const rows = users.map((profile,index) => '<article class="profile-user-row"><button type="button" class="profile-user-select" data-user-select="' + index + '" aria-label="切换到' + esc(profile.name.trim() || '未命名用户') + '"><span class="profile-user-avatar" style="background:' + esc(profile.color || '#ededed') + '">' + (profile.avatar ? '<img src="' + esc(profile.avatar) + '" alt="">' : esc((profile.nickname || profile.name || '').slice(0,1))) + '</span><span class="profile-user-info"><strong>' + esc(profile.name.trim() || '未命名用户') + '</strong><small>' + esc(profile.nickname || '个人档案') + '</small></span><small class="profile-user-current">' + (index === state.user ? '当前使用' : '') + '</small></button><button type="button" class="profile-user-edit" data-user-edit="' + index + '">编辑</button><button type="button" class="profile-roster-delete" data-user-delete="' + index + '" aria-label="删除' + esc(profile.name.trim() || '未命名用户') + '">删除</button></article>').join('');
+  const rows = users.map((profile,index) => {const savedCarrier=profile.phoneCarrier||'',selectedCarrier=userPhoneCarriers.includes(savedCarrier)?savedCarrier:(savedCarrier?'自定义运营商':'中国移动');return `<article class="profile-user-row"><button type="button" class="profile-user-select" data-user-select="${index}" aria-label="切换到${esc(profile.name.trim()||'未命名用户')}"><span class="profile-user-avatar" style="background:${esc(profile.color||'#ededed')}">${profile.avatar?`<img src="${esc(profile.avatar)}" alt="">`:esc((profile.nickname||profile.name||'').slice(0,1))}</span><span class="profile-user-info"><strong><span class="roster-name">${esc(profile.name.trim()||'未命名用户')}</span>${profile.phoneNumber?`<span class="roster-phone">${esc([profile.phoneCarrier,profile.phoneNumber].filter(Boolean).join(' ') )}</span>`:''}</strong><small>${esc(profile.nickname||'个人档案')}</small></span><small class="profile-user-current">${index===state.user?'当前使用':''}</small></button><button type="button" class="profile-user-edit" data-user-edit="${index}">编辑</button>${profile.phoneNumber?'':`<button type="button" class="profile-phone-action" data-user-phone="${index}">开通号码</button>`}<button type="button" class="profile-roster-delete" data-user-delete="${index}" aria-label="删除${esc(profile.name.trim()||'未命名用户')}">删除</button>${!profile.phoneNumber&&userPhoneSetupIndex===index?`<form class="profile-phone-editor" data-user-phone-form="${index}"><label>运营商<select name="carrier">${phoneCarrierOptions(selectedCarrier)}</select></label><input name="customCarrier" ${selectedCarrier==='自定义运营商'?'':'hidden'} value="${esc(selectedCarrier==='自定义运营商'?savedCarrier:'')}" placeholder="填写运营商名称" aria-label="自定义运营商"><div class="profile-phone-editor-number"><label>自定义号码<input name="number" type="tel" maxlength="40" value="${esc(profile.phoneNumber||'')}" placeholder="可直接输入自己的号码"></label><button type="submit">保存号码</button></div><div class="profile-phone-editor-actions"><button type="button" data-user-phone-random="${index}">随机生成</button><button type="button" data-user-phone-cancel="${index}">取消</button></div></form>`:''}</article>`}).join('');
   profileDialog.innerHTML = '<header class="profile-heading"><span class="profile-eyebrow">IRIS / USERS</span><button type="button" class="profile-close" aria-label="关闭用户列表">×</button></header><div class="profile-title-row"><h2 id="profileTitle">my users</h2><button type="button" id="addProfile">＋ 新用户</button></div>' + (users.length ? '<section class="profile-roster profile-user-list" aria-label="用户列表">' + rows + '</section>' : '<section class="empty-profiles"><div class="empty-profile-mark">' + icon('user') + '</div><h2>还没有用户</h2><p>创建一张个人档案，再开始聊天。</p></section>');
   profileDialog.querySelector('.profile-close').onclick = closeProfiles;
   profileDialog.querySelector('#addProfile').onclick = () => {
@@ -49,12 +67,27 @@ function drawProfileList() {
   });
   profileDialog.querySelectorAll('[data-user-edit]').forEach(button => button.onclick = () => { profilePage = Number(button.dataset.userEdit); drawProfile(); });
   profileDialog.querySelectorAll('[data-user-delete]').forEach(button => button.onclick = () => deleteProfileAt(Number(button.dataset.userDelete)));
+  profileDialog.querySelectorAll('[data-user-phone]').forEach(button=>button.onclick=()=>{const index=Number(button.dataset.userPhone);userPhoneSetupIndex=userPhoneSetupIndex===index?null:index;drawProfileList()});
+  profileDialog.querySelectorAll('[data-user-phone-cancel]').forEach(button=>button.onclick=()=>{userPhoneSetupIndex=null;drawProfileList()});
+  profileDialog.querySelectorAll('[data-user-phone-form]').forEach(form=>{
+    form.elements.carrier.onchange=()=>{form.elements.customCarrier.hidden=form.elements.carrier.value!=='自定义运营商'};
+    form.onsubmit=event=>{
+    event.preventDefault();const index=Number(form.dataset.userPhoneForm),profile=profileDrafts[index],data=new FormData(form),selected=String(data.get('carrier')||''),carrier=selected==='自定义运营商'?String(data.get('customCarrier')||'').trim():selected,number=String(data.get('number')||'').trim();
+    if(!carrier){toast('请填写运营商名称');form.elements.customCarrier.focus();return}if(number.replace(/\D/g,'').length<6){toast('请填写至少 6 位号码');form.elements.number.focus();return}
+    profile.phoneCarrier=carrier;profile.phoneNumber=number;state.users=profileDrafts.map(item=>({...item,name:item.name.trim(),nickname:item.nickname.trim()}));save();userPhoneSetupIndex=null;drawProfileList();
+    }
+  });
+  profileDialog.querySelectorAll('[data-user-phone-random]').forEach(button=>button.onclick=()=>{
+    const index=Number(button.dataset.userPhoneRandom),form=profileDialog.querySelector(`[data-user-phone-form="${index}"]`);if(!form)return;const selected=form.elements.carrier.value,carrier=selected==='自定义运营商'?form.elements.customCarrier.value.trim():selected;
+    if(!carrier){toast('请先填写运营商名称');form.elements.customCarrier.focus();return}const profile=profileDrafts[index];profile.phoneCarrier=carrier;profile.phoneNumber=randomUserPhone(userPhoneCarriers.includes(carrier)?carrier:'中国移动');state.users=profileDrafts.map(item=>({...item,name:item.name.trim(),nickname:item.nickname.trim()}));save();userPhoneSetupIndex=null;drawProfileList();
+  });
 }
 
 function deleteProfileAt(index) {
   const user = profileDrafts[index];
   if (!confirm(`确定删除“${user.name.trim() || '未命名用户'}”吗？此操作无法撤销。`)) return;
   profileDrafts.splice(index, 1);
+  remapSmsThreadsForUserDeletion(index);
   state.users = profileDrafts.map(profile => ({...profile,name:profile.name.trim(),nickname:profile.nickname.trim()}));
   if (state.user === index) state.user = state.users.length ? Math.min(index, state.users.length - 1) : -1;
   else if (state.user > index) state.user--;

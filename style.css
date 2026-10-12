@@ -164,6 +164,7 @@
 .message:not(.mine) .message-bubble-line{justify-content:flex-start}
 .message-time{position:static;z-index:1;flex:0 0 auto;align-self:flex-end;width:auto;margin:0 0 3px;padding:0;color:#b0b0b0;font-size:8px;letter-spacing:.1px;line-height:1;white-space:nowrap}
 .message-type-text .bubble{flex-shrink:0;max-width:100%}
+.message-type-text .message-delivery-anchor{flex-shrink:0;width:max-content;max-width:100%}
 .mine .bubble-translation{text-align:right}
 .call-summary-message{align-self:center;width:min(86%,370px);margin:18px 0 14px;color:#555}
 .call-summary-kicker{display:flex;align-items:center;gap:9px;margin-bottom:6px;color:#999}
@@ -958,6 +959,23 @@ body{position:fixed;inset:0}
 /* Existing chat content stays visible through page changes and updates. */
 .conversation .message,.conversation .call-summary-message{animation:none!important}
 
+/* Offline story mode uses named prose blocks instead of chat bubbles. */
+.conversation.is-offline-story{display:flex;flex-direction:column;align-items:stretch;padding:20px clamp(20px,5.5vw,52px) 32px}
+.conversation.is-offline-story>.offline-prose-entry{position:relative;display:block;width:100%;max-width:100%;margin:0 0 50px;padding:0;overflow:visible}
+.offline-prose-heading{display:flex;align-items:baseline;gap:9px;margin:0 0 clamp(30px,8vh,74px);min-height:2.2em;color:#222}
+.offline-prose-heading>strong{font-family:"Songti SC","Noto Serif CJK SC",serif;font-size:clamp(21px,6vw,30px);font-weight:400;letter-spacing:.12em;line-height:1.25;writing-mode:vertical-rl;text-orientation:upright}
+.offline-prose-heading>.message-time{margin-left:auto;color:#aaa;font-family:Georgia,serif;font-size:9px;letter-spacing:.2px;white-space:nowrap}
+.offline-prose-reflection{align-self:flex-start;padding:3px 0;color:#999;font-size:8px;letter-spacing:.08em}
+.offline-prose-body{width:100%;max-width:none;color:#292929;font-family:"Songti SC","Noto Serif CJK SC","SimSun",serif;font-size:clamp(15px,4.35vw,19px);font-weight:400;letter-spacing:.025em;line-height:2;white-space:pre-wrap;overflow-wrap:anywhere;text-indent:2em}
+.offline-prose-body .bubble{padding:0;border:0;border-radius:0;background:transparent;color:inherit;font:inherit;box-shadow:none}
+.offline-prose-quote{margin:0 0 1em;padding:0 0 0 1em;border:0;border-left:1px solid #bbb;color:#888;text-indent:0}
+.offline-prose-quote small{font-size:.72em;letter-spacing:.04em}
+.offline-prose-quote p{margin:.35em 0 0;font-size:.82em;line-height:1.8}
+.offline-prose-translation{margin:12px 0 0 2em;color:#aaa;font-family:system-ui,sans-serif;font-size:11px;line-height:1.7;letter-spacing:0;white-space:pre-wrap}
+.offline-prose-entry .reply-variant-controls{position:relative;inset:auto;display:flex;justify-content:space-between;margin:12px 0 0}
+.offline-prose-entry .reply-variant-count{margin:auto}
+@media(max-width:480px){.conversation.is-offline-story{padding:16px 20px 28px}.conversation.is-offline-story>.offline-prose-entry{margin-bottom:38px}.offline-prose-heading{margin-bottom:clamp(26px,7vh,56px)}.offline-prose-body{font-size:clamp(15px,4.25vw,17px);line-height:1.95}}
+
 .version-actions #checkVersion,.version-actions #updateVersion{height:44px;min-height:44px;align-self:stretch}
 .video-call-screen{padding-top:0}
 .video-call-header{height:auto;min-height:0;align-items:flex-start;padding:24px clamp(18px,5vw,52px) 9px}
@@ -1451,3 +1469,132 @@ input,textarea{scrollbar-width:thin}
 .reflection-panel[data-panel="gpt"] .reflection-response-tools .reflection-gpt-icon{opacity:1}
 .reflection-panel[data-panel="gpt"] .reflection-gpt-feedback{width:clamp(23px,6.4vw,29px);height:clamp(24px,6.6vw,30px)}
 .reflection-panel[data-panel="gpt"] .reflection-gpt-feedback .reflection-gpt-icon{width:100%;height:100%;filter:none}
+.quick-features:not(.dock-feature-menu){width:min(360px,calc(100vw - 50px))}.quick-action-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;width:min(100%,360px);margin-top:0;padding-top:0;border-top:0}.quick-action-row .quick-item,.quick-action-item{min-width:0;display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:6px;padding:0;color:#666;font-size:8px;line-height:1.25;white-space:normal;text-align:left}.quick-action-row>.quick-item.quick-exit{width:auto;white-space:normal}.quick-action-row .quick-item>span:last-child,.quick-action-item>span:last-child{min-width:0;max-width:100%;padding:4px 3px;background:#fff;border-radius:8px;box-shadow:0 2px 12px #0000000c;overflow-wrap:anywhere}.quick-action-row .quick-icon,.quick-action-item .quick-icon{display:grid;place-items:center;flex:none;width:38px;height:38px;padding:0;border-radius:50%;background:#f0f0f0}.quick-action-row .quick-icon svg,.quick-action-item .quick-icon svg{width:38px;height:38px;padding:10px;border-radius:50%;background:#f0f0f0;color:#5d5d5d;stroke-width:1.4}.quick-action-row .quick-exit .quick-icon svg{background:#333;color:#fff;transform:rotate(180deg)}.quick-action-item.is-blocked .quick-icon,.quick-action-item.is-blocked .quick-icon svg{background:#555;color:#fff}.quick-action-item.is-destructive .quick-icon svg{color:#777}
+.message-delivery-anchor{position:relative;display:inline-flex;align-items:center;min-width:0;max-width:100%}.message-delivery-failed{position:absolute;left:calc(100% + 7px);top:50%;display:inline-grid;place-items:center;width:17px;height:17px;transform:translateY(-50%);color:#fff;background:#e5484d;border-radius:50%;font:700 12px/1 Arial,sans-serif}
+.sms-notification{position:absolute;z-index:100;top:max(12px,env(safe-area-inset-top));left:50%;width:calc(100% - 28px);max-width:560px;transform:translateX(-50%);border:1px solid #e8e8e8;border-radius:22px;background:rgba(255,255,255,.96);box-shadow:0 8px 32px #00000012;backdrop-filter:blur(18px);animation:sms-banner-arrive .25s ease}
+.sms-notification-open{display:flex;align-items:center;gap:12px;width:100%;padding:15px 32px 15px 15px;text-align:left}
+.sms-notification .avatar{flex:none;width:42px;height:42px;border:0;font-size:17px;overflow:hidden}.sms-notification .avatar img{width:100%;height:100%;object-fit:cover}
+.sms-notification-copy{display:flex;flex:1;flex-direction:column;gap:3px;min-width:0}.sms-notification-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}.sms-notification-heading strong{min-width:0;color:#555;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sms-notification-heading time{flex:none;color:#aaa;font-size:9px;white-space:nowrap}.sms-notification-name{color:#aaa;font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sms-notification-text{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;color:#666;font-size:12px;line-height:1.6;overflow-wrap:anywhere;white-space:pre-wrap}.sms-notification-dismiss{position:absolute;top:6px;right:5px;display:grid;place-items:center;width:25px;height:25px;padding:0;color:#aaa;font-size:17px}
+@keyframes sms-banner-arrive{from{opacity:0;transform:translate(-50%,-12px)}to{opacity:1;transform:translate(-50%,0)}}
+@media(prefers-reduced-motion:reduce){.sms-notification,.sms-typing>i{animation:none}}
+.character-row-info strong,.profile-user-info strong{display:flex;align-items:baseline;flex-wrap:nowrap;gap:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.roster-name{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:inherit}
+.roster-phone{flex:0 1 auto;min-width:0;margin-left:7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#999;font-size:8px;font-weight:400;letter-spacing:0;line-height:1.5;overflow-wrap:normal}
+.character-phone-action,.profile-phone-action{flex:none;padding:5px 6px;border-bottom:1px solid #e7e7e7;color:#888;font-size:8px;white-space:nowrap}
+.character-phone-action:disabled{opacity:.5}
+.profile-user-row{flex-wrap:wrap}
+.profile-phone-editor{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 10px;flex:0 0 100%;padding:10px 5px 4px;border-top:1px solid #f1f1f1}
+.profile-phone-editor label{display:grid;gap:4px;min-width:0;color:#999;font-size:8px}
+.profile-phone-editor select,.profile-phone-editor input{width:100%;min-width:0;height:30px;padding:0 8px;border:1px solid #ececec;border-radius:7px;background:#fff;color:#666;font-size:9px}
+.profile-phone-editor>[name="customCarrier"]{align-self:end}
+.profile-phone-editor-number{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-column:1/-1;align-items:end;gap:8px}
+.profile-phone-editor-number button,.profile-phone-editor-actions button{padding:6px 10px;border-radius:7px;background:#f4f4f4;color:#777;font-size:8px;white-space:nowrap}
+.profile-phone-editor-actions{display:flex;grid-column:1/-1;justify-content:flex-end;gap:8px}
+#featurePageContent:has(.sms-thread-view){display:flex;flex-direction:column;overflow:hidden;padding-top:0;padding-bottom:0}
+.sms-inbox{max-width:560px;margin:0 auto}.sms-inbox>.feature-page-kicker{margin:4px 0 8px}.sms-inbox>h2{margin:0 0 20px;font-size:22px;font-weight:400;letter-spacing:1px;color:#444}
+.sms-contact-list{display:grid;border-top:1px solid #eee}.sms-contact-row{display:flex;align-items:center;gap:12px;min-width:0;width:100%;padding:12px 2px;border-bottom:1px solid #eee;text-align:left}.sms-contact-row>.avatar{width:42px;height:42px;font-size:16px}.sms-contact-copy{display:grid;gap:5px;flex:1;min-width:0}.sms-contact-copy>strong{display:flex;align-items:baseline;gap:8px;min-width:0;color:#555;font-size:11px;font-weight:500;white-space:nowrap}.sms-contact-copy>strong>small{min-width:0;overflow:hidden;text-overflow:ellipsis;color:#aaa;font-size:8px;font-weight:400}.sms-contact-copy>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#999;font-size:9px}.sms-contact-row>time{flex:none;color:#aaa;font-size:8px}.sms-contact-row>svg{width:13px;height:13px;flex:none;color:#bbb}
+.sms-back-mark{font-family:system-ui,sans-serif;font-size:32px;font-style:normal;font-weight:300;line-height:1;color:#888;margin-right:-5px}
+.sms-empty{display:grid;justify-items:center;gap:11px;padding:72px 24px;color:#aaa;text-align:center}.sms-empty>span svg{width:30px;height:30px;color:#bbb}.sms-empty>strong{font-size:12px;font-weight:400;color:#777}.sms-empty>p{max-width:230px;margin:0;font-size:9px;line-height:1.8}
+.sms-thread-view{display:flex;flex:1;flex-direction:column;min-height:0;width:100%;max-width:560px;margin:0 auto}.sms-thread-contact{display:grid;justify-items:center;gap:5px;flex:none;padding:8px 0 14px;border-bottom:1px solid #f0f0f0}.sms-thread-contact>.avatar{width:35px;height:35px;font-size:14px}.sms-thread-contact>strong{font-size:11px;font-weight:500;color:#555}.sms-thread-contact>small{font-size:8px;color:#aaa;letter-spacing:1px}.sms-thread-messages{display:flex;flex:1;flex-direction:column;gap:9px;min-height:0;overflow-y:auto;overflow-x:hidden;padding:16px 2px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}.sms-bubble-row{display:flex;flex-direction:column;align-items:flex-start;max-width:82%;gap:3px}.sms-bubble-row.is-mine{align-self:flex-end;align-items:flex-end}.sms-bubble{max-width:100%;padding:9px 13px;border-radius:17px 17px 17px 5px;background:#f1f1f1;color:#444;font-size:12px;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere}.sms-bubble-row.is-mine .sms-bubble{border-radius:17px 17px 5px 17px;background:#e8e8e8}.sms-bubble>small{display:block;margin-top:4px;color:#999;font-size:9px;line-height:1.5}.sms-bubble-row>time{padding:0 4px;color:#bbb;font-size:7px}.sms-thread-empty{align-self:center;margin:auto;color:#aaa;font-size:9px}.sms-typing{display:flex;gap:4px;padding:12px 14px}.sms-typing>i{width:5px;height:5px;border-radius:50%;background:#aaa;animation:chat-reply-wave .85s ease-in-out infinite}.sms-typing>i:nth-child(2){animation-delay:.12s}.sms-typing>i:nth-child(3){animation-delay:.24s}@keyframes smsTyping{0%,60%,100%{transform:translateY(0);opacity:.45}30%{transform:translateY(-3px);opacity:1}}
+.sms-composer{display:flex;align-items:flex-end;gap:8px;flex:none;padding:10px 0 max(5px,env(safe-area-inset-bottom));border-top:1px solid #f0f0f0;background:#fff}.sms-composer textarea{flex:1;min-width:0;min-height:38px;max-height:100px;padding:10px 13px;border:1px solid #eee;border-radius:20px;background:#f6f6f6;color:#444;font-size:12px;line-height:18px;resize:vertical;overflow-y:auto}.sms-composer button{display:grid;place-items:center;flex:none;width:38px;height:38px;border-radius:50%;background:#555;color:#fff}.sms-composer button svg{width:17px;height:17px;transform:rotate(90deg);stroke-width:1.8}
+@media(max-width:480px){.sms-inbox>h2{font-size:20px}.sms-contact-row{gap:9px;padding:11px 1px}.sms-contact-row>.avatar{width:37px;height:37px}.sms-contact-copy>strong{gap:5px;font-size:10px}.sms-contact-copy>strong>small{font-size:7px}.sms-bubble{font-size:11px}.sms-composer textarea{font-size:16px}}
+
+/* SMS uses the current profile as the inbox identity and an iPhone-like composer. */
+.avatar>img{display:block;width:100%;height:100%;min-width:0;min-height:0;object-fit:cover;border-radius:inherit}
+.feature-page-topbar:has(.sms-feature-heading){justify-content:space-between;padding-top:24px;padding-bottom:12px}
+#featurePageTitle:has(.sms-feature-heading){flex:1 1 auto;width:100%;min-width:0}
+.sms-feature-heading{position:relative;display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;min-width:0}
+.sms-feature-heading .feature-page-brand{align-items:center;min-height:40px}
+.sms-feature-heading .feature-page-wordmark{font-size:30px}
+.sms-feature-heading:has(.sms-thread-top-contact){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,58%) minmax(0,1fr);gap:0;align-items:center}
+.sms-feature-heading:has(.sms-thread-top-contact)>.feature-page-brand{grid-column:1;justify-self:start}
+.sms-thread-top-contact{position:static;grid-column:2;transform:none;display:grid;grid-template-rows:auto auto;justify-items:center;align-content:center;gap:4px;width:100%;min-width:0;color:#333;pointer-events:none}
+.sms-thread-top-contact>strong{max-width:100%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#888;font-size:12px;font-weight:400;letter-spacing:.1px;line-height:1.15}
+.sms-thread-top-contact>small{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#aaa;font-size:10px;font-weight:400;letter-spacing:.5px;line-height:1.2}
+@media(min-width:850px){.feature-page-topbar:has(.sms-feature-heading){padding-top:28px}}
+@media(max-width:480px){.feature-page-topbar:has(.sms-feature-heading){padding-top:var(--app-safe-top,env(safe-area-inset-top));padding-bottom:10px}}
+.sms-user-switch{position:relative;z-index:5;flex:none}
+.sms-user-switch>button{display:grid;width:40px;height:40px;place-items:center;padding:0;border:0;border-radius:50%;background:transparent;-webkit-tap-highlight-color:transparent}
+.sms-user-switch>button>.avatar{width:34px;height:34px;border:1px solid #e7e7e7;font-size:13px}
+.sms-user-switch>button>.avatar img{width:100%;height:100%;object-fit:cover;border-radius:inherit}
+.sms-user-menu{position:fixed;z-index:9999;top:0;right:12px;display:flex;flex-direction:column;width:min(270px,calc(100vw - 24px));min-width:min(210px,calc(100vw - 24px));max-height:min(55vh,360px);overflow-y:auto;padding:8px;background:#fff;border:1px solid #eee;border-radius:13px;box-shadow:0 12px 34px #00000018}
+.sms-user-menu[hidden]{display:none!important}
+.sms-user-menu>p{margin:3px 8px 7px;color:#aaa;font-size:9px;letter-spacing:.3px}
+.sms-user-menu>button{display:flex;align-items:center;gap:9px;width:100%;min-width:0;min-height:44px;padding:7px 8px;border:0;border-radius:8px;background:transparent;text-align:left;color:#555!important;font-size:11px!important;line-height:1.3;overflow:hidden}
+.sms-user-menu>button.is-current{background:#f5f5f5}
+.sms-user-option-avatar{display:flex;align-items:center;justify-content:center;width:30px;height:30px;flex:0 0 30px;overflow:hidden;border-radius:50%;background:#ededed;color:#777;font-size:11px}
+.sms-user-option-avatar>img{display:block;width:100%;height:100%;min-width:30px;min-height:30px;object-fit:cover;border-radius:50%}
+.sms-user-menu>button>.sms-user-option-name{display:block;flex:1 1 auto;min-width:0;color:#444!important;font-size:11px!important;font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sms-user-menu>button>i{flex:none;margin-left:auto;color:#999;font-size:8px;font-style:normal;white-space:nowrap}
+.sms-bubble{position:relative;border-radius:18px 18px 18px 5px;background:#e5e5ea;color:#171717;font-size:clamp(14px,4vw,17px);line-height:1.35;padding:9px 13px}
+.sms-bubble-row.is-mine .sms-bubble{border-radius:18px 18px 5px 18px;background:#087eff;color:#fff}
+.sms-bubble-row.is-mine .sms-bubble>small{color:#e7f2ff}
+.sms-bubble-row>time{font-size:8px}
+.sms-composer{align-items:center;gap:10px;padding:9px 0 max(5px,env(safe-area-inset-bottom));border-top:0}
+.sms-composer .sms-attach{width:34px;height:34px;border:0;background:#e9e9eb;color:#85858a;font:300 27px/1 system-ui,sans-serif}
+.sms-composer .sms-attach:disabled{opacity:1}
+.sms-composer .sms-attach svg{display:block;width:19px;height:19px;stroke-width:1.8}
+.sms-composer-field{position:relative;display:flex;flex:1;align-items:flex-end;min-width:0;min-height:39px;padding:0 7px 0 12px;border:1px solid #d9d9dd;border-radius:22px;background:#fff}
+.sms-composer-field>textarea{display:block;width:100%;min-height:37px;max-height:104px;padding:9px 30px 8px 2px;border:0;border-radius:0;background:transparent;color:#222;font-size:16px;line-height:20px;resize:none;overflow-y:auto;outline:0;box-shadow:none}
+.sms-composer-field>textarea::placeholder{color:#c2c2c6}
+.sms-composer .sms-send,.sms-composer .sms-mic{position:absolute;right:5px;bottom:4px;width:28px;height:28px;padding:0;border:0;border-radius:50%}
+.sms-composer .sms-send{background:#34c759;color:#fff}
+.sms-composer .sms-send svg{width:17px;height:17px;transform:rotate(0);stroke-width:2.4}
+.sms-composer .sms-mic{background:transparent;color:#aeb1b7}
+.sms-composer .sms-mic svg{width:18px;height:18px;transform:none;stroke-width:1.8}
+.sms-composer .sms-reply{width:34px;height:34px;border:0;background:#e9e9eb;color:#777}
+.sms-composer .sms-reply svg{width:19px;height:19px;transform:none;stroke-width:1.8}
+.sms-composer .sms-reply:disabled{opacity:.5}
+.sms-composer button[hidden]{display:none!important}
+@media(max-width:480px){.sms-thread-contact{padding:5px 0 12px}.sms-thread-messages{gap:8px;padding:13px 2px}.sms-bubble-row{max-width:88%}.sms-bubble{font-size:16px;padding:9px 12px}.sms-composer .sms-attach{width:34px;height:34px}.sms-composer-field{min-height:39px}}
+
+/* SMS actions share the online chat's quiet gray palette and small type. */
+.sms-bubble-row{position:relative}
+.sms-bubble-row.has-sms-actions{z-index:8}
+.sms-bubble{-webkit-touch-callout:none}
+.sms-message-actions{position:fixed;z-index:30;visibility:hidden;width:224px;max-width:calc(100vw - 50px);padding:5px;border:1px solid #e8e8e8;border-radius:18px;background:rgba(255,255,255,.98);box-shadow:0 5px 18px #00000012}
+.sms-reaction-picker{display:flex;align-items:center;justify-content:space-between;gap:2px;padding:1px 2px 5px}
+.sms-reaction-picker button{display:grid;place-items:center;flex:1;min-width:0;height:32px;padding:0;border-radius:50%;color:#999;transition:background .15s ease,color .15s ease}
+.sms-reaction-picker button svg{display:block;width:18px;height:18px;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.5}
+.sms-reaction-picker button[data-sms-reaction-choice="heart"] svg{fill:currentColor;stroke:none}
+.sms-reaction-picker button.is-active{background:#efefef;color:#555}
+.sms-reaction-picker button:hover,.sms-reaction-picker button:active{background:#f3f3f3;color:#666}
+.sms-action-row{display:flex;align-items:center;gap:2px;padding-top:4px;border-top:1px solid #f0f0f0}
+.sms-action-row button{flex:1;min-width:0;min-height:29px;padding:0 5px;border-radius:13px;color:#777;font-size:10px;font-weight:400;line-height:1;white-space:nowrap}
+.sms-action-row button:hover,.sms-action-row button:active{background:#f1f1f1;color:#555}
+.sms-action-row button:disabled{color:#c6c6c6;cursor:default}
+.sms-message-reaction{position:absolute;z-index:2;top:-12px;right:1px;left:auto;display:grid;place-items:center;width:32px;height:32px;padding:6px;border:2px solid #fff;border-radius:50%;background:#34c759;color:#fff;box-shadow:0 1px 4px #00000010}
+.sms-message-reaction svg{display:block;width:18px;height:18px;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.8}
+.sms-bubble:has(>.sms-message-reaction){padding-right:30px}
+.sms-bubble-row.has-sms-actions .sms-message-reaction{pointer-events:none}
+.sms-message-actions{width:224px;padding:5px 7px 6px}
+.sms-select-action{display:block;width:100%;min-height:27px;margin-top:4px;padding:4px 0 0;border-top:1px solid #f0f0f0;color:#888;font-size:10px;text-align:center}
+.sms-select-action:active{color:#555}
+.sms-composer{position:relative}
+.sms-attach-menu{position:absolute;z-index:12;bottom:calc(100% + 8px);left:0;min-width:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+.sms-attach-menu[hidden]{display:none!important}
+.sms-attach-menu button{display:block;width:100%;min-height:34px;padding:0 12px;border-radius:8px;background:transparent;color:#666;font-size:12px;text-align:left}
+.sms-attach-menu button:active{background:#f1f1f1}
+.sms-attach-menu button:disabled{color:#c6c6c6;cursor:default}
+.sms-attach-menu .sms-clear-item{display:flex;align-items:center;justify-content:flex-start;gap:8px;width:100%;min-height:40px;padding:3px 0;border-radius:9px;background:transparent;color:#666;font-size:9px;text-align:left}
+.sms-attach-menu .sms-clear-item .quick-icon{display:grid;place-items:center;flex:none;width:34px;height:34px;padding:0;border:0;border-radius:50%;background:#e9e9eb;color:#777}
+.sms-attach-menu .sms-clear-item .quick-icon svg{display:block;width:34px;height:34px;padding:8px;border:0;border-radius:50%;background:#e9e9eb;color:#777;stroke-width:1.5;transform:none}
+.sms-attach-menu .sms-clear-item>span:last-child{padding:5px 9px;border-radius:13px;background:#f2f2f3;box-shadow:none;color:#666}
+.sms-thread-view.is-selecting .sms-composer{display:none}
+.sms-thread-view.is-selecting .sms-message-reaction{pointer-events:none}
+.sms-thread-view.is-selecting .sms-bubble-row{max-width:calc(88% - 24px);margin-left:24px}
+.sms-thread-view.is-selecting .sms-bubble-row.is-mine{margin-right:24px;margin-left:0}
+.sms-selection-check{position:absolute;top:50%;left:-24px;display:grid;width:18px;height:18px;place-items:center;border:1px solid #c9c9c9;border-radius:50%;background:#fff;color:#fff;font-size:11px;transform:translateY(-50%)}
+.sms-bubble-row.is-mine .sms-selection-check{right:-24px;left:auto}
+.sms-bubble-row.is-sms-selected .sms-bubble{outline:1px solid #777;outline-offset:2px}
+.sms-bubble-row.is-sms-selected .sms-selection-check{border-color:#555;background:#555}
+.sms-selection-bar{display:flex;align-items:center;gap:10px;flex:none;padding:10px 2px max(10px,env(safe-area-inset-bottom));border-top:1px solid #ededed;background:rgba(255,255,255,.96);font-size:11px}
+.sms-selection-bar span{margin-right:auto;color:#777}
+.sms-selection-bar button{padding:7px 10px;border-radius:15px;color:#666;font-size:11px}
+.sms-selection-bar [data-sms-selection-delete]{background:#555;color:#fff}
+.sms-selection-bar button:disabled{opacity:.4;cursor:default}
+
+.sms-send-error{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;margin:8px 0;border:1px solid #e9e9e9;border-radius:14px;background:#fafafa;color:#777}.sms-send-error>span{display:grid;gap:4px;min-width:0}.sms-send-error strong{font-size:11px;font-weight:500}.sms-send-error small{font-size:10px;line-height:1.5;overflow-wrap:anywhere}.sms-send-error button{display:flex;align-items:center;gap:5px;flex:none;color:#666;font-size:10px}.sms-send-error button svg{width:16px;height:16px}
+
+/* Keep the online and offline composer text centered inside its pill. */
+.input-wrap textarea{display:block;height:22px;min-height:22px;max-height:22px;margin:0;padding:0;align-self:center;line-height:22px;overflow:hidden}
