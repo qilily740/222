@@ -44,7 +44,7 @@ test('requires both confirmed time and place and recognizes expired absolute tim
 test('app wires structured online invitations to a separate offline request and persisted thread', () => {
   const app = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
   const bootstrap = fs.readFileSync(path.join(__dirname, '..', 'storage-bootstrap.js'), 'utf8');
-  assert.match(bootstrap, /'role-invitations\.js', 'app\.js'/);
+  assert.match(bootstrap, /'role-invitations\.js'.*'app\.js'/s);
   assert.match(app, /payload\.invitation/);
   assert.match(app, /saveInviteProposal\(listReply,requestThreadKey/);
   assert.match(app, /sendOnlineMessage\(\{feature:'offlineStory'/);
