@@ -87,7 +87,7 @@
 
   load().then(async saved => {
     window.IRIS_BOOT_STATE = saved && typeof saved === 'object' ? saved : {};
-    for (const src of ['mini-theater.js', 'app.js', 'profiles.js', 'importers.js', 'characters.js']) await loadScript(src);
+    for (const src of ['mini-theater.js', 'role-invitations.js', 'app.js', 'profiles.js', 'importers.js', 'characters.js']) await loadScript(src);
   }).catch(error => {
     console.error('Iris startup failed', error);
     window.IRIS_BOOT_STATE = {};
