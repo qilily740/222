@@ -332,7 +332,7 @@ const offlineDraftCotInstruction=`【强制逐段预演与输出顺序｜不得�
 
 </draft>`;
 function offlineDraftInstructionForSettings(settings){return String(settings?.draftCotPrompt||'').trim()||offlineDraftCotInstruction}
-const createOfflineSettings=()=>({rolePerspective:'first',userPerspective:'second',userAgency:'no-takeover',paragraphRequirement:'alternating',wordCount:600,paragraphCountMin:3,paragraphCountMax:5,pacing:'free',style:'natural',customStyles:[],stylePromptOverrides:{},customPrompt:'',customPromptEnabled:false,draftCotEnabled:true,draftCotDeleted:false,miniTheaterEnabled:false,miniTheaterDeleted:false,miniTheaterPrompt:'',regexRules:[],prompt:offlineDefaultReplyPrompt,promptTemplates:[],activePromptTemplateId:'',promptVersion:2});
+const createOfflineSettings=()=>({rolePerspective:'third',userPerspective:'second',userAgency:'takeover',paragraphRequirement:'alternating',wordCount:1000,paragraphCountMin:13,paragraphCountMax:18,pacing:'free',style:'natural',customStyles:[],stylePromptOverrides:{},customPrompt:'',customPromptEnabled:false,draftCotEnabled:true,draftCotDeleted:false,miniTheaterEnabled:false,miniTheaterDeleted:false,miniTheaterPrompt:'',regexRules:[],prompt:offlineDefaultReplyPrompt,promptTemplates:[],activePromptTemplateId:'',promptVersion:2});
 function normalizeOfflineSettings(value={}){
  const settings={...createOfflineSettings(),...(value||{})},legacyStyle=String(value?.style||'');
  settings.customStyles=(Array.isArray(value?.customStyles)?value.customStyles:[]).filter(style=>style&&typeof style==='object').map((style,index)=>({id:String(style.id||`custom-style-${index+1}`),name:String(style.name||'未命名文风').slice(0,60),prompt:String(style.prompt||'').slice(0,12000)}));
@@ -1221,7 +1221,7 @@ let offlineExtraSettingsTab='requirements';
 let offlineRegexDraft=null;
 let offlineRequirementDraftRole=null;
 let systemSettingsTab='api';
-const APP_VERSION='2.0.2';
+const APP_VERSION='2.0.3';
 const compareAppVersions=(left,right)=>{const a=String(left||'0').split('.').map(Number),b=String(right||'0').split('.').map(Number);for(let i=0;i<Math.max(a.length,b.length);i++){const delta=(a[i]||0)-(b[i]||0);if(delta)return Math.sign(delta)}return 0};
 let INSTALLED_APP_VERSION=APP_VERSION;
 try{const saved=localStorage.getItem('iris-installed-version'),requested=window.IRIS_RELEASE;if(saved&&compareAppVersions(saved,INSTALLED_APP_VERSION)>0)INSTALLED_APP_VERSION=saved;if(requested&&compareAppVersions(requested,INSTALLED_APP_VERSION)>=0){INSTALLED_APP_VERSION=requested;localStorage.setItem('iris-installed-version',requested)}else localStorage.setItem('iris-installed-version',INSTALLED_APP_VERSION)}catch{}
