@@ -3,114 +3,158 @@
  'use strict';
  const prompt = `<随机互动小剧场>
 
-【创作】
-每轮正文结束后，生成一个与近期剧情、人物关系及角色性格紧密相关的HTML+CSS+JavaScript互动小剧场。
+【创作定位】
 
-每次独立设计主题、视觉风格与玩法，不使用固定模板。可以是小游戏、虚拟应用、信件、档案、物品探索、互动故事，也可以创造全新形式。
+每轮正式正文结束后，生成一个与近期剧情、人物关系、角色性格及重要细节紧密相关的HTML+CSS+JavaScript互动小剧场。
 
-小剧场应提供正文之外的新体验，不复述剧情，不让番外结果改变主线，不替{{user}}决定言行。
+将小剧场视为一件独立设计、真正可玩的微型数字作品。
 
-【交互】
-必须是真正可玩的互动作品，而非静态页面或装饰性按钮。
+每次自由构思主题、视觉形式和玩法，可以是小游戏、私人记录、模拟应用、可操作物品、互动故事、虚拟档案或其他原创形式。
 
-根据玩法设计点击、拖动、输入、翻页、解锁、选择等操作。
+小剧场应带来正文之外的新体验，不重复正文内容，不改变主线事实，不擅自替{{user}}作出选择。
 
-用户操作必须改变页面状态、触发不同反馈或推进游戏。
+【互动创作】
 
-复杂玩法需要完整的状态管理、判断逻辑与结果反馈。
+根据主题设计具有明确目标和实际反馈的交互。
 
-简单玩法也必须有实际探索价值。
+允许点击、拖动、输入、翻页、拆封、组合、排序、选择、探索和解锁等不同玩法。
 
-禁止点击一次就结束、假按钮、无效选项和所有操作得到相同结果。
+用户的操作必须真实改变界面内容或内部状态。
 
-所有交互由实际可执行的JavaScript实现。
+可以设计多阶段推进、自由探索、分支反馈、结果判断或持续操作的互动界面。
 
-【视觉】
-每次独立设计布局、配色、字体、材质与交互效果。
+每个按钮和可操作元素都必须具有完整的JavaScript逻辑。
 
-追求精美、自然、具有真实设计逻辑的视觉表现。
+复杂玩法需要维护正确的进度、条件和结果；简单玩法也应具有实际探索价值。
 
-避免通用AI网页风格：
-大面积渐变、滥用毛玻璃、巨大圆角、厚重阴影、细碎装饰、重复卡片、千篇一律的深色面板。
+让不同操作产生符合当前情境的反馈，使用户真正参与小剧场，而不仅仅是观看文字变化。
 
-不强制黑白灰，也不固定任何美术风格。
+根据剧情自由选择互动深度，不固定为问答、清单或选项游戏。
 
-根据主题选择合理的视觉形式，注重比例、排版、留白、色彩与细节。
+【视觉创作】
 
-精美不等于复杂，所有装饰都应服务于内容。
+每次小剧场先根据剧情确定独立的艺术方向，再决定界面形态、操作方式和视觉语言。
 
-避免将不同玩法统一制作成待办清单、进度条或三选一按钮。
+每次都必须采用明亮界面：作品的主要背景和内容面板使用浅色，不生成整体深色主题、黑灰色游戏面板或大面积深色背景。即使剧情发生在夜晚、悬疑或终端场景，也通过浅色纸张、雾面浅色界面或明亮画布承载内容；深色仅可用于少量文字、细线和小面积强调细节。
 
-【尺寸】
-小剧场嵌入iris聊天页面，不是全屏网页。
+可以使用奶油白、浅杏、雾蓝、淡粉、鼠尾草绿、象牙白、复古红、珊瑚橘、酒红等不同色彩。
 
-html、body背景透明。
+根据题材建立具有主次关系的完整配色，让大面积背景、内容区域、字体和强调色相互协调。
 
-body高度由内容自然撑开，不使用100vh、固定整屏高度或垂直居中布局。
+视觉设计必须与作品主题对应。
 
-视觉背景仅设置在作品自身的内容区域。
+例如：
+私人日记呈现真实书写与纸张的美感。
+趣味小游戏拥有原创的游戏画面和操作对象。
+模拟应用具有真实产品的信息架构。
+互动信件具有精致的信封、信纸与拆封体验。
+杂志测试具有成熟的编辑排版和色彩组织。
 
-使用响应式布局，宽度不超过父容器，适配窄屏手机。
+优先通过CSS、SVG、字体、构图和材质设计视觉主体。
 
-避免横向溢出、文字裁切和大面积无内容的背景。
+让用户操作的物品、卡牌、装置或页面本身成为视觉中心。
 
-【技术】
-输出完整HTML文档，内嵌CSS和JavaScript。
+使不同的小剧场具有明显不同的构图、色彩气质、交互布局和艺术风格。
 
-使用原生浏览器技术，不依赖外部脚本、样式、图片、字体或API。
+避免把随机创意简化成反复出现的圆形Emoji头像、进度条、四个矩形按钮与状态面板。
 
-允许CSS与内联SVG绘图。
+每件作品都应具有独立、完整的设计感，像经过专门设计的微型互动作品。
 
-所有操作必须绑定真实事件，并正确更新页面状态。
+【页面尺寸】
 
-不得访问iris主页面、聊天数据或其他内部资源，不得向外发送信息。
+小剧场是嵌入iris聊天区域的独立作品。
 
-【折叠】
-iris前端负责默认折叠与展开。
+页面高度由实际内容自然决定。
 
-折叠显示「▸ 小剧场」，展开显示「▾ 小剧场」。
+html与body保持透明背景，具体视觉背景设置在作品自身的内容容器中。
 
-AI只生成内部作品，不生成折叠按钮或额外折叠结构。
+采用适合小手机的响应式布局，使整体宽度跟随聊天容器变化。
 
-【输出】
-先完整输出正式正文，再生成一个小剧场。
+合理处理文字换行、内容高度、交互区域和触屏操作。
 
-严格使用以下格式：
+页面应紧凑、舒适、完整，呈现自然的嵌入式视觉效果。
+
+【代码实现】
+
+使用原生HTML、CSS、JavaScript生成完整、可运行的独立页面。
+
+CSS和JavaScript均写在HTML文档内部。
+
+交互必须具有真实的事件处理、状态维护和反馈机制。
+
+允许使用CSS绘图及内联SVG实现具有主题感的视觉元素。
+
+作品应能够在受限的独立运行环境中完成本地交互。
+
+所有交互逻辑必须自包含，不依赖外部服务或额外API。
+
+【交互兼容要求】
+
+只使用HTML内的普通JavaScript脚本，不使用type="module"、外部脚本、import、eval或依赖第三方库的代码。
+
+优先使用addEventListener绑定事件，并确保绑定时目标DOM元素已经存在；可以在DOMContentLoaded中初始化。
+
+若使用HTML内联onclick等事件属性，所调用的函数必须明确挂载到window上；不要从模块、闭包或局部作用域调用无法访问的函数。
+
+逐一核对每个控件的选择器、事件监听、状态变化和可见反馈，确保元素ID真实存在、变量已定义、每个操作都能改变作品状态。
+
+【角色与剧情】
+
+所有人物反应遵守既定人设、当前关系及故事背景。
+
+允许出现有趣、微妙、复杂或出人意料的互动，但应符合已有情节。
+
+小剧场属于独立番外，里面的选择、假设与结局默认不成为正式剧情事实。
+
+【折叠兼容】
+
+小剧场的折叠与展开由iris前端负责。
+
+AI只生成内部互动作品，不额外生成折叠按钮。
+
+【输出格式】
+
+先完成正式正文，再生成一个小剧场。
+
+使用固定标签：
 
 <mini_theater>
+\`\`\`html
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-/* 完整CSS */
+/* 当前作品的完整CSS */
 </style>
 </head>
 <body>
-<!-- 完整HTML -->
+<!-- 当前作品的完整HTML结构 -->
 <script>
-/* 完整JavaScript */
+/* 当前作品的完整JavaScript交互逻辑 */
 </script>
 </body>
 </html>
+\`\`\`
 </mini_theater>
 
-实际生成时必须填写完整代码，不保留占位内容。
+实际生成时填写完整代码，不保留示例注释。
 
-不使用Markdown代码围栏，不输出额外解释。
+小剧场代码必须完整放在 Markdown HTML 代码围栏中：以 \`\`\`html 单独一行开始，以 \`\`\` 单独一行结束。外围固定使用 <mini_theater> 和 </mini_theater> 标签；围栏内只放完整 HTML 文档，不额外输出说明。
 
 </随机互动小剧场>`;
  const ruleId='offline-no-mini-theater';
  const rule=()=>({id:ruleId,name:'不发送小剧场',find:'/<mini_theater\\b[^>]*>[\\s\\S]*?<\\/mini_theater\\s*>/gi',replace:'',enabled:true,contextEnabled:true,displayEnabled:false,target:['ai']});
  const completePattern=()=>/<mini_theater\b[^>]*>[\s\S]*?<\/mini_theater\s*>/gi;
+ function unwrapHtmlFence(value){const source=String(value??'');const match=/^\s*```(?:html)?[ \t]*\r?\n([\s\S]*?)\r?\n```[ \t]*\s*$/i.exec(source);return match?match[1].trim():source}
  function split(value,streaming=false){
   const source=String(value??''),theaters=[];let prose='',cursor=0;
   const opening=/<mini_theater\b[^>]*>/gi;let match;
   while((match=opening.exec(source))){
    prose+=source.slice(cursor,match.index);
    const close=/<\/mini_theater\s*>/gi;close.lastIndex=opening.lastIndex;const end=close.exec(source);
-   if(end){theaters.push(source.slice(opening.lastIndex,end.index));cursor=close.lastIndex;opening.lastIndex=cursor;continue}
+   if(end){theaters.push(unwrapHtmlFence(source.slice(opening.lastIndex,end.index)));cursor=close.lastIndex;opening.lastIndex=cursor;continue}
    const tail=source.slice(opening.lastIndex),htmlEnd=/<\/html\s*>/i.exec(tail);
    // For malformed historical labels, remove recognizable HTML only, retaining ordinary prose.
    if(!streaming){if(/^\s*(?:<!doctype\b|<(?:html|head|body|style|script|meta)\b)/i.test(tail)){if(htmlEnd)prose+=tail.slice(htmlEnd.index+htmlEnd[0].length)}else prose+=tail}
@@ -124,24 +168,30 @@ AI只生成内部作品，不生成折叠按钮或额外折叠结构。
  }
  function filterHistory(value){return split(String(value??'').replace(completePattern(),''),false).prose}
  function hash(value){let n=2166136261;for(const c of String(value))n=Math.imul(n^c.charCodeAt(0),16777619);return(n>>>0).toString(36)}
- const documents=new Map(),bound=new WeakSet(),frames=new Map();
+ const documents=new Map(),sourceInfo=new Map(),bound=new WeakSet(),frames=new Map(),runtimeInfo=new WeakMap();
+ const debugEnabled=()=>window.__IRIS_DEV__===true;
+ function generationInfo(systemPrompt){const sections=String(systemPrompt||'').match(/<随机互动小剧场>[\s\S]*?<\/随机互动小剧场>/g)||[];return{rendererVersion:'mini-diagnostics-3',builtinPromptHash:hash(prompt),sentPromptHashes:sections.map(hash),instructionCount:sections.length,...(debugEnabled()?{sentTheaterPrompts:sections}:{})}}
+ function recordRuntime(frame,category,detail=''){let info=runtimeInfo.get(frame);if(!info){info={events:[]};runtimeInfo.set(frame,info)}info.events.push({category,detail,time:Date.now()});if(info.events.length>50)info.events.shift()}
  function markup(message,threadKey,escape){
-  const html=String(message?.miniTheater||split(message?.text).theaters[0]||split(message?.rawResponse).theaters[0]||'');
+  const html=unwrapHtmlFence(message?.miniTheater||split(message?.text).theaters[0]||split(message?.rawResponse).theaters[0]||'');
   if(!html.trim())return'';
   const key=hash(`${threadKey}:${message?.miniTheaterId||message?.id||message?.createdAt||''}:${html}`);
-  documents.set(key,html);
+  documents.set(key,html);sourceInfo.set(key,{createdAt:Number(message?.createdAt)||null,rawExtractedHtml:split(message?.rawResponse).theaters[0]||null,generation:message?.miniTheaterGeneration||null});
   return `<details class="offline-mini-theater" data-mini-theater-key="${escape(key)}"><summary>小剧场</summary></details>`
  }
  function documentFor(html,token){
   const doc=new DOMParser().parseFromString(String(html),'text/html');
   doc.querySelectorAll('base,meta[http-equiv],link,iframe,frame,object,embed,portal').forEach(node=>node.remove());
-  doc.querySelectorAll('script').forEach(script=>{if(script.hasAttribute('src')||script.hasAttribute('href')||script.hasAttribute('xlink:href'))script.remove();else script.setAttribute('nonce',token)});
+  const inlineScripts=[];doc.querySelectorAll('script').forEach(script=>{if(script.hasAttribute('src')||script.hasAttribute('href')||script.hasAttribute('xlink:href'))script.remove();else{const type=(script.getAttribute('type')||'').trim().toLowerCase(),executable=!type||type==='module'||/(?:text|application)\/(?:java|ecma)script/.test(type);if(executable){script.removeAttribute('async');script.removeAttribute('defer');script.remove();inlineScripts.push(script)}}});
+  // Generated scripts sometimes arrive in <head> or before their controls. Re-run them
+  // after parsing the page body so direct DOM queries and listener binding can succeed.
+  doc.body.append(...inlineScripts);
   doc.querySelectorAll('a,area').forEach(link=>{if(!String(link.getAttribute('href')||'').startsWith('#'))link.removeAttribute('href');link.removeAttribute('target');link.removeAttribute('ping');link.removeAttribute('download')});
   doc.querySelectorAll('form').forEach(form=>{form.removeAttribute('action');form.removeAttribute('target')});
   const policy=doc.createElement('meta');policy.httpEquiv='Content-Security-Policy';
-  policy.content=`default-src 'none'; script-src 'nonce-${token}'; script-src-attr 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src 'none'; connect-src 'none'; frame-src 'none'; child-src 'none'; worker-src 'none'; object-src 'none'; media-src 'none'; form-action 'none'; base-uri 'none'`;
-  const shim=doc.createElement('script');shim.setAttribute('nonce',token);
-  shim.textContent=`(()=>{const token=${JSON.stringify(token)};for(const name of ['RTCPeerConnection','webkitRTCPeerConnection','WebSocket','Worker','SharedWorker']){try{Object.defineProperty(window,name,{value:undefined,writable:false,configurable:false})}catch{}}document.addEventListener('submit',event=>event.preventDefault(),true);let queued=false;const resizeObserver=window.ResizeObserver?new ResizeObserver(resize):null;function post(data){try{parent.postMessage(data,'*')}catch{}}function resize(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;const body=document.body,root=document.documentElement;if(!body||!root)return;const height=Math.ceil(Math.max(body.scrollHeight,body.offsetHeight,body.getBoundingClientRect().height,root.scrollHeight,root.offsetHeight,root.getBoundingClientRect().height));post({type:'iris-mini-height',token,height})})}function reportError(){post({type:'iris-mini-error',token})}addEventListener('DOMContentLoaded',()=>{const body=document.body,root=document.documentElement;if(body){resizeObserver?.observe(body);new MutationObserver(resize).observe(body,{subtree:true,childList:true,attributes:true,characterData:true})}if(root)resizeObserver?.observe(root);resize()},{once:true});addEventListener('load',resize,{once:true});addEventListener('resize',resize);addEventListener('error',reportError);addEventListener('unhandledrejection',reportError)})();`;
+  policy.content=`default-src 'none'; script-src 'unsafe-inline'; script-src-attr 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src 'none'; connect-src 'none'; frame-src 'none'; child-src 'none'; worker-src 'none'; object-src 'none'; media-src 'none'; form-action 'none'; base-uri 'none'`;
+  const shim=doc.createElement('script');
+  shim.textContent=`(()=>{const token=${JSON.stringify(token)};for(const name of ['RTCPeerConnection','webkitRTCPeerConnection','WebSocket','Worker','SharedWorker']){try{Object.defineProperty(window,name,{value:undefined,writable:false,configurable:false})}catch{}}document.addEventListener('submit',event=>event.preventDefault(),true);let queued=false,ready=false;const listenerCounts=new WeakMap(),originalAdd=EventTarget.prototype.addEventListener;EventTarget.prototype.addEventListener=function(type,listener,...options){if(listener){let types=listenerCounts.get(this);if(!types){types=new Set();listenerCounts.set(this,types)}if(/^(click|dblclick|input|change|pointer[a-z]*|touch[a-z]*|mouse[a-z]*|key[a-z]*|drag[a-z]*|drop|submit)$/.test(String(type)))types.add(String(type))}return originalAdd.call(this,type,listener,...options)};const resizeObserver=window.ResizeObserver?new ResizeObserver(resize):null;function post(data){try{parent.postMessage(data,'*')}catch{}}function diagnose(category,detail=''){post({type:'iris-mini-diagnostic',token,category,detail})}function resize(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;const body=document.body,root=document.documentElement;if(!body||!root)return;const height=Math.ceil(Math.max(body.scrollHeight,body.offsetHeight,body.getBoundingClientRect().height,root.scrollHeight,root.offsetHeight,root.getBoundingClientRect().height));post({type:'iris-mini-height',token,height})})}addEventListener('DOMContentLoaded',()=>{ready=true;const body=document.body,root=document.documentElement;if(body){resizeObserver?.observe(body);new MutationObserver(resize).observe(body,{subtree:true,childList:true,attributes:true,characterData:true})}if(root)resizeObserver?.observe(root);resize();post({type:'iris-mini-ready',token});addEventListener('load',()=>setTimeout(()=>{const controls=document.querySelectorAll('button,input,select,textarea,[role="button"],[tabindex]'),delegated=[document,body,root,window].some(target=>target&&listenerCounts.get(target)?.size>0),bound=Array.from(controls).some(control=>listenerCounts.get(control)?.size>0||control.onclick||control.onchange||control.oninput||control.hasAttribute('onclick')||control.hasAttribute('onchange')||control.hasAttribute('oninput'));if(controls.length&&!delegated&&!bound)diagnose('event-binding-missing','no-control-listeners-detected')},0),{once:true})},{once:true});addEventListener('load',resize,{once:true});addEventListener('resize',resize);addEventListener('error',event=>{if(event.target!==window)return;const syntax=event.error?.name==='SyntaxError'||/syntax|unexpected token|unterminated/i.test(String(event.message||''));diagnose(syntax?'javascript-syntax-error':ready?'javascript-runtime-error':'javascript-initialization-error',syntax?'syntax-error':(['TypeError','ReferenceError','RangeError','URIError','EvalError','AggregateError'].includes(event.error?.name)?event.error.name:'script-error')+';line='+String(Number.isFinite(event.lineno)?event.lineno:0)+';column='+String(Number.isFinite(event.colno)?event.colno:0))});addEventListener('unhandledrejection',event=>diagnose(ready?'javascript-runtime-error':'javascript-initialization-error',(['TypeError','ReferenceError','RangeError','URIError','EvalError','AggregateError'].includes(event.reason?.name)?event.reason.name:'unhandled-rejection')));addEventListener('securitypolicyviolation',event=>{if(/^script-src/.test(event.violatedDirective||''))diagnose('csp-script-blocked',(['script-src','script-src-elem','script-src-attr'].includes(event.effectiveDirective)?event.effectiveDirective:'script-src'))});})();`;
   const css=doc.createElement('style');css.textContent='html,body{height:auto!important;min-height:0!important;max-height:none!important;background:transparent!important;pointer-events:auto!important}html{max-width:100%;overflow-x:hidden}body{min-width:0;max-width:100%;margin:0!important;overflow-wrap:anywhere}*,*::before,*::after{box-sizing:border-box}img,svg,canvas,video,table,input,textarea{max-width:100%}body button,body input,body textarea,body select,body summary,body label,body a,body [role="button"],body [tabindex]{pointer-events:auto!important;touch-action:manipulation;-webkit-tap-highlight-color:transparent}';
   const viewport=doc.createElement('meta');viewport.name='viewport';viewport.content='width=device-width,initial-scale=1';
   doc.head.prepend(policy,viewport,shim,css);
@@ -155,12 +205,16 @@ AI只生成内部作品，不生成折叠按钮或额外折叠结构。
     const html=documents.get(details.dataset.miniTheaterKey);if(!html)return;
     const token=Array.from(crypto.getRandomValues(new Uint8Array(16)),n=>n.toString(16).padStart(2,'0')).join('');
     const frame=document.createElement('iframe');frame.title='互动小剧场';frame.className='offline-mini-theater-frame';frame.setAttribute('sandbox','allow-scripts');frame.setAttribute('referrerpolicy','no-referrer');frame.setAttribute('credentialless','');
-    frames.set(token,frame);frame.srcdoc=documentFor(html,token);details.append(frame);
+    frame.dataset.miniTheaterKey=details.dataset.miniTheaterKey;recordRuntime(frame,'created');
+    frame.addEventListener('error',()=>showDiagnostic(frame,'iframe-load-failed','iframe-error'),{once:true});
+    frame.addEventListener('load',()=>{recordRuntime(frame,'iframe-load');setTimeout(()=>{if(frame.isConnected&&!frame.dataset.miniTheaterReady)showDiagnostic(frame,'csp-or-bootstrap-blocked','frame-loaded-without-script-ready')},3000)},{once:true});
+    frames.set(token,frame);details.append(frame);
+    try{frame.srcdoc=documentFor(html,token)}catch(error){showDiagnostic(frame,'html-parse-failed',error?.name||'document-build-error')}
    });
   });
   for(const [token,frame]of frames)if(!frame.isConnected)frames.delete(token);
   const active=new Set(Array.from(document.querySelectorAll('[data-mini-theater-key]'),node=>node.dataset.miniTheaterKey));
-  for(const key of documents.keys())if(!active.has(key))documents.delete(key)
+  for(const key of documents.keys())if(!active.has(key)){documents.delete(key);sourceInfo.delete(key)}
  }
  function patchEntry(previous,incoming){
   const live=previous.querySelector(':scope > [data-mini-theater-key]'),next=incoming.querySelector(':scope > [data-mini-theater-key]');
@@ -172,16 +226,33 @@ AI只生成内部作品，不生成折叠按钮或额外折叠结构。
   let after=false;for(const child of Array.from(incoming.childNodes)){if(child===next){after=true;continue}if(after)previous.append(child);else previous.insertBefore(child,live)}
   return true
  }
+ function showDiagnostic(frame,category,detail=''){
+  recordRuntime(frame,category,detail);
+  let status=frame.nextElementSibling;if(!status||!status.classList.contains('offline-mini-theater-status')){status=document.createElement('div');status.className='offline-mini-theater-status';status.setAttribute('role','status');frame.after(status)}
+  status.textContent=category==='event-binding-missing'?'尚未检测到交互事件绑定；这是一项诊断提示。':'互动内容暂时无法运行，请继续阅读正文或稍后重试。';status.dataset.diagnostic=category;
+  if(debugEnabled())console.warn('[Iris mini theater]',category,String(detail).slice(0,160));
+ }
  window.addEventListener('message',event=>{
   const data=event.data;if(!data||typeof data!=='object'||Array.isArray(data)||typeof data.token!=='string')return;
   const frame=frames.get(data.token);if(!frame?.isConnected||event.source!==frame.contentWindow)return;
   if(data.type==='iris-mini-height'&&Object.keys(data).length===3&&typeof data.height==='number'&&Number.isFinite(data.height)){
    frame.style.height=`${Math.max(48,Math.min(6000,Math.ceil(data.height)))}px`;return
   }
-  if(data.type==='iris-mini-error'&&Object.keys(data).length===2){
-   let status=frame.nextElementSibling;if(!status||!status.classList.contains('offline-mini-theater-status')){status=document.createElement('div');status.className='offline-mini-theater-status';status.setAttribute('role','status');frame.after(status)}
-   status.textContent='互动内容暂时无法运行，请继续阅读正文或稍后重试。'
+  if(data.type==='iris-mini-ready'&&Object.keys(data).length===2){frame.dataset.miniTheaterReady='true';recordRuntime(frame,'dom-ready','not-proof-of-work-script-success');return}
+  if(data.type==='iris-mini-diagnostic'&&Object.keys(data).length===4&&['html-parse-failed','javascript-syntax-error','javascript-initialization-error','javascript-runtime-error','csp-script-blocked','event-binding-missing','iframe-load-failed','csp-or-bootstrap-blocked'].includes(data.category)&&typeof data.detail==='string'&&data.detail.length<=160){
+   showDiagnostic(frame,data.category,data.detail)
   }
  });
- window.IrisMiniTheater={prompt,rule,ruleId,split,filterHistory,markup,mount,patchEntry,documentFor};
+ function enableDiagnostics(){window.__IRIS_DEV__=true;return '小剧场诊断已启用；无需刷新。生成新小剧场可记录实际发送的小剧场提示词。'}
+ function diagnosticKeys(){if(!debugEnabled())throw Error('请先调用 IrisMiniTheater.enableDiagnostics()');return Array.from(documents.keys())}
+ function exportDiagnostics(key){
+  if(!debugEnabled())throw Error('请先调用 IrisMiniTheater.enableDiagnostics()');
+  if(!documents.has(key))throw Error('未找到当前聊天中对应的小剧场');
+  const originalHtml=documents.get(key),frame=Array.from(frames.values()).find(item=>item.isConnected&&item.dataset.miniTheaterKey===key),doc=new DOMParser().parseFromString(originalHtml,'text/html');
+  const scripts=Array.from(doc.querySelectorAll('script'),(script,index)=>({index,type:script.getAttribute('type')||'classic',external:script.hasAttribute('src'),async:script.hasAttribute('async'),defer:script.hasAttribute('defer'),source:script.textContent}));
+  const inlineHandlers=Array.from(doc.querySelectorAll('*')).flatMap((node)=>Array.from(node.attributes).filter(attr=>/^on/i.test(attr.name)).map(attr=>({tag:node.tagName,id:node.id||'',event:attr.name,code:attr.value})));
+  return {rendererVersion:'mini-diagnostics-3',key,currentBuiltinPromptHash:hash(prompt),...sourceInfo.get(key),originalHtml,finalSrcdoc:frame?.srcdoc||null,sandbox:frame?.getAttribute('sandbox')||null,domReady:frame?.dataset.miniTheaterReady==='true',runtime:runtimeInfo.get(frame)?.events||[],scripts,inlineHandlers,limitations:['DOM ready does not prove work script initialization','No automatic scope repair','Export contains only this theater; inspect its fictional content before sharing']};
+ }
+ function downloadDiagnostics(key){const report=exportDiagnostics(key),url=URL.createObjectURL(new Blob([JSON.stringify(report,null,2)],{type:'application/json'})),link=document.createElement('a');link.href=url;link.download='iris-mini-theater-diagnostics.json';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),0);return '已下载本地诊断文件；未上传任何数据'}
+ window.IrisMiniTheater={prompt,rule,ruleId,split,filterHistory,markup,mount,patchEntry,documentFor,generationInfo,enableDiagnostics,diagnosticKeys,exportDiagnostics,downloadDiagnostics};
 })();
