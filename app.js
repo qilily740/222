@@ -202,6 +202,7 @@ const offlineDefaultReplyPrompt = `【线下角色回复总规则】
 【八、最终输出格式】
 只输出 {{char_name}} 的回复正文。不要输出标题、规则、分析、JSON、时间戳、提示词、角色卡说明、世界书说明、作者旁白或“根据设定”等出戏内容；逐段预演按附加的 HTML 注释规则输出。{{user_agency_rule}}\n回复要完整、具体、有现场感；需要达到目标篇幅时，通过新的行动、信息、心理转折和对白推进补足，不要用重复句或无效环境描写灌水。`;
 const offlineDraftOutputRegex='/<!--\\s*段落预演[\\s\\S]*?-->\\r?\\n?/g';
+const offlineDraftOutputRegexRuleId='offline-hide-paragraph-preview';
 const offlineDraftCotInstruction=`【强制逐段预演与输出顺序｜不得省略】
 本轮每一个正式自然段都必须先完成一份独立、完整的段落预演，再立即输出对应正文，然后才开始下一段预演。严格循环：输出完整的 HTML 注释（<!-- 段落预演……-->），随后输出对应正文；每次新段开始前重复该流程。
 
@@ -353,6 +354,7 @@ function normalizeOfflineSettings(value={}){
  const legacyFind=String(value?.outputRegexFind??value?.customRegexPrompt??'').slice(0,4000),legacyEnabled=Boolean(value?.outputRegexEnabled??value?.customRegexPromptEnabled??legacyFind.trim());
  settings.regexRules=(Array.isArray(value?.regexRules)?value.regexRules:[]).filter(rule=>rule&&typeof rule==='object').map((rule,index)=>({id:String(rule.id||`offline-regex-${index+1}`),name:String(rule.name||`正则 ${index+1}`).slice(0,80),find:String(rule.find||'').slice(0,4000),replace:String(rule.replace??'').slice(0,4000),enabled:rule.enabled!==false,contextEnabled:rule.contextEnabled!==false,displayEnabled:Boolean(rule.displayEnabled),target:Array.isArray(rule.target)?(rule.target.filter(target=>target==='ai'||target==='user').length?rule.target.filter(target=>target==='ai'||target==='user'):['ai']):rule.target==='user'?['user']:['ai']})).filter(rule=>rule.find.trim());
  if(!settings.regexRules.length&&legacyEnabled)settings.regexRules.push({id:'offline-regex-legacy',name:'旧正则',find:legacyFind.trim()||offlineDraftOutputRegex,replace:String(value?.outputRegexReplace||'').slice(0,4000),enabled:true,contextEnabled:true,displayEnabled:false,target:['ai']});
+ if(!settings.regexRules.some(rule=>rule.id===offlineDraftOutputRegexRuleId))settings.regexRules.push({id:offlineDraftOutputRegexRuleId,name:'隐藏段落',find:offlineDraftOutputRegex,replace:'',enabled:true,contextEnabled:true,displayEnabled:true,target:['ai']});
  if(!settings.regexRules.some(rule=>rule.id===IrisMiniTheater.ruleId))settings.regexRules.push(IrisMiniTheater.rule());
  delete settings.draftCotInExtraRequirements;delete settings.outputRegexEnabled;delete settings.outputRegexFind;delete settings.outputRegexReplace;delete settings.customRegexPrompt;delete settings.customRegexPromptEnabled;delete settings.thinkingPrompt;
  settings.prompt=String(value?.prompt||offlineDefaultReplyPrompt);if(Number(value?.promptVersion)<2&&!String(value?.prompt||'').trim())settings.prompt=offlineDefaultReplyPrompt;
@@ -1219,7 +1221,7 @@ let offlineExtraSettingsTab='requirements';
 let offlineRegexDraft=null;
 let offlineRequirementDraftRole=null;
 let systemSettingsTab='api';
-const APP_VERSION='2.0.1';
+const APP_VERSION='2.0.2';
 const compareAppVersions=(left,right)=>{const a=String(left||'0').split('.').map(Number),b=String(right||'0').split('.').map(Number);for(let i=0;i<Math.max(a.length,b.length);i++){const delta=(a[i]||0)-(b[i]||0);if(delta)return Math.sign(delta)}return 0};
 let INSTALLED_APP_VERSION=APP_VERSION;
 try{const saved=localStorage.getItem('iris-installed-version'),requested=window.IRIS_RELEASE;if(saved&&compareAppVersions(saved,INSTALLED_APP_VERSION)>0)INSTALLED_APP_VERSION=saved;if(requested&&compareAppVersions(requested,INSTALLED_APP_VERSION)>=0){INSTALLED_APP_VERSION=requested;localStorage.setItem('iris-installed-version',requested)}else localStorage.setItem('iris-installed-version',INSTALLED_APP_VERSION)}catch{}
