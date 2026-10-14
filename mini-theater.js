@@ -31,17 +31,22 @@
 
 根据剧情自由选择互动深度，不固定为问答、清单或选项游戏。
 
-【视觉创作】
+【题材范围】
+小剧场可以呈现群聊、私信、通话记录、论坛帖子、日记、备忘录、问卷、行程、寻物启事、订单物流、购物车、菜单、相册、歌单、追星记录、演唱会、节日活动、小游戏、解谜、互动故事、角色档案等多种内容。
 
-写代码前，先根据本轮剧情确定这件作品具体是什么，再选构图和视觉语言。它可以是一封信、一张相册页、一张服装护理卡、一件桌面小物、一页杂志、一处微缩场景或一个轻量游戏；每轮选择最贴合剧情的一种形态，不套用固定页面模板。
+也可以创作平行世界、身份互换，或角色与{{user}}变成小孩、小狗、小猫等趣味番外。以上仅供启发，题材和形式不限于清单。每次结合剧情选择合适的方向，并留意近期小剧场，尽量更换题材或玩法。平行世界和身份变化只属于本次番外，不自动成为主线事实。
 
-先确定一个视觉主体，以及用户会实际操作的物件。让主体成为画面焦点，标题、说明、状态和操作围绕它自然组织。只展示玩法真正需要的信息，不为了填满页面添加标签、指标或状态面板。
+【视觉与样式】
 
-为本作品明确设计主色、辅助色、文字色和强调色，并安排它们在背景、主体与交互状态中的比例关系。每次都必须采用明亮界面：作品的主要背景和内容区域使用浅色，不生成整体深色主题、黑灰色游戏面板或大面积深色背景；夜晚、悬疑或终端题材也用浅色画布承载，深色仅用于少量文字、细线和小面积点缀。奶油白、浅杏、雾蓝、淡粉、鼠尾草绿、象牙白、复古红、珊瑚橘、酒红等可作为灵感。
+先确定这次小剧场呈现的内容和形式，再让题材决定颜色、布局与质感。不要默认套用深色背景或大块深色面板；只有剧情场景确实需要时才用深色，例如夜间演唱会的灯光或深夜终端。日记可以像手写页面，群聊可以像真实聊天记录；也可以采用明亮、鲜艳、照片感、纸感或纯文字等适合题材的表现，不强制浅色，也不固定使用卡片布局。每次改变呈现方式，让内容具体贴合人物和情境，避免所有小剧场都像同一套精致网页。
 
-版式、字体、材质、纹理、边缘和动画都要能说明作品的主题或操作。可通过CSS、SVG、留白、对齐和细节塑造真实感；例如信件应有信封与拆封过程，护理玩法围绕衣物和护理动作展开，杂志测试采用编辑式排版，小游戏让操作对象拥有自己的画面语言。
+手机端优先：正文清楚、按钮好点、长文字自然换行，不出现横向溢出。通过字号、对齐和间距区分主次，避免大片无意义留白和层层套框。
 
-每轮重新构思构图、色彩气质和交互布局。避免未经玩法需要就组合通用卡片、Emoji头像、进度条、成组矩形按钮和底部反馈栏；需要这些元素时，赋予它们明确用途并融入作品造型。所有装饰都服务于主题、阅读或操作，让不同小剧场看起来像不同类型的独立作品。
+同一作品内保持字体、配色与图标协调。文字清楚耐读，装饰和特效符合题材并服务于内容，不为追求精致堆叠卡片、阴影、纹理或渐变。
+
+人物表达与信息应具体、贴合情境。减少泛泛的抒情文案、装饰性英文和重复说明，不为简单内容强加封面或宣传语。
+
+动画应对应实际动作，如翻页、展开、切换和确认，幅度适中，阅读区域保持稳定。完成后删去无作用的装饰，检查窄屏中的文字、间距和操作位置。
 
 【页面尺寸】
 
@@ -127,6 +132,15 @@ AI只生成内部互动作品，不额外生成折叠按钮。
 小剧场代码必须完整放在 Markdown HTML 代码围栏中：以 \`\`\`html 单独一行开始，以 \`\`\` 单独一行结束。外围固定使用 <mini_theater> 和 </mini_theater> 标签；围栏内只放完整 HTML 文档，不额外输出说明。
 
 </随机互动小剧场>`;
+ function upgradePrompt(value){
+  const source=String(value||'');
+  if(!source.includes('每次都必须采用明亮界面')&&!source.includes('夜间演唱会可以使用暗色灯光，日记可以像手写页面'))return source;
+  const start=source.includes('【视觉创作】')?source.indexOf('【视觉创作】'):source.indexOf('【题材范围】');
+  const end=source.indexOf('【页面尺寸】',start);
+  const currentStart=prompt.indexOf('【题材范围】'),currentEnd=prompt.indexOf('【页面尺寸】',currentStart);
+  if(start<0||end<0||currentStart<0||currentEnd<0)return source;
+  return source.slice(0,start)+prompt.slice(currentStart,currentEnd)+source.slice(end);
+ }
  const ruleId='offline-no-mini-theater';
  const rule=()=>({id:ruleId,name:'不发送小剧场',find:'/<mini_theater\\b[^>]*>[\\s\\S]*?<\\/mini_theater\\s*>/gi',replace:'',enabled:true,contextEnabled:true,displayEnabled:false,target:['ai']});
  const completePattern=()=>/<mini_theater\b[^>]*>[\s\S]*?<\/mini_theater\s*>/gi;
@@ -237,5 +251,5 @@ AI只生成内部互动作品，不额外生成折叠按钮。
   return {rendererVersion:'mini-diagnostics-3',key,currentBuiltinPromptHash:hash(prompt),...sourceInfo.get(key),originalHtml,finalSrcdoc:frame?.srcdoc||null,sandbox:frame?.getAttribute('sandbox')||null,domReady:frame?.dataset.miniTheaterReady==='true',runtime:runtimeInfo.get(frame)?.events||[],scripts,inlineHandlers,limitations:['DOM ready does not prove work script initialization','No automatic scope repair','Export contains only this theater; inspect its fictional content before sharing']};
  }
  function downloadDiagnostics(key){const report=exportDiagnostics(key),url=URL.createObjectURL(new Blob([JSON.stringify(report,null,2)],{type:'application/json'})),link=document.createElement('a');link.href=url;link.download='iris-mini-theater-diagnostics.json';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),0);return '已下载本地诊断文件；未上传任何数据'}
- window.IrisMiniTheater={prompt,rule,ruleId,split,filterHistory,markup,mount,patchEntry,documentFor,generationInfo,enableDiagnostics,diagnosticKeys,exportDiagnostics,downloadDiagnostics};
+ window.IrisMiniTheater={prompt,upgradePrompt,rule,ruleId,split,filterHistory,markup,mount,patchEntry,documentFor,generationInfo,enableDiagnostics,diagnosticKeys,exportDiagnostics,downloadDiagnostics};
 })();
