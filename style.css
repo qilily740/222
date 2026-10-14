@@ -1017,7 +1017,7 @@ body{position:fixed;inset:0}
 .conversation.is-offline-story>.offline-stage-fold{display:block;align-self:stretch;margin:-14px 0 28px;padding:5px 0;border:0;background:transparent;color:#aaa;font:inherit;font-family:"Songti SC","Noto Serif CJK SC",serif;font-size:12px;letter-spacing:.04em;line-height:1.6;text-align:left;cursor:pointer}
 .conversation.is-offline-story>.offline-stage-fold:hover{color:#777}
 .offline-prose-heading{display:flex;align-items:baseline;gap:9px;margin:0 0 clamp(30px,8vh,74px);min-height:2.2em;color:#222}
-.offline-prose-heading>strong{font-family:"Songti SC","Noto Serif CJK SC",serif;font-size:clamp(21px,6vw,30px);font-weight:400;letter-spacing:.12em;line-height:1.25;writing-mode:vertical-rl;text-orientation:upright}
+.offline-prose-heading>strong{font-family:"LXGW WenKai","Iris Kai","Kaiti SC","STKaiti","KaiTi","楷体-简","楷体",serif;font-size:clamp(21px,6vw,30px);font-weight:400;letter-spacing:.12em;line-height:1.25;writing-mode:vertical-rl;text-orientation:upright}
 .offline-prose-heading>.message-time{margin-left:auto;color:#aaa;font-family:Georgia,serif;font-size:9px;letter-spacing:.2px;white-space:nowrap}
 .offline-prose-reflection{align-self:flex-start;padding:3px 0;color:#999;font-size:8px;letter-spacing:.08em}
 .offline-prose-body{width:100%;max-width:none;color:#292929;font-family:"LXGW WenKai","Iris Kai","Kaiti SC","STKaiti","KaiTi",serif;font-size:clamp(15px,4.35vw,19px);font-weight:400;letter-spacing:.025em;line-height:2;white-space:pre-wrap;overflow-wrap:anywhere;text-indent:2em}
