@@ -37,6 +37,12 @@ test('initializes one permanent default forum and adds the current persona witho
   assert.equal(again.world.members.some(item => item.sourcePersonaId === state.users[1].forumPersonaId), true);
 });
 
+test('shortens the built-in Atuan bio in existing forum saves', () => {
+  const state = { users: [], forums: { worlds: [{ id: 'default', npcs: [{ id: 'atuan', name: '阿团不加冰', bio: '喜欢城市散步和甜饮，习惯分享路边小店，语气轻松，偶尔发一张随手拍。' }] }] } };
+  forum.ensure(state, []);
+  assert.equal(state.forums.worlds[0].npcs[0].bio, '爱散步和甜饮，常分享街边小店与随手拍。');
+});
+
 test('protects default forum from deletion and resets its content without removing members or NPC identity', () => {
   const user = { name: '面具 A' }, state = { users: [user], messages: { private: ['keep'] }, forums: {} };
   const data = forum.ensure(state, []), { world } = forum.ensureDefaultWorld(data, user);
@@ -157,7 +163,7 @@ test('persists nested discussion and safely deletes only the selected forum worl
   assert.equal(state.messages['0-0-chat'][0].text, 'private');
 });
 
-test('wires the forum entry to local state and the existing online chat API route', () => {
+test('wires the forum entry to local state and its dedicated API route', () => {
   const bootstrap = fs.readFileSync(path.join(__dirname, '..', 'storage-bootstrap.js'), 'utf8');
   const app = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
   const moduleSource = fs.readFileSync(path.join(__dirname, '..', 'forum.js'), 'utf8');
@@ -165,7 +171,9 @@ test('wires the forum entry to local state and the existing online chat API rout
   assert.ok(bootstrap.indexOf("'forum-core.js'") < bootstrap.indexOf("'app.js'"));
   assert.ok(bootstrap.indexOf("'app.js'") < bootstrap.indexOf("'forum.js'"));
   assert.match(app, /window\.IrisForum\?\.render/);
-  assert.match(app, /apiConfigForFeature\('onlineChat'\).*requestConfiguredChatCompletion/);
+  assert.match(app, /apiConfigForFeature\('forum'\).*requestConfiguredChatCompletion/);
+  assert.match(app, /apiConfigForFeature\('market'\).*requestConfiguredChatCompletion/);
+  assert.match(app, /\['forum','论坛'\].*\['market','商场'\]/);
   assert.match(app, /IrisForumCore\?\.chatContext\?\.\(state,character,bound\)/);
   assert.match(app, /forumContext=window\.IrisForumCore\?\.chatContext\?\.\(state,character,user\)/);
   assert.match(moduleSource, /allowStoryContext/);
@@ -174,6 +182,13 @@ test('wires the forum entry to local state and the existing online chat API rout
   assert.match(moduleSource, /roleMember\.authorizedStorySummary/);
   assert.doesNotMatch(moduleSource, /runtime\.state\.messages\[sourceKey\]/);
   assert.match(moduleSource, /role-new-post/);
+  assert.match(moduleSource, /forum-member-participation/);
+  assert.match(moduleSource, /data-forum-frequency-row \$\{item\.participationMode==='autonomous'\?'':'hidden'\}/);
+  assert.match(moduleSource, /forum-profile-avatar-picker/);
+  assert.match(moduleSource, /type="radio" name="type"/);
+  assert.ok(moduleSource.indexOf('<fieldset class="forum-post-type">') < moduleSource.indexOf('class="forum-compose-content"'), 'post type should appear above the content editor');
+  assert.ok(moduleSource.indexOf('class="forum-compose-image-upload"') < moduleSource.indexOf('name="topics"'), 'image upload should appear before topics');
+  assert.doesNotMatch(moduleSource, /AI 角色 · 来源面具/);
   assert.match(moduleSource, /Core\.canRoleReply\(item,targetActorId\)/);
   assert.match(moduleSource, /Core\.canRolePost\(candidate\)/);
   assert.match(coreSource, /worldId:world\.id/);

@@ -14,6 +14,10 @@ const specCounts=JSON.stringify(state.market.products.map(item=>[item.id,item.sp
 C.normalize(state);
 assert.equal(JSON.stringify(state.market.products.map(item=>[item.id,item.specs.length])),specCounts,'catalog upgrades must not duplicate specifications');
 assert.equal(C.linePrice(C.product(state,'p-record-jazz'),'cd'),8800);
+assert.match(C.shippingSummary(C.product(state,'p-drink-milk-tea')),/30–60 分钟/);
+assert.match(C.shippingSummary(C.product(state,'p-home-lamp')),/3–7 个工作日/);
+assert.doesNotMatch(C.shippingSummary({category:'书籍',shipping:'虚拟世界配送'}),/虚拟/);
+assert.match(C.shippingSummary({category:'书籍',shipping:'普通快递配送'}),/1–3 个工作日/);
 assert.equal(product.priceCents, 49900);
 assert.equal(C.yuan(C.cents('2680.25')), '2680.25');
 const knit = C.product(state, 'p-coat-knit');

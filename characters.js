@@ -148,7 +148,7 @@ function drawCharacterEditor(index) {
     const unnamed=characterDrafts.findIndex(role=>!role.name.trim());
     if(unnamed>=0){drawCharacterEditor(unnamed);characterNotice('请先填写角色名字');characterDialog.querySelector('[name=name]').focus();return}
     for(const role of characterDrafts){role.name=role.name.trim();role.initial=role.initial||role.name.slice(0,1);role.birthday=CharacterImport.normalizeDate(role.birthday)}
-    chars.splice(0,chars.length,...characterDrafts);state.characters=chars;state.char=index;const boundUser=chars[index]?.chatSettings?.userIndex;if(Number.isInteger(boundUser)&&state.users[boundUser])state.user=boundUser;save();render();characterDialog.close();
+    const activeMode=Boolean(state.offline);chars.splice(0,chars.length,...characterDrafts);state.characters=chars;state.char=index;chars[index].offlineMode=activeMode;state.offline=activeMode;const boundUser=chars[index]?.chatSettings?.userIndex;if(Number.isInteger(boundUser)&&state.users[boundUser])state.user=boundUser;save();render();characterDialog.close();
   };
   document.getElementById('characterPortrait').onclick=()=>document.getElementById('characterPortraitFile').click();
   document.getElementById('removeCharacterPortrait').onclick=()=>{c.avatar='';refreshCharacterPortrait()};

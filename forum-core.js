@@ -6,7 +6,7 @@
   state.users.forEach(user=>{if(user&&!user.forumPersonaId)user.forumPersonaId=id('persona')});
   characters.forEach(character=>{if(character&&!character.forumCharacterId)character.forumCharacterId=id('character')});
   const data=state.forums&&typeof state.forums==='object'?state.forums:{};
-  data.version=1;data.worlds=Array.isArray(data.worlds)?data.worlds:[];for(const world of data.worlds){world.id||=id('world');world.members=Array.isArray(world.members)?world.members:[];world.profiles=world.profiles&&typeof world.profiles==='object'?world.profiles:{};world.npcs=Array.isArray(world.npcs)?world.npcs:[];world.posts=Array.isArray(world.posts)?world.posts:[];world.comments=Array.isArray(world.comments)?world.comments:[];world.notifications=Array.isArray(world.notifications)?world.notifications:[];world.events=Array.isArray(world.events)?world.events:[];world.follows=world.follows&&typeof world.follows==='object'?world.follows:{};world.bookmarks=world.bookmarks&&typeof world.bookmarks==='object'?world.bookmarks:{}}
+  data.version=1;data.worlds=Array.isArray(data.worlds)?data.worlds:[];for(const world of data.worlds){world.id||=id('world');world.members=Array.isArray(world.members)?world.members:[];world.profiles=world.profiles&&typeof world.profiles==='object'?world.profiles:{};world.npcs=Array.isArray(world.npcs)?world.npcs:[];for(const npc of world.npcs)if(npc?.name==='阿团不加冰'&&npc.bio==='喜欢城市散步和甜饮，习惯分享路边小店，语气轻松，偶尔发一张随手拍。')npc.bio='爱散步和甜饮，常分享街边小店与随手拍。';world.collections=Array.isArray(world.collections)?world.collections:[];world.posts=Array.isArray(world.posts)?world.posts:[];world.comments=Array.isArray(world.comments)?world.comments:[];world.notifications=Array.isArray(world.notifications)?world.notifications:[];world.events=Array.isArray(world.events)?world.events:[];world.follows=world.follows&&typeof world.follows==='object'?world.follows:{};world.bookmarks=world.bookmarks&&typeof world.bookmarks==='object'?world.bookmarks:{}}
   data.activeWorldId=data.worlds.some(world=>world.id===data.activeWorldId)?data.activeWorldId:(data.worlds[0]?.id||'');
   state.forums=data;return data;
  };
@@ -16,7 +16,7 @@
  const activeWorld=data=>worldById(data,data?.activeWorldId);
  const deleteWorld=(data,idValue)=>{const world=worldById(data,idValue);if(!world||world.isDefault)return false;data.worlds=data.worlds.filter(item=>item!==world);if(data.activeWorldId===idValue)data.activeWorldId=data.worlds.find(item=>item.isDefault)?.id||data.worlds[0]?.id||'';return true};
  const defaultNpcs=()=>[
-  ['阿团不加冰','喜欢城市散步和甜饮，习惯分享路边小店，语气轻松，偶尔发一张随手拍。'],
+  ['阿团不加冰','爱散步和甜饮，常分享街边小店与随手拍。'],
   ['夜航纸片','爱看书和做摘抄，表达克制，常在深夜讨论电影、音乐与故事。'],
   ['今天也迟到','关注通勤、工作和生活琐事，幽默直接，擅长用一句话吐槽。'],
   ['青柠研究所','热衷料理和生活实验，会认真记录过程，也乐于回复别人的求助。'],
@@ -25,7 +25,7 @@
  ].map(([name,bio])=>({id:id('npc'),forumProfileId:id('profile'),name,nickname:name,avatar:'',bio,personality:bio,interests:bio,language:bio,createdAt:Date.now(),postCount:0,active:true}));
  const createWorld=(data,{name,description='',background='',persona=null}={})=>{
   const title=clean(name,50);if(!title)throw Error('请填写论坛世界名称');
-  const world={id:id('world'),name:title,description:clean(description,300),background:clean(background,240),createdAt:Date.now(),updatedAt:Date.now(),members:[],profiles:{},npcs:defaultNpcs(),posts:[],comments:[],notifications:[],events:[],follows:{},bookmarks:{},settings:{},lastAiUpdateAt:0};
+  const world={id:id('world'),name:title,description:clean(description,300),background:clean(background,240),createdAt:Date.now(),updatedAt:Date.now(),members:[],profiles:{},npcs:defaultNpcs(),collections:[],posts:[],comments:[],notifications:[],events:[],follows:{},bookmarks:{},settings:{},lastAiUpdateAt:0};
   data.worlds.push(world);data.activeWorldId=world.id;
   if(persona)addPersona(world,persona);
   return world;
@@ -33,7 +33,7 @@
  const ensureDefaultWorld=(data,persona=null)=>{
   let world=data.worlds.find(item=>item.isDefault||item.id==='default-forum');
   let created=false;
-  if(!world){world={id:data.worlds.some(item=>item.id==='default-forum')?id('default-forum'):'default-forum',name:'默认论坛',description:'不同面具可以在这里共享公开的帖子与讨论。',background:'',createdAt:Date.now(),updatedAt:Date.now(),isDefault:true,members:[],profiles:{},npcs:defaultNpcs(),posts:[],comments:[],notifications:[],events:[],follows:{},bookmarks:{},settings:{},lastAiUpdateAt:0};data.worlds.unshift(world);created=true}
+  if(!world){world={id:data.worlds.some(item=>item.id==='default-forum')?id('default-forum'):'default-forum',name:'默认论坛',description:'不同面具可以在这里共享公开的帖子与讨论。',background:'',createdAt:Date.now(),updatedAt:Date.now(),isDefault:true,members:[],profiles:{},npcs:defaultNpcs(),collections:[],posts:[],comments:[],notifications:[],events:[],follows:{},bookmarks:{},settings:{},lastAiUpdateAt:0};data.worlds.unshift(world);created=true}
   for(const item of data.worlds)item.isDefault=item===world;
   if(!world.name)world.name='默认论坛';
   let personaAdded=false;
@@ -43,7 +43,7 @@
  };
  const resetWorld=(data,idValue)=>{
   const world=worldById(data,idValue);if(!world||!world.isDefault)return false;
-  world.posts=[];world.comments=[];world.notifications=[];world.events=[];world.follows={};world.bookmarks={};
+  world.posts=[];world.comments=[];world.notifications=[];world.events=[];world.collections=[];world.follows={};world.bookmarks={};
   for(const npc of world.npcs||[])npc.postCount=0;
   world.lastAiUpdateAt=0;world.lastAiAttemptAt=0;world.updatedAt=Date.now();
   return true;
@@ -75,10 +75,16 @@
  };
  const actorProfile=(world,actorId)=>world?.profiles?.[actorId]||world?.npcs?.find(npc=>npc.id===actorId.replace(/^npc:/,''))||null;
  const authorView=(world,post)=>post?.anonymous?{actorId:'anonymous',kind:'anonymous',name:'匿名网友',nickname:'匿名网友',avatar:'',bio:''}:(actorProfile(world,post?.authorId)||{actorId:post?.authorId,kind:post?.authorKind||'unknown',name:post?.authorName||'已离开论坛',nickname:post?.authorName||'已离开论坛',avatar:''});
- const createPost=(world,{actorId,kind='persona',authorName='',content,type='text',anonymous=false,attachments=[],topics=[],poll=null}={})=>{
+ const collectionById=(world,collectionId)=>world?.collections?.find(item=>item.id===collectionId)||null;
+ const collectionsForActor=(world,actorId)=>world?.collections?.filter(item=>item.createdBy===actorId)||[];
+ const ownedCollectionById=(world,collectionId,actorId)=>world?.collections?.find(item=>item.id===collectionId&&item.createdBy===actorId)||null;
+ const createCollection=(world,{name,description='',actorId=''}={})=>{
+  if(!world)throw Error('论坛世界不存在');world.collections=Array.isArray(world.collections)?world.collections:[];const owner=clean(actorId,180);if(!owner)throw Error('合集所属身份无效');const title=clean(name,60);if(!title)throw Error('请填写合集名称');if(world.collections.some(item=>item.createdBy===owner&&String(item.name||'').toLowerCase()===title.toLowerCase()))throw Error('你的合集里已有同名合集');const collection={id:id('collection'),worldId:world.id,name:title,description:clean(description,240),createdBy:owner,createdAt:Date.now()};world.collections.push(collection);world.updatedAt=collection.createdAt;return collection;
+ };
+ const createPost=(world,{actorId,kind='persona',authorName='',content,type='text',anonymous=false,attachments=[],topics=[],poll=null,collectionId=''}={})=>{
   if(!actorId)throw Error('帖子作者身份无效');const body=clean(content,5000);if(!body&&!attachments.length&&type!=='poll')throw Error('帖子内容不能为空');
   if(!['text','image','poll','update'].includes(type))throw Error('不支持的帖子类型');
-  const post={id:id('post'),worldId:world.id,authorId:actorId,authorKind:kind,authorName:clean(authorName,60)||'未命名',displayAuthor:anonymous?'匿名网友':clean(authorName,60)||'未命名',anonymous:Boolean(anonymous),createdAt:Date.now(),updatedAt:0,type,content:body,attachments:Array.isArray(attachments)?attachments.slice(0,4):[],topics:Array.isArray(topics)?topics.map(topic=>clean(topic.replace(/^#/,'').replace(/\s+/g,''),30)).filter(Boolean).slice(0,8):[],commentsCount:0,likes:[],views:0,edited:false,deleted:false,poll:poll&&type==='poll'?{options:poll.options.map(text=>clean(text,100)).filter(Boolean).slice(0,6),votes:{},endsAt:Number(poll.endsAt)||0}:null};
+  const post={id:id('post'),worldId:world.id,authorId:actorId,authorKind:kind,authorName:clean(authorName,60)||'未命名',displayAuthor:anonymous?'匿名网友':clean(authorName,60)||'未命名',anonymous:Boolean(anonymous),createdAt:Date.now(),updatedAt:0,type,content:body,attachments:Array.isArray(attachments)?attachments.slice(0,4):[],topics:Array.isArray(topics)?topics.map(topic=>clean(topic.replace(/^#/,'').replace(/\s+/g,''),30)).filter(Boolean).slice(0,8):[],collectionId:ownedCollectionById(world,collectionId,actorId)?.id||'',commentsCount:0,likes:[],views:0,edited:false,deleted:false,poll:poll&&type==='poll'?{options:poll.options.map(text=>clean(text,100)).filter(Boolean).slice(0,6),votes:{},endsAt:Number(poll.endsAt)||0}:null};
   if(type==='poll'&&(!post.poll||post.poll.options.length<2))throw Error('投票至少需要两个选项');
   world.posts.unshift(post);world.updatedAt=post.createdAt;if(kind==='npc'){const npc=world.npcs.find(item=>`npc:${item.id}`===actorId);if(npc)npc.postCount=(npc.postCount||0)+1}
   return post;
@@ -109,5 +115,5 @@
   return lines.length?`【当前论坛世界中该角色自己的公开活动与收到的论坛通知】\n论坛：${world.name}\n${lines.join('\n')}\n这些只是可见的论坛经历，不覆盖私人主线；不要假定角色知道未包含的帖子。`:'';
  };
  const deletePost=(world,postId,actorId)=>{const post=world.posts.find(item=>item.id===postId);if(!post||post.authorId!==actorId)return false;post.deleted=true;post.deletedAt=Date.now();post.content='';post.attachments=[];world.comments=world.comments.filter(comment=>comment.postId!==postId);world.notifications=world.notifications.filter(item=>item.postId!==postId);return true};
- return{ id,clean,ensure,ensureDefaultWorld,resetWorld,actorForPersona,actorForCharacter,worldById,activeWorld,deleteWorld,createWorld,addPersona,addCharacter,canRolePost,canRoleReply,removeMember,actorProfile,authorView,createPost,addComment,toggleLike,toggleFollow,toggleBookmark,notify,markRead,chatContext,deletePost,defaultNpcs };
+ return{ id,clean,ensure,ensureDefaultWorld,resetWorld,actorForPersona,actorForCharacter,worldById,activeWorld,deleteWorld,createWorld,addPersona,addCharacter,canRolePost,canRoleReply,removeMember,actorProfile,authorView,collectionById,collectionsForActor,ownedCollectionById,createCollection,createPost,addComment,toggleLike,toggleFollow,toggleBookmark,notify,markRead,chatContext,deletePost,defaultNpcs };
 });

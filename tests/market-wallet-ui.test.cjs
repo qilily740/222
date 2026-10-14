@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
-const context = { window: {}, Date, Math, Intl, Error, JSON, Number, String, Array, Object, setTimeout };
+const context = { window: {}, Date, Math, Intl, Error, JSON, Number, String, Array, Object, setTimeout, FormData: class { get(){return '羊毛礼物';} } };
 vm.runInNewContext(fs.readFileSync(require.resolve('../market-core.js'), 'utf8'), context);
 vm.runInNewContext(fs.readFileSync(require.resolve('../market.js'), 'utf8'), context);
 const C = context.window.IrisMarketCore;
@@ -42,7 +42,7 @@ context.window.IrisMarket.render({
   esc: value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char])),
   save: () => { saves += 1; },
   exchangeRateToCny: async code => {fxCalls+=1;assert.equal(code,'USD');return {rate:7.2,date:'2026-10-14'};},
-  request: async prompt => { prompts.push(prompt);apiCalls += 1; if(apiFailure)throw Error('钱包 API 失败');if(prompt.includes('仅返回本次检查区间'))return JSON.stringify({transactions:[]}); return JSON.stringify({balance:8520,currency:'CNY',bankName:'虚拟城市银行',accountStyle:'numeric',transactions:[{kind:'expense',amount:22,description:'奶茶',daysAgo:0},{kind:'expense',amount:168,description:'工作用品',daysAgo:1},{kind:'income',amount:4000,description:'工作收入',daysAgo:5}]}); }
+  request: async prompt => { prompts.push(prompt);apiCalls += 1; if(apiFailure)throw Error('钱包 API 失败');if(prompt.includes('搜索需求：'))return JSON.stringify({name:'羊毛手作礼盒',category:'礼盒',shop:'手作礼物铺',brand:'手作礼物铺',price:128,description:'适合作为日常礼物。',colors:['暖白'],specName:'规格',spec:'标准礼盒',material:'羊毛与纸材',shipping:'通常 1–3 个工作日送达'});if(prompt.includes('仅返回本次检查区间'))return JSON.stringify({transactions:[]}); return JSON.stringify({balance:8520,currency:'CNY',bankName:'虚拟城市银行',accountStyle:'numeric',transactions:[{kind:'expense',amount:22,description:'奶茶',daysAgo:0},{kind:'expense',amount:168,description:'工作用品',daysAgo:1},{kind:'income',amount:4000,description:'工作收入',daysAgo:5}]}); }
 });
 assert.match(content.innerHTML, /market-product-art/);
 assert.match(content.innerHTML, /<svg viewBox="0 0 24 24" aria-hidden="true">/);
@@ -156,9 +156,31 @@ async function click(dataset) {
   assert.match(content.innerHTML,/value="large" checked/,'favoriting must preserve the selected specification');
   assert.doesNotMatch(content.innerHTML,/<header class="market-subhead">/);
   assert.match(content.innerHTML,/>购买<\/button>/);
+  assert.match(content.innerHTML,/同城配送，通常 30–60 分钟送达|通常 1–3 个工作日送达/);
+  assert.doesNotMatch(content.innerHTML,/虚拟世界配送/);
   assert.equal(context.window.IrisMarket.back(),true);
   assert.equal(content.scrollTop,240,'wordmark return must restore the preceding page');
   assert.equal(context.window.IrisMarket.back(),false,'category wordmark must exit even with route history');
   for(const page of ['home','cart','orders','mine']){await click({mPage:page});assert.equal(context.window.IrisMarket.back(),false);}
+  context.window.IrisMarket.render({state,characters:state.characters,content,title:{querySelector:selector=>selector==='.market-page-subtitle'?subtitle:null},esc:value=>String(value),save:()=>{saves+=1},request:async prompt=>{apiCalls+=1;if(prompt.includes('搜索需求：'))return JSON.stringify({name:'羊毛手作礼盒',category:'礼盒',shop:'手作礼物铺',brand:'手作礼物铺',price:128,description:'适合作为日常礼物。',colors:['暖白'],specName:'规格',spec:'标准礼盒',material:'羊毛与纸材',shipping:'通常 1–3 个工作日送达'});throw Error('unexpected API request')}});
+  await click({mPage:'category'});
+  assert.match(content.innerHTML, /^<main class="iris-market market-view-category"><div class="market-category-pills"/,'category tabs must be the first content directly under the market header');
+  assert.doesNotMatch(content.innerHTML, /market-search|market-subhead/,'category view must not contain the home search or a second header row');
+  content.scrollTop=240;
+  await click({mPage:'home'});
+  const searchCalls=apiCalls;
+  await content.onsubmit({preventDefault(){},target:{matches:selector=>selector==='.market-search'}});
+  assert.equal(apiCalls,searchCalls+1,'submitting home search must call the product API');
+  assert.equal(state.market.aiCache['羊毛礼物']!==undefined,true);
+  assert.match(content.innerHTML,/羊毛手作礼盒/);
+  assert.match(content.innerHTML,/market-view-home/,'search must keep the user on the home page');
+  assert.match(content.innerHTML,/market-search-results/,'the generated product must be shown in a home search results section');
+  assert.doesNotMatch(content.innerHTML,/market-flash/,'search completion must not leave a floating status strip above the category row');
+  assert.equal(content.scrollTop,0,'search results must open at the top rather than restoring the old category scroll');
+  assert.match(content.innerHTML,/class="market-search"/,'the search field belongs on the home page');
+  const css=fs.readFileSync(require.resolve('../style.css'),'utf8');
+  assert.match(css,/feature-page-content:has\(\.market-view-category\)\{padding-top:0\}[\s\S]*?market-view-category \.market-category-pills\{position:sticky;top:0/,'the category strip must begin at the top edge and remain pinned while the list scrolls');
+  await content.onsubmit({preventDefault(){},target:{matches:selector=>selector==='.market-search'}});
+  assert.equal(apiCalls,searchCalls+1,'cached searches must reuse the generated product');
   console.log('market-wallet-ui: all assertions passed');
 })().catch(error => { console.error(error); process.exitCode = 1; });
