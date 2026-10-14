@@ -131,20 +131,32 @@
     if(!Array.isArray(wallet.ledger))wallet.ledger=[];
     return wallet;
   };
-  const payRoleOrder=(state,userIndex,order,roleId)=>{
+  const quoteRolePayment=(order,wallet,{roleRateToCny,orderRateToCny,feeBps=200}={})=>{
+    if(!Number.isSafeInteger(order?.totalCents)||order.totalCents<0)throw Error('订单金额无效');
+    const roleCurrency=wallet?.currency||'CNY',orderCurrency=order.currency||'CNY';
+    if(roleCurrency===orderCurrency)return{roleCurrency,orderCurrency,orderAmountCents:order.totalCents,baseAmountCents:order.totalCents,feeCents:0,chargedAmountCents:order.totalCents,feeRateBps:0,rateToCny:1,orderRateToCny:1};
+    if(!Number.isFinite(roleRateToCny)||roleRateToCny<=0||!Number.isFinite(orderRateToCny)||orderRateToCny<=0)throw Error('币种兑换汇率不可用，暂时无法代付');
+    if(!Number.isInteger(feeBps)||feeBps<0||feeBps>1000)throw Error('换汇手续费设置无效');
+    const scale=100000000,roleRate=BigInt(Math.round(roleRateToCny*scale)),orderRate=BigInt(Math.round(orderRateToCny*scale));
+    if(roleRate<=0n||orderRate<=0n)throw Error('币种兑换汇率不可用，暂时无法代付');
+    const ceilDiv=(n,d)=>(n+d-1n)/d,orderCents=BigInt(order.totalCents),denominator=roleRate*10000n;
+    const base=ceilDiv(orderCents*orderRate*10000n,denominator),charged=ceilDiv(orderCents*orderRate*BigInt(10000+feeBps),denominator);
+    if(charged>BigInt(Number.MAX_SAFE_INTEGER)||base>BigInt(Number.MAX_SAFE_INTEGER))throw Error('换汇金额超出安全范围');
+    return{roleCurrency,orderCurrency,orderAmountCents:order.totalCents,baseAmountCents:Number(base),feeCents:Number(charged-base),chargedAmountCents:Number(charged),feeRateBps:feeBps,rateToCny:roleRateToCny,orderRateToCny};
+  };
+  const payRoleOrder=(state,userIndex,order,roleId,exchange={})=>{
     if(!roleId||order.characterId!==roleId)throw Error('角色实例与订单不匹配');const wallet=roleWallet(state,roleId,userIndex,true);if(order.status!=='待支付')throw Error('订单已处理，不能重复代付');
     if(wallet.ledger.some(row=>row.orderId===order.id&&row.kind==='role-payment'))throw Error('该订单已由角色支付');
-    if(!Number.isSafeInteger(order.totalCents)||order.totalCents<0)throw Error('订单金额无效');
-    if(!Number.isSafeInteger(wallet.balanceCents)||wallet.balanceCents<0)throw Error('角色余额未设定，不能完成代付');
-    if(wallet.currency!==(order.currency||'CNY'))throw Error('角色钱包与订单币种不同，暂不支持兑换');if(wallet.balanceCents<order.totalCents)throw Error('角色余额不足，不能完成代付');
-    const now=Date.now(),txId=id('role-tx');wallet.balanceCents-=order.totalCents;wallet.ledger.unshift({id:txId,kind:'role-payment',amountCents:-order.totalCents,orderId:order.id,createdAt:now,description:`${(order.items||[]).map(item=>item.name).join('、')||'购物订单'}（代付）`});
+    if(!Number.isSafeInteger(wallet.balanceCents)||wallet.balanceCents<0)throw Error('角色钱包余额未设定，不能完成代付');
+    const settlement=quoteRolePayment(order,wallet,exchange);if(wallet.balanceCents<settlement.chargedAmountCents)throw Error('角色余额不足，不能完成代付');
+    const now=Date.now(),txId=id('role-tx'),description=`${(order.items||[]).map(item=>item.name).join('、')||'购物订单'}（代付）`;wallet.balanceCents-=settlement.chargedAmountCents;const paymentRow={id:txId,kind:'role-payment',amountCents:-settlement.baseAmountCents,currency:settlement.roleCurrency,orderAmountCents:order.totalCents,orderCurrency:settlement.orderCurrency,exchangeRateToCny:settlement.rateToCny,orderRateToCny:settlement.orderRateToCny,feeCents:settlement.feeCents,orderId:order.id,createdAt:now,description};const feeRow=settlement.feeCents?{id:id('role-tx'),kind:'exchange-fee',amountCents:-settlement.feeCents,currency:settlement.roleCurrency,orderId:order.id,createdAt:now,description:'订单换汇手续费'}:null;wallet.ledger.unshift(...[paymentRow,feeRow].filter(Boolean));order.rolePaymentSettlement=settlement;
     order.pay='role-pay';order.paidByCharacterId=roleId;order.status='已支付';order.paidAt=now;order.transactionId=txId;transition(order,'待发货',now);schedule(order,now);return order;
   };
   const refundRoleOrder=(state,userIndex,order)=>{
     if(!['role-pay','role-funded'].includes(order.pay)||!order.paidByCharacterId||order.rolePaymentReversed)throw Error('角色钱包退款状态无效');
     const wallet=roleWallet(state,order.paidByCharacterId,userIndex);if(!Number.isSafeInteger(wallet.balanceCents))throw Error('角色钱包余额未设定，无法退款入账');
     transition(order,'退款中');for(const event of order.shippingEvents||[]){event.applied=true;event.status='配送已取消'}
-    wallet.balanceCents+=order.totalCents;wallet.ledger.unshift({id:id('role-tx'),kind:'refund',amountCents:order.totalCents,orderId:order.id,createdAt:Date.now(),description:`${(order.items||[]).map(item=>item.name).join('、')||'购物订单'}退款`});transition(order,'已退款');order.refundAt=Date.now();order.rolePaymentReversed=true;return order;
+    const refundCents=Number.isSafeInteger(order.rolePaymentSettlement?.chargedAmountCents)?order.rolePaymentSettlement.chargedAmountCents:order.totalCents,next=wallet.balanceCents+refundCents;if(!Number.isSafeInteger(next))throw Error('退款金额超出安全范围');wallet.balanceCents=next;wallet.ledger.unshift({id:id('role-tx'),kind:'refund',amountCents:refundCents,currency:wallet.currency||'CNY',orderId:order.id,createdAt:Date.now(),description:`${(order.items||[]).map(item=>item.name).join('、')||'购物订单'}退款（含换汇手续费）`});transition(order,'已退款');order.refundAt=Date.now();order.rolePaymentReversed=true;return order;
   };
   const product=(state,productId)=>normalize(state).products.find(p=>p.id===productId&&p.active!==false);
   const linePrice=(p,specId)=>{const spec=p?.specs?.find(x=>x.id===specId);return Math.max(0,Number(p?.priceCents)||0)+(Number(spec?.priceDeltaCents)||0)};
@@ -152,10 +164,12 @@
   const addCart=(state,pid,specId='default',quantity=1,userIndex=state.user)=>{const p=product(state,pid);if(!p)throw Error('商品已下架或不存在');if(!p.specs?.some(s=>s.id===specId))throw Error('请选择有效规格');const cart=persona(state,userIndex).cart,old=cart.find(x=>x.productId===pid&&x.specId===specId);if(old)old.quantity=Math.min(99,old.quantity+Math.max(1,Number(quantity)||1));else cart.push({id:id('cart'),productId:pid,specId,quantity:Math.min(99,Math.max(1,Number(quantity)||1)),selected:true,addedAt:Date.now()});return cart};
   const cents=(x)=>{const n=Number(x);if(!Number.isFinite(n)||n<0)throw Error('金额无效');return Math.round(n*100)};
   const transition=(order,next,at=Date.now())=>{const allowed={待支付:['已取消','已支付'],已支付:['待发货','退款中'],待发货:['运输中','退款中'],运输中:['派送中','退款中'],派送中:['已送达','退款中'],退款中:['已退款'],已取消:[],已退款:[],已送达:['退款中']};if(!allowed[order.status]?.includes(next))throw Error(`不能将订单从${order.status}变更为${next}`);order.status=next;order.updatedAt=at;return order};
-  const createOrder=(state,{userIndex=state.user,items,kind='self',characterIndex=null,addressId='',note='',pay='wallet',paidByCharacterId=''}={})=>{
+  const createOrder=(state,{userIndex=state.user,items,kind='self',characterIndex=null,addressId='',note='',pay='wallet',paidByCharacterId='',requestId=''}={})=>{
+    if(!state.users?.[userIndex])throw Error('面具已不存在');
+    if(kind==='gift'){normalize(state);const role=state.characters?.[characterIndex];if(!role||role.chatSettings?.userIndex!==userIndex)throw Error('收礼人与当前面具不匹配');if(requestId){const existing=persona(state,userIndex).orders.find(order=>order.requestId===requestId);if(existing){if(existing.kind!=='gift'||existing.characterId!==role.irisMarketId)throw Error('赠礼请求与订单不匹配');return existing}}}
     const p=persona(state,userIndex),picked=(items||p.cart.filter(x=>x.selected)).map(row=>{const productInfo=product(state,row.productId);if(!productInfo)throw Error('购物车中有商品已下架');const spec=productInfo.specs?.find(s=>s.id===row.specId);if(!spec)throw Error('商品规格已失效');return{productId:productInfo.id,name:productInfo.name,shopId:productInfo.shopId,shopName:normalize(state).shops.find(s=>s.id===productInfo.shopId)?.name||productInfo.brand,imageKey:productInfo.imageKey,specId:spec.id,specName:spec.values?.[0]||spec.name,quantity:Math.max(1,Number(row.quantity)||1),unitPriceCents:linePrice(productInfo,row.specId),lineTotalCents:linePrice(productInfo,row.specId)*Math.max(1,Number(row.quantity)||1),category:productInfo.category}});
-    if(!picked.length)throw Error('请先选择商品');const total=picked.reduce((s,x)=>s+x.lineTotalCents,0),now=Date.now(),order={id:id('order'),userId:personaId(state,userIndex),characterId:Number.isInteger(characterIndex)?state.characters?.[characterIndex]?.irisMarketId||null:null,characterName:Number.isInteger(characterIndex)?state.characters?.[characterIndex]?.name||'已删除角色':'',sourceThreadKey:Number.isInteger(characterIndex)?`${characterIndex}-${userIndex}-chat`:null,kind,items:picked,totalCents:total,currency:p.wallet.currency||'CNY',pay,paidByCharacterId,status:pay==='pending-role'?'待支付':'待支付',createdAt:now,paidAt:null,address:kind==='gift'?null:(p.addresses.find(x=>x.id===addressId)||p.addresses.find(x=>x.isDefault)||null),deliveryMode:kind==='gift'?'role-context':'virtual-address',note:String(note||'').slice(0,300),shippingEvents:[],refundAt:null,transactionId:null};
-    if(pay==='wallet')payOrder(state,userIndex,order);else if(pay==='role-funded')chargeRoleOrder(state,userIndex,order,paidByCharacterId||order.characterId);p.orders.unshift(order);if(kind==='self')p.cart=p.cart.filter(x=>!(items||p.cart.filter(y=>y.selected)).some(y=>y.productId===x.productId&&y.specId===x.specId));if(pay==='wallet'||pay==='role-funded')schedule(order,now);return order;
+    if(!picked.length)throw Error('请先选择商品');const total=picked.reduce((s,x)=>s+x.lineTotalCents,0),now=Date.now(),order={id:id('order'),requestId:String(requestId||'').slice(0,160),userId:personaId(state,userIndex),characterId:Number.isInteger(characterIndex)?state.characters?.[characterIndex]?.irisMarketId||null:null,characterName:Number.isInteger(characterIndex)?state.characters?.[characterIndex]?.name||'已删除角色':'',sourceThreadKey:Number.isInteger(characterIndex)?`${characterIndex}-${userIndex}-chat`:null,kind,items:picked,totalCents:total,currency:p.wallet.currency||'CNY',pay,paidByCharacterId,status:pay==='pending-role'?'待支付':'待支付',createdAt:now,paidAt:null,address:kind==='gift'?null:(p.addresses.find(x=>x.id===addressId)||p.addresses.find(x=>x.isDefault)||null),deliveryMode:kind==='gift'?'role-context':'virtual-address',note:String(note||'').slice(0,300),shippingEvents:[],refundAt:null,transactionId:null};
+    if(pay==='wallet')payOrder(state,userIndex,order);else if(pay==='role-funded')chargeRoleOrder(state,userIndex,order,paidByCharacterId||order.characterId);p.orders.unshift(order);if(kind==='self')p.cart=p.cart.filter(x=>!(items||p.cart.filter(y=>y.selected)).some(y=>y.productId===x.productId&&y.specId===x.specId));if(pay==='wallet'||pay==='role-funded')schedule(order,now);if(kind==='gift')syncGiftCards(state,userIndex);return order;
   };
   const payOrder=(state,userIndex,order)=>{const p=persona(state,userIndex),duplicate=p.ledger.find(x=>x.orderId===order.id&&x.kind==='purchase');if(duplicate)throw Error('该订单已支付');if(order.totalCents>p.wallet.balanceCents)throw Error('银行卡余额不足');p.wallet.balanceCents-=order.totalCents;order.status='已支付';order.paidAt=Date.now();const tx={id:id('tx'),kind:'purchase',amountCents:-order.totalCents,orderId:order.id,createdAt:order.paidAt,description:`商场订单 ${order.id}`};p.ledger.unshift(tx);order.transactionId=tx.id;transition(order,'待发货',order.paidAt);return order};
   const chargeRoleOrder=(state,userIndex,order,roleId)=>{if(!roleId||order.characterId!==roleId)throw Error('角色实例与订单不匹配');if(order.status!=='待支付')throw Error('订单状态无效');const wallet=roleWallet(state,roleId,userIndex,true);if(wallet.ledger.some(row=>row.orderId===order.id))throw Error('角色订单已记账');if(!Number.isSafeInteger(order.totalCents)||order.totalCents<0)throw Error('订单金额无效');if(!Number.isSafeInteger(wallet.balanceCents)||wallet.balanceCents<0)throw Error('角色余额未设定，不能完成购物');if(wallet.currency!==(order.currency||'CNY'))throw Error('角色钱包与订单币种不同，暂不支持兑换');if(wallet.balanceCents<order.totalCents)throw Error('角色余额不足，不能完成购物');const now=Date.now(),txId=id('role-tx'),gift=order.kind==='role-gift';wallet.balanceCents-=order.totalCents;wallet.ledger.unshift({id:txId,kind:gift?'gift-expense':'purchase-expense',amountCents:-order.totalCents,orderId:order.id,createdAt:now,description:`${(order.items||[]).map(item=>item.name).join('、')||'购物订单'}${gift?'（赠礼）':'（自购）'}`});order.pay='role-funded';order.paidByCharacterId=roleId;order.status='已支付';order.paidAt=now;order.transactionId=txId;transition(order,'待发货',now);return order};
@@ -199,6 +213,38 @@
     if(action!=='send')item.status=action==='accept'?'accepted':'returned';
     return tx;
   };
+  // Gift cards reference orders; they never own payment or delivery state.
+  const giftStatus=order=>{const name=order.characterName||'收礼人',reaction=order.giftReaction?.status;if(reaction==='declined')return `${name}婉拒了礼物${order.status==='已退款'?' · 已退款':''}`;if(reaction==='accepted')return `${name}已接受礼物`;if(['已退款','退款中','已取消'].includes(order.status))return order.status;if(order.status==='已送达')return reaction==='deferred'?`${name}还想再考虑`:`已送达 · 等待${name}回应`;return order.status==='待发货'?'商家备货中':order.status;};
+  const giftOrder=(state,event)=>{if(!event||!['user-gift','role-gift'].includes(event.type))return null;const user=(state.users||[]).find(user=>user.irisMarketId===event.userId);if(!user)return null;const order=state.market?.personas?.[event.userId]?.orders?.find(order=>order.id===event.orderId);return order?.kind===(event.type==='role-gift'?'role-gift':'gift')&&order.userId===event.userId&&order.characterId===event.characterId?order:null;};
+  const syncGiftCards=(state,userIndex=state.user)=>{
+    if(!state.users?.[userIndex])return false;const p=persona(state,userIndex);let changed=false;
+    const cards=new Map();for(const [key,thread] of Object.entries(state.messages||{})){if(!key.endsWith(`-${userIndex}-chat`)||!Array.isArray(thread))continue;for(const item of thread)if(item.type==='gift-card'&&item.marketEvent?.userId===personaId(state,userIndex))cards.set(`${item.marketEvent.orderId}:${item.marketEvent.characterId}`,item)}
+    for(const order of p.orders){if(order.kind!=='gift'||!order.paidAt||order.userId!==personaId(state,userIndex))continue;
+      const roleIndex=(state.characters||[]).findIndex(role=>role.irisMarketId===order.characterId),role=state.characters?.[roleIndex];
+      const event={type:'user-gift',orderId:order.id,userId:order.userId,characterId:order.characterId};
+      // Update an existing card by stable identity, including after a character is deleted.
+      let card=cards.get(`${order.id}:${order.characterId}`);
+      if(!card&&!order.giftCardId&&!['已取消','已退款'].includes(order.status)&&role&&role.chatSettings?.userIndex===userIndex){
+        const threadKey=`${roleIndex}-${userIndex}-chat`;state.messages||={};const thread=state.messages[threadKey]||=[];
+        card={id:id('gift-card'),type:'gift-card',mine:true,createdAt:order.paidAt,marketEvent:event};thread.push(card);order.giftCardId=card.id;order.sourceThreadKey=threadKey;changed=true;
+      }
+      if(card){const text=`送给${order.characterName||'收礼人'}的礼物：${order.items.map(item=>item.name).join('、')}。${giftStatus(order)}。${order.note?'附言：'+order.note:''}`;if(card.text!==text){card.text=text;changed=true}}
+      const record=p.giftRecords.find(item=>item.orderId===order.id);if(record&&record.status!==giftStatus(order)){record.status=giftStatus(order);changed=true}
+    }return changed;
+  };
+  const decideGift=(state,userIndex,roleId,orderId,decision,reply)=>{
+    const p=persona(state,userIndex),role=state.characters?.find(role=>role.irisMarketId===roleId),order=p.orders.find(order=>order.id===orderId),text=String(reply||'').trim().slice(0,1200);
+    if(!role||role.chatSettings?.userIndex!==userIndex||!order||order.userId!==personaId(state,userIndex)||order.characterId!==roleId||order.kind!=='gift')throw Error('礼物与当前聊天不匹配');
+    if(['accepted','declined'].includes(order.giftReaction?.status))return null;
+    if(order.status!=='已送达')throw Error('礼物尚未送达或订单已结束');
+    if(!['accept','decline','defer'].includes(decision)||!text)throw Error('礼物回应不完整');
+    if(decision==='defer'&&order.giftReaction?.status==='deferred'&&order.giftReaction.reply===text)return null;
+    if(decision==='decline'){const history=order.shippingEvents.map(event=>({...event}));refund(state,userIndex,order.id);order.shippingEvents=history;}
+    const now=Date.now(),reactionId=id('gift-reaction');
+    if(decision==='accept'&&!p.characterItems.some(item=>item.orderId===order.id))for(const item of order.items)p.characterItems.push({id:id('role-item'),characterId:roleId,characterName:order.characterName,productId:item.productId,name:item.name,source:'user-gift',orderId:order.id,quantity:item.quantity,createdAt:now,state:'持有'});
+    order.giftReaction={id:reactionId,status:decision==='accept'?'accepted':decision==='decline'?'declined':'deferred',reply:text,at:now};syncGiftCards(state,userIndex);
+    return{id:reactionId,mine:false,type:'text',text,createdAt:now,marketEvent:{type:'gift-received',orderId:order.id,characterId:roleId,userId:order.userId,decision}};
+  };
   const favorites=(state,userIndex=state.user)=>persona(state,userIndex).favorites;
-  window.IrisMarketCore={settleTransfer,categories,normalize,personaId,persona,shippingSummary,roleWallet,initializeRoleWallet,updateRoleWallet,chargeRoleOrder,payRoleOrder,refundRoleOrder,product,linePrice,cartTotal,addCart,cents,transition,createOrder,payOrder,schedule,advance,refund,saveGenerated,saveGeneratedBatch,favorites,yuan,id};
+  window.IrisMarketCore={giftStatus,giftOrder,syncGiftCards,decideGift,settleTransfer,categories,normalize,personaId,persona,shippingSummary,roleWallet,initializeRoleWallet,updateRoleWallet,chargeRoleOrder,quoteRolePayment,payRoleOrder,refundRoleOrder,product,linePrice,cartTotal,addCart,cents,transition,createOrder,payOrder,schedule,advance,refund,saveGenerated,saveGeneratedBatch,favorites,yuan,id};
 })();
