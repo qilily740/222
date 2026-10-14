@@ -1495,8 +1495,8 @@ input,textarea{scrollbar-width:thin}
 .reflection-panel[data-panel="gpt"] .reflection-response-tools>button[aria-pressed="true"]{background:transparent;border-radius:0;box-shadow:none}
 .reflection-panel .reflection-more-button,.reflection-panel .reflection-more-button:focus,.reflection-panel .reflection-more-button:focus-visible,.reflection-panel .reflection-more-button:active{border:0;outline:none;box-shadow:none;-webkit-tap-highlight-color:transparent}
 
-/* Avoid mobile double-tap zoom/jump while keeping settings vertically scrollable. */
-.settings-screen{touch-action:pan-y}
+/* Keep settings taps from triggering native double-tap zoom or scrolling the page behind the screen. */
+.settings-screen{touch-action:manipulation;overscroll-behavior-y:none}
 .system-setting-tabs,.system-setting-tabs button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .system-setting-tabs button{-webkit-user-select:none;user-select:none}
 

@@ -58,7 +58,10 @@
           return writeState(database, JSON.parse(JSON.stringify(state)));
         }
       };
-      try { await navigator.storage?.persist?.(); } catch {}
+      try {
+        const persistence = navigator.storage?.persist?.();
+        persistence?.catch?.(() => {});
+      } catch {}
       return saved;
     } catch (error) {
       database?.close();
@@ -79,6 +82,8 @@
 
   const loadScript = src => new Promise((resolve, reject) => {
     const script = document.createElement('script');
+    // Start every download at once while preserving the dependency order below.
+    script.async = false;
     script.src = `${src}${query}`;
     script.onload = resolve;
     script.onerror = () => reject(new Error(`Could not load ${src}`));
@@ -87,7 +92,7 @@
 
   load().then(async saved => {
     window.IRIS_BOOT_STATE = saved && typeof saved === 'object' ? saved : {};
-    for (const src of ['mini-theater.js', 'role-invitations.js', 'forum-core.js', 'market-core.js', 'backup-core.js', 'app.js', 'forum.js', 'market.js', 'profiles.js', 'importers.js', 'characters.js']) await loadScript(src);
+    await Promise.all(['mini-theater.js', 'role-invitations.js', 'forum-core.js', 'market-core.js', 'backup-core.js', 'app.js', 'forum.js', 'market.js', 'profiles.js', 'importers.js', 'characters.js'].map(loadScript));
   }).catch(error => {
     console.error('Iris startup failed', error);
     window.IRIS_BOOT_STATE = {};
