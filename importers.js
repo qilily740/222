@@ -6,6 +6,7 @@ const CharacterImport = (() => {
     if(bytes[0]===254&&bytes[1]===255)return new TextDecoder('utf-16be').decode(bytes).replace(/^\uFEFF/,'');
     try{return new TextDecoder('utf-8',{fatal:true}).decode(bytes).replace(/^\uFEFF/,'')}catch{return new TextDecoder('gb18030').decode(bytes)}
   }
+  const normalizeNewlines=value=>String(value||'').replace(/\r\n?/g,'\n').replace(/\u0000/g,'');
   async function inflate(bytes,format,limit=3*1024*1024) {
     const reader=new Blob([bytes]).stream().pipeThrough(new DecompressionStream(format)).getReader();
     const parts=[];let total=0;
@@ -16,8 +17,18 @@ const CharacterImport = (() => {
     const s=String(value||'').trim();
     let m=s.match(/(\d{4})[年\/.\-](\d{1,2})[月\/.\-](\d{1,2})日?/);
     if(m){const y=+m[1],mo=+m[2],d=+m[3];const date=new Date(Date.UTC(y,mo-1,d));if(date.getUTCFullYear()!==y||date.getUTCMonth()!==mo-1||date.getUTCDate()!==d)return s;return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`}
-    m=s.match(/^(\d{1,2})[月\/.\-](\d{1,2})日?$/);if(m&&+m[1]>=1&&+m[1]<=12&&+m[2]>=1&&+m[2]<=new Date(Date.UTC(2000,+m[1],0)).getUTCDate())return `${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
+    m=s.match(/^\s*(\d{1,2})月\s*(\d{1,2})日?(?=$|[\s（(])/);if(m&&+m[1]>=1&&+m[1]<=12&&+m[2]>=1&&+m[2]<=new Date(Date.UTC(2000,+m[1],0)).getUTCDate())return `${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
+    m=s.match(/^\s*(\d{1,2})[月\/.\-](\d{1,2})日?(?=$|[\s（(])/);if(m&&+m[1]>=1&&+m[1]<=12&&+m[2]>=1&&+m[2]<=new Date(Date.UTC(2000,+m[1],0)).getUTCDate())return `${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
     return s;
+  }
+  function ageFromText(value) {
+    const text=normalizeNewlines(value),match=text.match(/(?:^|[\n|;；,，])\s*(?:年龄|岁数|周岁|age)\s*[:：=]?\s*(\d{1,3})\s*(?:周岁|岁|years?\s*old)?/i)||text.match(/(?:^|[^\d])(\d{1,3})\s*(?:周岁|岁|years?\s*old)(?=$|[^\p{L}\d])/iu);
+    const age=Number(match?.[1]);return Number.isInteger(age)&&age>=0&&age<=120?age:null;
+  }
+  function birthdayWithAge(value,age,now=new Date()) {
+    const date=normalizeDate(value);if(!/^\d{2}-\d{2}$/.test(date)||!Number.isInteger(age)||age<0||age>120)return date;
+    const [,month,day]=date.match(/^(\d{2})-(\d{2})$/),currentYear=now.getFullYear(),beforeBirthday=Number(month)*100+Number(day)>((now.getMonth()+1)*100+now.getDate()),year=currentYear-age-(beforeBirthday?1:0);
+    return `${year}-${date}`;
   }
   const aliases={name:['name','charname','charactername','名字','姓名','角色名','名称'],nickname:['nickname','网名','昵称'],gender:['gender','sex','性别'],birthday:['birthday','birthdate','dateofbirth','dob','生日','出生日期']};
   function normalizeWorldBook(root,body=root) {
@@ -46,8 +57,9 @@ const CharacterImport = (() => {
     for(const value of Object.values(root)){const found=findField(value,keys,depth+1);if(found)return found}return '';
   }
   function fromText(text) {
-    const pick=(names)=>{const regex=new RegExp(`(?:^|[\\n\\r|;；,，])\\s*(?:[-*#>]+\\s*)?(?:${names.join('|')})\\s*(?:[:：=]\\s*|\\s+)([^\\n\\r|;；,，]+)`,'i');return(text.match(regex)||[])[1]?.trim()||''};
-    return {name:pick(['角色名','姓名','名字','名称','character name','char_name','name']),nickname:pick(['网名','昵称','nickname']),gender:pick(['性别','gender','sex']),birthday:normalizeDate(pick(['生日','出生日期','birthday','birthdate','date of birth'])),details:text.trim()};
+    const source=normalizeNewlines(text).trim(),pick=(names)=>{const regex=new RegExp(`(?:^|[\\n|;；,，])\\s*(?:[-*#>]+\\s*)?(?:${names.join('|')})\\s*(?:[:：=]\\s*|\\s+)([^\\n|;；,，]+)`,'i');return(source.match(regex)||[])[1]?.trim()||''};
+    const birthday=pick(['生日','出生日期','出生年月日','birthday','birthdate','birth_date','date of birth','date_of_birth','dob']),age=ageFromText(pick(['年龄','岁数','周岁','age']))??ageFromText(source);
+    return {name:pick(['角色名','姓名','名字','名称','character name','char_name','name']),nickname:pick(['网名','昵称','nickname']),gender:pick(['性别','gender','sex']),birthday:birthdayWithAge(birthday,age),details:source};
   }
   function fromJSON(root) {
     if(Array.isArray(root)){if(root.length!==1)throw Error('请每次导入一张角色卡');root=root[0]}
@@ -55,17 +67,19 @@ const CharacterImport = (() => {
     const body=root.data&&typeof root.data==='object'?root.data:root;
     const descriptions=['description','personality','scenario','first_mes','mes_example','creator_notes','details','具体信息','角色设定','描述'];
     const sections=descriptions.map(k=>typeof body[k]==='string'?body[k]:'').filter(Boolean);
-    const details=sections.join('\n\n')||JSON.stringify(body,null,2);
+    const details=normalizeNewlines(sections.join('\n\n')||JSON.stringify(body,null,2));
     const textFields=fromText(details);const result={details};
     for(const [key,keys] of Object.entries(aliases))result[key]=findField(body,keys)||textFields[key]||'';
-    result.birthday=normalizeDate(result.birthday);result.worldBook=normalizeWorldBook(root,body);return result;
+    const age=ageFromText(findField(body,['age','年龄','岁数','周岁'])||'')??ageFromText(details);
+    result.birthday=birthdayWithAge(result.birthday||textFields.birthday,age);result.worldBook=normalizeWorldBook(root,body);return result;
   }
   function xmlText(xml) {
     if(typeof DOMParser!=='undefined'){
       const doc=new DOMParser().parseFromString(xml,'application/xml');if(doc.querySelector('parsererror'))throw Error('DOCX 文档内容损坏');
-      return Array.from(doc.getElementsByTagNameNS('*','p')).map(p=>Array.from(p.getElementsByTagNameNS('*','t')).map(t=>t.textContent).join('')).join('\n');
+      const read=node=>{if(node.nodeType===3)return node.nodeValue||'';if(node.nodeType!==1)return '';if(node.localName==='t')return node.textContent||'';if(node.localName==='tab')return '\t';if(node.localName==='br'||node.localName==='cr')return '\n';return Array.from(node.childNodes).map(read).join('')};
+      return normalizeNewlines(Array.from(doc.getElementsByTagNameNS('*','p')).map(read).join('\n'));
     }
-    return xml.replace(/<\/w:p>/g,'\n').replace(/<[^>]*>/g,'').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&amp;/g,'&');
+    return normalizeNewlines(xml.replace(/<w:(?:br|cr)\b[^>]*\/?\s*>/g,'\n').replace(/<w:tab\b[^>]*\/?\s*>/g,'\t').replace(/<\/w:p>/g,'\n').replace(/<[^>]*>/g,'').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&amp;/g,'&').replace(/&#(\d+);/g,(_,n)=>String.fromCodePoint(Number(n))).replace(/&#x([\da-f]+);/gi,(_,n)=>String.fromCodePoint(parseInt(n,16))));
   }
   async function docxText(bytes) {
     const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);let end=-1;
@@ -119,6 +133,6 @@ const CharacterImport = (() => {
     if((result.details||'').length>100000)throw Error('角色设定过长，请控制在 10 万字以内');
     return {character:{gender:'',birthday:'',details:'',avatar:'',color:'#ededed',initial:'',...result,nickname:'',name:result.name||file.name.replace(/\.[^.]+$/,'')},note};
   }
-  return {parse,fromText,fromJSON,normalizeDate,normalizeWorldBook,docxText,pngData,portrait};
+  return {parse,fromText,fromJSON,normalizeDate,birthdayWithAge,ageFromText,normalizeWorldBook,docxText,pngData,portrait};
 })();
 if(typeof module!=='undefined')module.exports=CharacterImport;

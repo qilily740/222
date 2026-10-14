@@ -41,7 +41,7 @@
   const initializeRoleWallet=(state,userIndex,roleId,data)=>{
     const wallet=roleWallet(state,roleId,userIndex,true);
     // Upgrade a previously generated opening balance without replacing saved shopping facts.
-    if((wallet.historyGeneratedAt&&Number.isSafeInteger(wallet.balanceCents))||wallet.ledger.some(row=>row.kind!=='opening')||(Number.isSafeInteger(wallet.balanceCents)&&!wallet.generatedAt))return wallet;
+    if((wallet.historyGeneratedAt&&Number.isSafeInteger(wallet.balanceCents))||(Number.isSafeInteger(wallet.balanceCents)&&!wallet.generatedAt))return wallet;
     if(!data||typeof data.bankName!=='string'||!data.bankName.trim()||!['numeric','token'].includes(data.accountStyle))throw Error('钱包资料格式无效');
     const currency=String(data.currency||'').trim().toUpperCase();if(!/^[A-Z0-9_]{2,12}$/.test(currency))throw Error('钱包币种格式无效');
     if(data.balance!==null&&(typeof data.balance!=='number'||!Number.isFinite(data.balance)))throw Error('钱包余额格式无效');
@@ -49,11 +49,11 @@
     if(!Array.isArray(data.transactions)||data.transactions.length>6)throw Error('近期交易格式无效');
     if(amount===null&&data.transactions.length)throw Error('未知余额不能生成确定的交易账本');
     const now=Date.now(),history=data.transactions.map(row=>{if(!row||!['expense','income'].includes(row.kind)||typeof row.amount!=='number'||!Number.isFinite(row.amount)||row.amount<=0||typeof row.description!=='string'||!row.description.trim()||!Number.isInteger(row.daysAgo)||row.daysAgo<0||row.daysAgo>30)throw Error('近期交易内容无效');const value=cents(row.amount);if(!Number.isSafeInteger(value)||value<1||value>100000000000)throw Error('近期交易金额无效');return {id:id('role-tx'),kind:row.kind==='expense'?'personal-expense':'personal-income',amountCents:row.kind==='expense'?-value:value,description:row.description.trim().slice(0,80),createdAt:now-row.daysAgo*86400000,source:'ai-wallet-history'};}).sort((a,b)=>a.createdAt-b.createdAt);
-    const opening=amount===null?null:amount-history.reduce((sum,row)=>sum+row.amountCents,0);let running=opening;
+    const existingFacts=wallet.ledger.filter(row=>row.kind!=='opening'),combined=[...history,...existingFacts].sort((a,b)=>a.createdAt-b.createdAt),opening=amount===null?null:amount-combined.reduce((sum,row)=>sum+row.amountCents,0);let running=opening;
     if(opening!==null&&(!Number.isSafeInteger(opening)||opening<0))throw Error('近期交易与余额不一致');
-    for(const row of history){running+=row.amountCents;if(!Number.isSafeInteger(running)||running<0)throw Error('近期交易导致负余额');}
-    const role=state.characters?.find(item=>item.irisMarketId===roleId),location=roleLocation(role),region=roleRegionCode(location);wallet.currency=Number.isSafeInteger(wallet.balanceCents)?wallet.currency:currency;wallet.balanceCents=amount;wallet.bankName=wallet.bankName||data.bankName.trim().slice(0,40);wallet.accountStyle=data.accountStyle;wallet.accountRegion=region;wallet.accountNumber ||= accountNumber(location,data.accountStyle);wallet.accountExpiry ||= accountExpiry();wallet.generatedAt ||= now;wallet.historyGeneratedAt=now;
-    wallet.ledger=[...history].reverse();if(opening!==null)wallet.ledger.push({id:id('role-tx'),kind:'opening',amountCents:opening,createdAt:(history[0]?.createdAt||now)-1,description:'角色钱包期初余额'});
+    for(const row of combined){running+=row.amountCents;if(opening!==null&&(!Number.isSafeInteger(running)||running<0))throw Error('近期交易导致负余额');}
+    const role=state.characters?.find(item=>item.irisMarketId===roleId),location=roleLocation(role),region=roleRegionCode(location);wallet.currency=existingFacts.length?wallet.currency:Number.isSafeInteger(wallet.balanceCents)?wallet.currency:currency;wallet.balanceCents=amount;wallet.bankName=wallet.bankName||data.bankName.trim().slice(0,40);wallet.accountStyle=data.accountStyle;wallet.accountRegion=region;wallet.accountNumber ||= accountNumber(location,data.accountStyle);wallet.accountExpiry ||= accountExpiry();wallet.generatedAt ||= now;wallet.historyGeneratedAt=now;
+    wallet.ledger=[...combined].reverse();if(opening!==null)wallet.ledger.push({id:id('role-tx'),kind:'opening',amountCents:opening,createdAt:(combined[0]?.createdAt||now)-1,description:'角色钱包期初余额'});
     return wallet;
   };
   const updateRoleWallet=(state,userIndex,roleId,data,{requestId,since,now=Date.now()}={})=>{
@@ -172,7 +172,7 @@
     const cacheKey=String(query||'').trim().toLowerCase().slice(0,120);if(cacheKey&&items.length)m.aiCache[cacheKey]={productIds:items.map(item=>item.id)};return items;
   };
   // Transfer settlement shares the market wallet; each event is posted at most once.
-  const settleTransfer=(state,userIndex,item,action)=>{
+  const settleTransfer=(state,userIndex,item,action,roleSettlement={})=>{
     if(!state.users?.[userIndex]||item?.type!=='transfer')throw Error('转账所属面具不存在');
     const p=persona(state,userIndex),owner=personaId(state,userIndex);
     if(item.walletUserId&&item.walletUserId!==owner)throw Error('转账不属于当前面具');
@@ -191,8 +191,11 @@
     const delta=action==='send'?-value:value,next=p.wallet.balanceCents+delta;
     if(!Number.isSafeInteger(p.wallet.balanceCents)||!Number.isSafeInteger(next))throw Error('钱包余额无效');
     if(next<0)throw Error('银行卡余额不足');
+    const roleTransfer=action==='accept'&&!item.mine&&Boolean(item.characterId),roleBook=roleTransfer?roleWallet(state,item.characterId,userIndex,true):null,roleExisting=roleTransfer&&roleBook.ledger.find(row=>row.transferId===item.id&&row.kind==='transfer-out');
+    let roleNext=null,roleTx=null;
+    if(roleTransfer&&!roleExisting){const roleCurrency=String(roleSettlement.roleCurrency||'').toUpperCase(),roleAmountCents=roleSettlement.roleAmountCents;if(!/^[A-Z0-9_]{2,12}$/.test(roleCurrency)||!Number.isSafeInteger(roleAmountCents)||roleAmountCents<=0)throw Error('角色转账账目或汇率无效，暂时无法入账');if(Number.isSafeInteger(roleBook.balanceCents)){if(roleBook.currency!==roleCurrency)throw Error('角色钱包币种已变化，请刷新后重试');roleNext=roleBook.balanceCents-roleAmountCents;if(roleNext<0)throw Error('角色钱包余额不足，转账暂时无法入账')}else if(roleBook.balanceCents!==null)throw Error('角色钱包余额无效');const now=Date.now();roleTx={id:id('role-tx'),kind:'transfer-out',transferId:item.id,amountCents:-roleAmountCents,currency:roleCurrency,originalAmount:item.amount,originalCurrency,createdAt:now,description:`转账给 ${item.toName||'用户'}`}}
     const tx={id:id('tx'),kind,transferId:item.id,amountCents:delta,currency,originalAmount:item.amount,originalCurrency,exchangeRate:item.exchangeRate,createdAt:Date.now(),description:action==='send'?`转账给 ${item.toName||'角色'}`:action==='return'?`转账退回 · ${item.toName||'角色'}`:`收到 ${item.fromName||'角色'} 的转账`};
-    p.wallet.balanceCents=next;p.ledger.unshift(tx);item.walletUserId=owner;
+    p.wallet.balanceCents=next;p.ledger.unshift(tx);if(roleTx){if(!Number.isSafeInteger(roleBook.balanceCents))roleBook.currency=roleSettlement.roleCurrency;else roleBook.balanceCents=roleNext;roleBook.ledger.unshift(roleTx)}item.walletUserId=owner;
     if(action!=='send')item.status=action==='accept'?'accepted':'returned';
     return tx;
   };

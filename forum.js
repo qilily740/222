@@ -131,7 +131,9 @@
   else if(view.page==='profile-edit')html=w?editProfile(w):empty('先创建论坛世界','');
   else if(view.page==='detail'){const post=w?.posts.find(item=>item.id===view.postId&&!item.deleted);html=post?postDetail(w,post):empty('帖子不存在','这条帖子可能已被删除。')}
   else if(view.page==='edit-post'){const post=w?.posts.find(item=>item.id===view.postId&&!item.deleted);html=post&&post.authorId===personaActor()?editPostView(w,post):empty('无法编辑这条帖子','只有作者本人可以修改帖子。')}
+  const featureScreen=content.closest('.feature-screen');featureScreen?.querySelectorAll(':scope > .forum-dock').forEach(node=>node.remove());
   content.innerHTML=`<main class="forum-app">${noticeText?`<p class="forum-flash" role="status">${esc(noticeText)}</p>`:''}${html}${forumDock(w)}</main>`;
+  const dock=content.querySelector('.forum-dock');if(dock&&featureScreen){featureScreen.append(dock);dock.addEventListener('click',onClick)}
   content.onclick=onClick;content.onchange=onChange;content.onsubmit=onSubmit;content.oninput=onInput;
   if(view.page==='detail'&&view.commentId){content.querySelector(`[data-forum-comment="${CSS.escape(view.commentId)}"]`)?.scrollIntoView({block:'center'});view.commentId=''}
   if(view.page==='notifications'&&w){Core.markRead(w,personaActor());runtime.save()}
