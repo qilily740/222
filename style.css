@@ -2662,7 +2662,10 @@ textarea.offline-draft-cot-content{display:block;width:100%;min-height:280px;bor
 .chat-gift-detail{max-height:60dvh;overflow:auto;color:#666;font-size:12px;line-height:1.7}
 .chat-gift-detail ol{padding-left:17px}.chat-gift-detail li{padding:7px 0;color:#aaa}.chat-gift-detail li.is-done{color:#555}.chat-gift-detail time{display:block;color:#aaa;font-size:10px}.chat-gift-detail>small{font-size:9px;overflow-wrap:anywhere}
 
-/* Keep the Beautify header-to-category spacing and fill it with white. */
-.feature-page-topbar:has(.beautify-feature-brand),
-.feature-page-content:has(.beautify-workspace),
-.beautify-workspace{background:#fff}
+/* The white bridge moves with the sticky tabs, so scrolling cannot expose the gap above them. */
+#featureScreen .feature-page-topbar:has(.beautify-feature-brand){position:relative;z-index:12;background:#fff}
+#featureScreen .feature-page-content:has(.beautify-workspace){--beautify-header-gap:12px;isolation:isolate;background:#fff}
+#featureScreen .beautify-workspace,#featureScreen .beautify-tabs{background:#fff}
+#featureScreen .beautify-tabs{z-index:12}
+#featureScreen .beautify-tabs::before{position:absolute;right:0;bottom:calc(100% - 1px);left:0;height:calc(var(--beautify-header-gap,12px) + 2px);background:#fff;content:"";pointer-events:none}
+@media(max-width:480px){#featureScreen .feature-page-content:has(.beautify-workspace){--beautify-header-gap:10px}}
