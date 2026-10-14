@@ -1427,7 +1427,7 @@ let offlineExtraSettingsTab='requirements';
 let offlineRegexDraft=null;
 let offlineRequirementDraftRole=null;
 let systemSettingsTab='api';
-const APP_VERSION='3.2.5';
+const APP_VERSION='3.2.6';
 const compareAppVersions=(left,right)=>{const a=String(left||'0').split('.').map(Number),b=String(right||'0').split('.').map(Number);for(let i=0;i<Math.max(a.length,b.length);i++){const delta=(a[i]||0)-(b[i]||0);if(delta)return Math.sign(delta)}return 0};
 let INSTALLED_APP_VERSION=APP_VERSION;
 try{const saved=localStorage.getItem('iris-installed-version'),requested=window.IRIS_RELEASE;if(saved&&compareAppVersions(saved,INSTALLED_APP_VERSION)>0)INSTALLED_APP_VERSION=saved;if(requested&&compareAppVersions(requested,INSTALLED_APP_VERSION)>=0){INSTALLED_APP_VERSION=requested;localStorage.setItem('iris-installed-version',requested)}else localStorage.setItem('iris-installed-version',INSTALLED_APP_VERSION)}catch{}
@@ -3173,6 +3173,7 @@ $('#composer').onsubmit=e=>{e.preventDefault();submitMessage()};$('#messageInput
  // Restore before painting the next frame; retain normal taps on an active field.
  document.addEventListener('pointerdown',event=>{
   const input=event.target;
+  if(input instanceof HTMLInputElement&&input.type==='date')return;
   if(event.pointerType==='touch'&&isWorldBookEditor(input))return;
   if(!isIOS||event.pointerType!=='touch'||!editable(input)||input.disabled||input.readOnly||document.activeElement===input)return;
   event.preventDefault();avoidNativePan(input);input.focus({preventScroll:true});
@@ -3216,7 +3217,7 @@ $('#composer').onsubmit=e=>{e.preventDefault();submitMessage()};$('#messageInput
  viewport?.addEventListener('resize',sync);
  viewport?.addEventListener('scroll',sync);
  window.addEventListener('resize',sync);
- document.addEventListener('focusin',event=>{if(editable(event.target))avoidNativePan(event.target);if(event.target===$('#messageInput'))keepLatestChatMessageVisible(750);else if(event.target.matches?.('.sms-composer textarea'))keepLatestSmsMessageVisible(850);followKeyboard()});
+ document.addEventListener('focusin',event=>{if(event.target instanceof HTMLInputElement&&event.target.type==='date')return;if(editable(event.target))avoidNativePan(event.target);if(event.target===$('#messageInput'))keepLatestChatMessageVisible(750);else if(event.target.matches?.('.sms-composer textarea'))keepLatestSmsMessageVisible(850);followKeyboard()});
  document.addEventListener('focusout',followKeyboard);
  window.addEventListener('orientationchange',()=>setTimeout(readSafeTop,250));
  readSafeTop();
