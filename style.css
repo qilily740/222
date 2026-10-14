@@ -2661,3 +2661,8 @@ textarea.offline-draft-cot-content{display:block;width:100%;min-height:280px;bor
 .chat-gift-detail blockquote{margin:10px 0;padding:0 0 0 9px;border-left:2px solid #ddd;color:#888;font-size:11px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
 .chat-gift-detail{max-height:60dvh;overflow:auto;color:#666;font-size:12px;line-height:1.7}
 .chat-gift-detail ol{padding-left:17px}.chat-gift-detail li{padding:7px 0;color:#aaa}.chat-gift-detail li.is-done{color:#555}.chat-gift-detail time{display:block;color:#aaa;font-size:10px}.chat-gift-detail>small{font-size:9px;overflow-wrap:anywhere}
+
+/* Keep the Beautify header-to-category spacing and fill it with white. */
+.feature-page-topbar:has(.beautify-feature-brand),
+.feature-page-content:has(.beautify-workspace),
+.beautify-workspace{background:#fff}
