@@ -42,7 +42,7 @@ profileDialog.addEventListener('click', event => {
 function drawEmptyProfiles() {
   profileDialog.innerHTML = `<header class="profile-heading"><span class="profile-eyebrow">IRIS / USER</span><button type="button" class="profile-close" aria-label="关闭用户面板">×</button></header><section class="empty-profiles"><div class="empty-profile-mark">${icon('user')}</div><h2>还没有用户</h2><p>创建一张个人档案，再开始聊天。</p><button type="button" class="profile-confirm" id="createFirstUser">创建用户 <span aria-hidden="true">＋</span></button></section>`;
   profileDialog.querySelector('.profile-close').onclick=closeProfiles;
-  document.getElementById('createFirstUser').onclick=()=>{profileDrafts.push({name:'',nickname:'',birthday:'',details:'',avatar:''});profilePage=0;drawProfile();profileDialog.querySelector('[name="name"]').focus()};
+  document.getElementById('createFirstUser').onclick=()=>{profileDrafts.push({name:'',nickname:'',gender:'',birthday:'',details:'',avatar:''});profilePage=0;drawProfile();profileDialog.querySelector('[name="name"]').focus()};
 }
 
 function drawProfileList() {
@@ -53,7 +53,7 @@ function drawProfileList() {
   profileDialog.querySelector('.profile-user-list')?.scrollTo(0,rosterScrollTop);
   profileDialog.querySelector('.profile-close').onclick = closeProfiles;
   profileDialog.querySelector('#addProfile').onclick = () => {
-    profileDrafts.push({name:'',nickname:'',birthday:'',details:'',avatar:''});
+    profileDrafts.push({name:'',nickname:'',gender:'',birthday:'',details:'',avatar:''});
     profilePage = profileDrafts.length - 1;
     drawProfile();
     profileDialog.querySelector('[name="name"]').focus();
@@ -165,7 +165,7 @@ function drawProfile() {
       <div class="profile-fields">
         <label class="name-paper">名字 <span>NAME</span><input name="name" maxlength="40" required autocomplete="off" placeholder="你的名字" value="${esc(user.name)}"></label>
         <label class="nickname-paper">网名 <span>NICKNAME</span><input name="nickname" maxlength="40" autocomplete="off" placeholder="怎么称呼你" value="${esc(user.nickname)}"></label>
-        <label class="profile-wide birthday-ticket">生日 <span>BIRTHDAY</span><input name="birthday" type="date" value="${esc(user.birthday)}"></label>
+        <div class="profile-demographics"><label>性别 <span>GENDER</span><select name="gender"><option value="" ${user.gender?'':'selected'}>请选择</option><option value="Male" ${user.gender==='Male'?'selected':''}>Male</option><option value="Female" ${user.gender==='Female'?'selected':''}>Female</option></select></label><label>生日 <span>BIRTHDAY</span><input name="birthday" maxlength="40" value="${esc(user.birthday||'')}" placeholder="YYYY-MM-DD / MM-DD"></label></div>
         <label class="profile-wide details-note">具体信息 <span>ABOUT YOU</span><span class="note-decoration" aria-hidden="true">${icon('music')}</span><textarea name="details" maxlength="2000" rows="3" placeholder="性格、喜好，或想被记住的小事…">${esc(user.details)}</textarea></label>
       </div>
       <div class="profile-pagination"><button type="button" id="previousProfile" ${profilePage === 0 ? 'disabled' : ''}><span aria-hidden="true">←</span> 上一页</button><span aria-live="polite">${number}<i>/</i>${String(profileDrafts.length).padStart(2, '0')}</span><button type="button" id="nextProfile" ${profilePage === profileDrafts.length - 1 ? 'disabled' : ''}>下一页 <span aria-hidden="true">→</span></button></div>
@@ -181,10 +181,11 @@ function drawProfile() {
   const form = document.getElementById('profileForm');
   bindProfileDetailsAutoGrow(form.querySelector('[name="details"]'));
   form.addEventListener('input', event => {
-    if (!['name','nickname','birthday','details'].includes(event.target.name)) return;
+    if (!['name','nickname','gender','birthday','details'].includes(event.target.name)) return;
     user[event.target.name] = event.target.value;
     if (event.target.name === 'name' || event.target.name === 'nickname') updateProfilePreview();
   });
+  form.addEventListener('change', event => {if(event.target.name==='gender')user.gender=event.target.value});
   form.onsubmit = event => {
     event.preventDefault();
     if (pendingPortraits) { profileNotice('头像处理中，请稍候'); return; }
