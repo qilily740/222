@@ -3,8 +3,8 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 
 const context = { window: {}, Date, Math, Intl, Error, JSON, Number, String, Array, Object, setTimeout, FormData: class { get(){return '羊毛礼物';} } };
-vm.runInNewContext(fs.readFileSync(require.resolve('../market-core.js'), 'utf8'), context);
-vm.runInNewContext(fs.readFileSync(require.resolve('../market.js'), 'utf8'), context);
+vm.runInNewContext(fs.readFileSync(require.resolve('../scripts/market-core.js'), 'utf8'), context);
+vm.runInNewContext(fs.readFileSync(require.resolve('../scripts/market.js'), 'utf8'), context);
 const C = context.window.IrisMarketCore;
 const state = {
   users: [{ name: '面具甲' }, { name: '面具乙' }],
@@ -21,6 +21,10 @@ let apiCalls = 0;
 let fxCalls = 0;
 const prompts=[];
 let apiFailure = false;
+const searchResponse = () => JSON.stringify({products: [
+  {name:'羊毛手作礼盒',category:'礼盒',shop:'手作礼物铺',brand:'手作礼物铺',price:128,description:'适合作为日常礼物。',colors:['暖白'],specName:'规格',spec:'标准礼盒',material:'羊毛与纸材',reviews:[{author:'买家甲',rating:4,text:'包装完整，手感柔软。'}]},
+  {name:'羊毛钥匙挂件',category:'礼盒',shop:'手作礼物铺',brand:'手作礼物铺',price:38,description:'小巧的羊毛挂件。',colors:['浅灰'],specName:'规格',spec:'单只',material:'羊毛',reviews:[{author:'买家乙',rating:3,text:'尺寸比预期稍小。'}]}
+]});
 const subtitle = { textContent: '' };
 const horizontalNodes={'.market-category-pills':{scrollLeft:0},'.market-categories':{scrollLeft:0},'.market-role-picker':{scrollLeft:0}};
 const content = {
@@ -42,7 +46,7 @@ context.window.IrisMarket.render({
   esc: value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char])),
   save: () => { saves += 1; },
   exchangeRateToCny: async code => {fxCalls+=1;assert.equal(code,'USD');return {rate:7.2,date:'2026-10-14'};},
-  request: async prompt => { prompts.push(prompt);apiCalls += 1; if(apiFailure)throw Error('钱包 API 失败');if(prompt.includes('搜索需求：'))return JSON.stringify({name:'羊毛手作礼盒',category:'礼盒',shop:'手作礼物铺',brand:'手作礼物铺',price:128,description:'适合作为日常礼物。',colors:['暖白'],specName:'规格',spec:'标准礼盒',material:'羊毛与纸材',shipping:'通常 1–3 个工作日送达'});if(prompt.includes('仅返回本次检查区间'))return JSON.stringify({transactions:[]}); return JSON.stringify({balance:8520,currency:'CNY',bankName:'虚拟城市银行',accountStyle:'numeric',transactions:[{kind:'expense',amount:22,description:'奶茶',daysAgo:0},{kind:'expense',amount:168,description:'工作用品',daysAgo:1},{kind:'income',amount:4000,description:'工作收入',daysAgo:5}]}); }
+  request: async prompt => { prompts.push(prompt);apiCalls += 1; if(apiFailure)throw Error('钱包 API 失败');if(prompt.includes('搜索需求：'))return searchResponse();if(prompt.includes('仅返回本次检查区间'))return JSON.stringify({transactions:[]}); return JSON.stringify({balance:8520,currency:'CNY',bankName:'虚拟城市银行',accountStyle:'numeric',transactions:[{kind:'expense',amount:22,description:'奶茶',daysAgo:0},{kind:'expense',amount:168,description:'工作用品',daysAgo:1},{kind:'income',amount:4000,description:'工作收入',daysAgo:5}]}); }
 });
 assert.match(content.innerHTML, /market-product-art/);
 assert.match(content.innerHTML, /<svg viewBox="0 0 24 24" aria-hidden="true">/);
@@ -53,7 +57,8 @@ assert.match(content.innerHTML, /class="market-dock-my/);
 assert.equal(subtitle.textContent, '首页');
 
 async function click(dataset) {
-  content.onclick({ target: { closest: () => ({ dataset }) } });
+  const button = { dataset };
+  content.onclick({ target: { closest: selector => selector === 'button' ? button : null } });
   await new Promise(resolve => setImmediate(resolve));
 }
 
@@ -156,13 +161,13 @@ async function click(dataset) {
   assert.match(content.innerHTML,/value="large" checked/,'favoriting must preserve the selected specification');
   assert.doesNotMatch(content.innerHTML,/<header class="market-subhead">/);
   assert.match(content.innerHTML,/>购买<\/button>/);
-  assert.match(content.innerHTML,/同城配送，通常 30–60 分钟送达|通常 1–3 个工作日送达/);
+  assert.match(content.innerHTML,/16:00 前下单当日发货，16:00 后下单次日发货；同省隔天送达，跨省约 2–3 天/);
   assert.doesNotMatch(content.innerHTML,/虚拟世界配送/);
   assert.equal(context.window.IrisMarket.back(),true);
   assert.equal(content.scrollTop,240,'wordmark return must restore the preceding page');
   assert.equal(context.window.IrisMarket.back(),false,'category wordmark must exit even with route history');
   for(const page of ['home','cart','orders','mine']){await click({mPage:page});assert.equal(context.window.IrisMarket.back(),false);}
-  context.window.IrisMarket.render({state,characters:state.characters,content,title:{querySelector:selector=>selector==='.market-page-subtitle'?subtitle:null},esc:value=>String(value),save:()=>{saves+=1},request:async prompt=>{apiCalls+=1;if(prompt.includes('搜索需求：'))return JSON.stringify({name:'羊毛手作礼盒',category:'礼盒',shop:'手作礼物铺',brand:'手作礼物铺',price:128,description:'适合作为日常礼物。',colors:['暖白'],specName:'规格',spec:'标准礼盒',material:'羊毛与纸材',shipping:'通常 1–3 个工作日送达'});throw Error('unexpected API request')}});
+  context.window.IrisMarket.render({state,characters:state.characters,content,title:{querySelector:selector=>selector==='.market-page-subtitle'?subtitle:null},esc:value=>String(value),save:()=>{saves+=1},request:async prompt=>{apiCalls+=1;if(prompt.includes('搜索需求：'))return searchResponse();throw Error('unexpected API request')}});
   await click({mPage:'category'});
   assert.match(content.innerHTML, /^<main class="iris-market market-view-category"><div class="market-category-pills"/,'category tabs must be the first content directly under the market header');
   assert.doesNotMatch(content.innerHTML, /market-search|market-subhead/,'category view must not contain the home search or a second header row');
@@ -182,5 +187,10 @@ async function click(dataset) {
   assert.match(css,/feature-page-content:has\(\.market-view-category\)\{padding-top:0\}[\s\S]*?market-view-category \.market-category-pills\{position:sticky;top:0/,'the category strip must begin at the top edge and remain pinned while the list scrolls');
   await content.onsubmit({preventDefault(){},target:{matches:selector=>selector==='.market-search'}});
   assert.equal(apiCalls,searchCalls+1,'cached searches must reuse the generated product');
+  const orderCard = { dataset: { mOrder: overdueOrder.id } };
+  content.onclick({target:{closest:selector=>selector==='.market-order[data-m-order]'?orderCard:null}});
+  assert.equal(subtitle.textContent,'订单详情','clicking an actual order card must open its detail page');
+  await click({mPage:'category'});
+  assert.equal(subtitle.textContent,'分类','navigation buttons must not be treated as order cards');
   console.log('market-wallet-ui: all assertions passed');
 })().catch(error => { console.error(error); process.exitCode = 1; });

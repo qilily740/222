@@ -3,7 +3,12 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
-const forum = require('../forum-core.js');
+const forum = require('../scripts/forum-core.js');
+
+function controllerContent() {
+  return { innerHTML: '', onclick: null, onchange: null, onsubmit: null, oninput: null,
+    closest: () => null, querySelector: () => null, querySelectorAll: () => [] };
+}
 
 test('migrates stable independent persona and character forum identities', () => {
   const state = { users: [{ name: '面具 A' }, { name: '面具 B' }], forums: {} };
@@ -164,12 +169,12 @@ test('persists nested discussion and safely deletes only the selected forum worl
 });
 
 test('wires the forum entry to local state and its dedicated API route', () => {
-  const bootstrap = fs.readFileSync(path.join(__dirname, '..', 'storage-bootstrap.js'), 'utf8');
-  const app = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
-  const moduleSource = fs.readFileSync(path.join(__dirname, '..', 'forum.js'), 'utf8');
-  const coreSource = fs.readFileSync(path.join(__dirname, '..', 'forum-core.js'), 'utf8');
-  assert.ok(bootstrap.indexOf("'forum-core.js'") < bootstrap.indexOf("'app.js'"));
-  assert.ok(bootstrap.indexOf("'app.js'") < bootstrap.indexOf("'forum.js'"));
+  const bootstrap = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'storage-bootstrap.js'), 'utf8');
+  const app = fs.readFileSync(path.join(__dirname, '..', 'scripts/app.js'), 'utf8');
+  const moduleSource = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'forum.js'), 'utf8');
+  const coreSource = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'forum-core.js'), 'utf8');
+  assert.ok(bootstrap.indexOf("'scripts/forum-core.js'") < bootstrap.indexOf("'scripts/app.js'"));
+  assert.ok(bootstrap.indexOf("'scripts/app.js'") < bootstrap.indexOf("'scripts/forum.js'"));
   assert.match(app, /window\.IrisForum\?\.render/);
   assert.match(app, /apiConfigForFeature\('forum'\).*requestConfiguredChatCompletion/);
   assert.match(app, /apiConfigForFeature\('market'\).*requestConfiguredChatCompletion/);
@@ -196,14 +201,14 @@ test('wires the forum entry to local state and its dedicated API route', () => {
 
 test('runs forum controller handlers against a local non-browser DOM stub', async () => {
   const state = { users: [{ name: '面具 A', nickname: '苏茜理' }, { name: '面具 B', nickname: '林知夏' }], user: 0, messages: {}, forums: {} };
-  const content = { innerHTML: '', onclick: null, onchange: null, onsubmit: null, oninput: null };
+  const content = controllerContent();
   const window = { IrisForumCore: forum };
   const context = {
     window, document: { querySelector: () => null }, CSS: { escape: value => value },
     Date, Intl, Math, JSON, Set, Array, Object, String, Number, Boolean, RegExp, Promise,
     FormData: class { constructor(form) { this.form = form; } get(name) { return this.form.values?.[name] ?? null; } has(name) { return Boolean(this.form.values?.[name]); } }
   };
-  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'forum.js'), 'utf8'), context);
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'scripts', 'forum.js'), 'utf8'), context);
   let saves = 0;
   window.IrisForum.render({ state, characters: [], content, esc: value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char])), save: () => saves++, apiConfigured: false });
   const defaultWorld = forum.activeWorld(state.forums);
@@ -236,7 +241,7 @@ test('keeps role reply requests bound to one character and commits only validate
   const character = { name: '陆时宴', details: '角色人设', chatSettings: { userIndex: 0 } };
   const otherCharacter = { name: '另一角色', details: '不应进入陆时宴的独立请求', chatSettings: { userIndex: 1 } };
   const state = { users, user: 0, messages: { '0-0-chat': [{ mine: true, text: '其他面具的私人秘密' }] }, forums: {} };
-  const content = { innerHTML: '', onclick: null, onchange: null, onsubmit: null, oninput: null };
+  const content = controllerContent();
   const window = { IrisForumCore: forum };
   let sentPrompt = '';
   const context = {
@@ -244,7 +249,7 @@ test('keeps role reply requests bound to one character and commits only validate
     Date, Intl, Math, JSON, Set, Array, Object, String, Number, Boolean, RegExp, Promise,
     FormData: class { constructor(form) { this.form = form; } get(name) { return this.form.values?.[name] ?? null; } has(name) { return Boolean(this.form.values?.[name]); } }
   };
-  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'forum.js'), 'utf8'), context);
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'scripts', 'forum.js'), 'utf8'), context);
   window.IrisForum.render({ state, characters: [character, otherCharacter], content, esc: value => String(value), save() {}, apiConfigured: false, request: async prompt => { sentPrompt = prompt; return { choices: [{ message: { content: JSON.stringify({ content: '我也正想问这个。' }) } }] }; } });
   const click = async (dataset, parentElement) => { const target = { dataset, parentElement, closest: () => target }; return content.onclick({ target }); };
   const submit = async (kind, values, extras = {}) => content.onsubmit({ preventDefault() {}, target: { dataset: { form: kind, ...extras }, values, elements: {}, matches: selector => selector.includes('form[data-form]') || selector.includes(`.${kind}`) } });

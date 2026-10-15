@@ -30,6 +30,13 @@ const CharacterImport = (() => {
     const [,month,day]=date.match(/^(\d{2})-(\d{2})$/),currentYear=now.getFullYear(),beforeBirthday=Number(month)*100+Number(day)>((now.getMonth()+1)*100+now.getDate()),year=currentYear-age-(beforeBirthday?1:0);
     return `${year}-${date}`;
   }
+  function normalizeGender(value) {
+    const gender=String(value||'').trim();if(!gender)return'';
+    if(/男|\bmale\b|\bman\b|\bboy\b|masculine|♂/i.test(gender))return'Male';
+    if(/女|\bfemale\b|\bwoman\b|\bgirl\b|feminine|♀/i.test(gender))return'Female';
+    if(/非二元|non[\s_-]?binary/i.test(gender))return'Non-binary';
+    return gender;
+  }
   const aliases={name:['name','charname','charactername','名字','姓名','角色名','名称'],nickname:['nickname','网名','昵称'],gender:['gender','sex','性别'],birthday:['birthday','birthdate','dateofbirth','dob','生日','出生日期']};
   function normalizeWorldBook(root,body=root) {
     const book=body?.character_book||root?.character_book||body?.worldBook||body?.worldbook||body?.lorebook||root?.worldBook||root?.worldbook||root?.lorebook;
@@ -59,7 +66,7 @@ const CharacterImport = (() => {
   function fromText(text) {
     const source=normalizeNewlines(text).trim(),pick=(names)=>{const regex=new RegExp(`(?:^|[\\n|;；,，])\\s*(?:[-*#>]+\\s*)?(?:${names.join('|')})\\s*(?:[:：=]\\s*|\\s+)([^\\n|;；,，]+)`,'i');return(source.match(regex)||[])[1]?.trim()||''};
     const birthday=pick(['生日','出生日期','出生年月日','birthday','birthdate','birth_date','date of birth','date_of_birth','dob']),age=ageFromText(pick(['年龄','岁数','周岁','age']))??ageFromText(source);
-    return {name:pick(['角色名','姓名','名字','名称','character name','char_name','name']),nickname:pick(['网名','昵称','nickname']),gender:pick(['性别','gender','sex']),birthday:birthdayWithAge(birthday,age),details:source};
+    return {name:pick(['角色名','姓名','名字','名称','character name','char_name','name']),nickname:pick(['网名','昵称','nickname']),gender:normalizeGender(pick(['性别','gender','sex'])),birthday:birthdayWithAge(birthday,age),details:source};
   }
   function fromJSON(root) {
     if(Array.isArray(root)){if(root.length!==1)throw Error('请每次导入一张角色卡');root=root[0]}
@@ -71,7 +78,7 @@ const CharacterImport = (() => {
     const textFields=fromText(details);const result={details};
     for(const [key,keys] of Object.entries(aliases))result[key]=findField(body,keys)||textFields[key]||'';
     const age=ageFromText(findField(body,['age','年龄','岁数','周岁'])||'')??ageFromText(details);
-    result.birthday=birthdayWithAge(result.birthday||textFields.birthday,age);result.worldBook=normalizeWorldBook(root,body);return result;
+    result.gender=normalizeGender(result.gender);result.birthday=birthdayWithAge(result.birthday||textFields.birthday,age);result.worldBook=normalizeWorldBook(root,body);return result;
   }
   function xmlText(xml) {
     if(typeof DOMParser!=='undefined'){
@@ -131,7 +138,7 @@ const CharacterImport = (() => {
     else if(ext==='png'){result=await pngData(bytes);if(!result){result={};note='图片未嵌入角色资料，已设为头像，请手动补充信息。'}result.avatar=await portrait(file)}
     else throw Error('支持 JSON、PNG、TXT、DOCX 格式');
     if((result.details||'').length>100000)throw Error('角色设定过长，请控制在 10 万字以内');
-    return {character:{gender:'',birthday:'',details:'',avatar:'',color:'#ededed',initial:'',...result,nickname:'',name:result.name||file.name.replace(/\.[^.]+$/,'')},note};
+    return {character:{gender:'',birthday:'',details:'',avatar:'',color:'#ededed',initial:'',...result,gender:normalizeGender(result.gender),nickname:'',name:result.name||file.name.replace(/\.[^.]+$/,'')},note};
   }
   return {parse,fromText,fromJSON,normalizeDate,birthdayWithAge,ageFromText,normalizeWorldBook,docxText,pngData,portrait};
 })();

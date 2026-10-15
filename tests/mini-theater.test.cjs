@@ -1,6 +1,6 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
-const ctx={window:{addEventListener(){}},Map,WeakSet};vm.createContext(ctx);vm.runInContext(fs.readFileSync('mini-theater.js','utf8'),ctx);const mini=ctx.window.IrisMiniTheater;
-const implementation=fs.readFileSync('mini-theater.js','utf8'),app=fs.readFileSync('app.js','utf8');
+const ctx={window:{addEventListener(){}},Map,WeakSet};vm.createContext(ctx);vm.runInContext(fs.readFileSync('scripts/mini-theater.js','utf8'),ctx);const mini=ctx.window.IrisMiniTheater;
+const implementation=fs.readFileSync('scripts/mini-theater.js','utf8'),app=fs.readFileSync('scripts/app.js','utf8');
 for(const phrase of ['【互动创作】','【题材范围】','群聊','日记','订单物流','追星记录','演唱会','小狗、小猫','不强制浅色','不固定使用卡片布局','【视觉与样式】','【代码实现】','【交互兼容要求】','不使用type="module"','所调用的函数必须明确挂载到window上','逐一核对每个控件的选择器、事件监听、状态变化和可见反馈'])assert(mini.prompt.includes(phrase),`built-in prompt includes ${phrase}`);
 assert(!mini.prompt.includes('也可以自主采用精致的深色设计'),'built-in prompt no longer permits dark themed theaters');
 const oldPrompt='【互动创作】\n规则\n【视觉创作】\n每次都必须采用明亮界面。\n【页面尺寸】\n尺寸',upgraded=mini.upgradePrompt(oldPrompt);assert(upgraded.includes('不要默认套用深色背景或大块深色面板'));assert(upgraded.includes('【题材范围】'));assert(!upgraded.includes('每次都必须采用明亮界面'));assert(upgraded.endsWith('【页面尺寸】\n尺寸'),'prompt upgrade preserves content outside the visual section');

@@ -3,10 +3,11 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 
 const context = { window: {}, Date, Math, Intl, Error, JSON, Number, String, Array, Object };
-vm.runInNewContext(fs.readFileSync(require.resolve('../market-core.js'), 'utf8'), context);
+vm.runInNewContext(fs.readFileSync(require.resolve('../scripts/market-core.js'), 'utf8'), context);
 const C = context.window.IrisMarketCore;
 const state = { users: [{ name: '面具甲' }, { name: '面具乙' }], characters: [{ name: '周树生' }], char: 0, user: 0 };
 C.normalize(state);
+const initialBalance = C.persona(state, 0).wallet.balanceCents;
 
 const product = C.product(state, 'p-digital-headphone');
 assert.ok(product.specs.length>=3);
@@ -14,10 +15,14 @@ const specCounts=JSON.stringify(state.market.products.map(item=>[item.id,item.sp
 C.normalize(state);
 assert.equal(JSON.stringify(state.market.products.map(item=>[item.id,item.specs.length])),specCounts,'catalog upgrades must not duplicate specifications');
 assert.equal(C.linePrice(C.product(state,'p-record-jazz'),'cd'),8800);
-assert.match(C.shippingSummary(C.product(state,'p-drink-milk-tea')),/30–60 分钟/);
-assert.match(C.shippingSummary(C.product(state,'p-home-lamp')),/3–7 个工作日/);
+for (const productId of ['p-drink-milk-tea', 'p-home-lamp']) {
+  const summary = C.shippingSummary(C.product(state, productId));
+  assert.match(summary, /16:00 前下单当日发货/);
+  assert.match(summary, /16:00 后下单次日发货/);
+  assert.match(summary, /同省隔天送达，跨省约 2–3 天/);
+}
 assert.doesNotMatch(C.shippingSummary({category:'书籍',shipping:'虚拟世界配送'}),/虚拟/);
-assert.match(C.shippingSummary({category:'书籍',shipping:'普通快递配送'}),/1–3 个工作日/);
+assert.match(C.shippingSummary({category:'书籍',shipping:'普通快递配送'}),/同省隔天送达，跨省约 2–3 天/);
 assert.equal(product.priceCents, 49900);
 assert.equal(C.yuan(C.cents('2680.25')), '2680.25');
 const knit = C.product(state, 'p-coat-knit');
@@ -32,22 +37,45 @@ persona0.addresses.push({ id: 'addr-1', name: '甲', label: '虚拟城市 / 家�
 const order = C.createOrder(state, { userIndex: 0, kind: 'self', addressId: 'addr-1' });
 assert.equal(order.status, '待发货');
 assert.equal(order.totalCents, 99800);
-assert.equal(persona0.wallet.balanceCents, 200);
+assert.equal(persona0.wallet.balanceCents, initialBalance - order.totalCents);
 assert.equal(persona0.ledger.filter(x => x.kind === 'purchase').length, 1);
 assert.throws(() => C.payOrder(state, 0, order), /已支付/);
 
 const persona1 = C.persona(state, 1);
 assert.equal(persona1.orders.length, 0);
-assert.equal(persona1.wallet.balanceCents, 100000);
+assert.equal(persona1.wallet.balanceCents, initialBalance);
 
 const timeline = order.shippingEvents;
 assert.equal(timeline.length, 4);
 assert.ok(timeline.every((event, i) => i === 0 || event.at > timeline[i - 1].at));
 assert.throws(() => C.transition(order, '已送达'), /不能将订单/);
 
+// Exercise the cutoff and province rules using fixed local dates rather than the test run time.
+for (const [hour, minute, dispatchDay] of [[15, 59, 15], [16, 0, 16], [20, 0, 16]]) {
+  const now = new Date(2026, 9, 15, hour, minute).getTime();
+  const shippingOrder = { id: 'same-province', kind: 'self', address: { label: '杭州市西湖区' },
+    items: [{ productId: 'p-home-mug' }], shippingEvents: [] };
+  C.schedule(state, shippingOrder, now);
+  const events = shippingOrder.shippingEvents;
+  assert.equal(events[1].at, new Date(2026, 9, dispatchDay, 16).getTime(), '16:00 is the dispatch cutoff');
+  assert.equal(events[3].at, new Date(2026, 9, dispatchDay + 1, 16).getTime(), 'same-province shipments arrive the next day');
+  assert.ok(events.every((event, i) => i === 0 || event.at > events[i - 1].at));
+  const savedEvents = JSON.stringify(events);
+  C.schedule(state, shippingOrder, now + 86400000);
+  assert.equal(JSON.stringify(shippingOrder.shippingEvents), savedEvents, 'reopening must not reschedule an order');
+}
+const crossProvinceDays = new Set();
+for (const orderId of ['cross-a', 'cross-b']) {
+  const shippingOrder = { id: orderId, kind: 'self', address: { label: '北京市朝阳区' },
+    items: [{ productId: 'p-home-mug' }], shippingEvents: [] };
+  C.schedule(state, shippingOrder, new Date(2026, 9, 15, 10).getTime());
+  crossProvinceDays.add((shippingOrder.shippingEvents[3].at - shippingOrder.shippingEvents[1].at) / 86400000);
+}
+assert.deepEqual(crossProvinceDays, new Set([2, 3]), 'cross-province deliveries use two or three days');
+
 const returned = C.refund(state, 0, order.id);
 assert.equal(returned.status, '已退款');
-assert.equal(persona0.wallet.balanceCents, 100000);
+assert.equal(persona0.wallet.balanceCents, initialBalance);
 assert.equal(persona0.ledger.filter(x => x.kind === 'refund').length, 1);
 assert.throws(() => C.refund(state, 0, order.id), /不能申请退款/);
 
@@ -62,7 +90,7 @@ const roleGift = C.createOrder(state, {
   paidByCharacterId: state.characters[0].irisMarketId
 });
 assert.equal(roleGift.status, '待发货');
-assert.equal(persona0.wallet.balanceCents, 100000);
+assert.equal(persona0.wallet.balanceCents, initialBalance);
 assert.equal(C.roleWallet(state, role.irisMarketId, 0).balanceCents, 87200);
 assert.equal(C.roleWallet(state, role.irisMarketId, 0).ledger[0].amountCents, -12800);
 C.advance(state, 0, roleGift.shippingEvents.at(-1).at + 1);

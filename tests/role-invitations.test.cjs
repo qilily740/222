@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const invitations = require('../role-invitations.js');
+const invitations = require('../scripts/role-invitations.js');
 
 test('requires a structured, explicit invitation intent and bounds untrusted fields', () => {
   assert.equal(invitations.normalizeProposal(null), null);
@@ -42,9 +42,9 @@ test('requires both confirmed time and place and recognizes expired absolute tim
 });
 
 test('app wires structured online invitations to a separate offline request and persisted thread', () => {
-  const app = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
-  const bootstrap = fs.readFileSync(path.join(__dirname, '..', 'storage-bootstrap.js'), 'utf8');
-  assert.match(bootstrap, /'role-invitations\.js'.*'app\.js'/s);
+  const app = fs.readFileSync(path.join(__dirname, '..', 'scripts/app.js'), 'utf8');
+  const bootstrap = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'storage-bootstrap.js'), 'utf8');
+  assert.match(bootstrap, /'scripts\/role-invitations\.js'.*'scripts\/app\.js'/s);
   assert.match(app, /payload\.invitation/);
   assert.match(app, /saveInviteProposal\(listReply,requestThreadKey/);
   assert.match(app, /sendOnlineMessage\(\{feature:'offlineStory'/);

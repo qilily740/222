@@ -19,7 +19,7 @@
   return new Response(new ReadableStream({pull(controller){if(breakStream&&cursor>=nextReply.length){controller.error(Error('模拟小剧场流中断'));return}if(cursor>=nextReply.length){controller.enqueue(encoder.encode('data: [DONE]\n\n'));controller.close();return}const delta=nextReply.slice(cursor,cursor+7);cursor+=7;controller.enqueue(encoder.encode('data: '+JSON.stringify({choices:[{delta:{content:delta}}]})+'\n\n'))}}),{headers:{'Content-Type':'text/event-stream'}});
  };
  try{
-  await load('../mini-theater.js');await load('../app.js');
+  await load('../scripts/mini-theater.js');await load('../scripts/app.js');
   assert(!currentRoleOfflineData().settings.miniTheaterEnabled,'feature defaults off');
   assert(currentRoleOfflineData().settings.rolePerspective==='third'&&currentRoleOfflineData().settings.userAgency==='takeover'&&currentRoleOfflineData().settings.wordCount===1000&&currentRoleOfflineData().settings.paragraphCountMin===13&&currentRoleOfflineData().settings.paragraphCountMax===18,'new offline settings use requested defaults');
   assert(currentRoleOfflineData().settings.regexRules.some(x=>x.id===IrisMiniTheater.ruleId&&x.enabled&&!x.displayEnabled),'built-in context rule migrated and defaults on');

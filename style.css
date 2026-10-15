@@ -785,6 +785,7 @@ body{position:fixed;inset:0}
 .transfer-note{display:grid;grid-template-columns:48px minmax(0,1fr);align-items:baseline;gap:8px;margin:0;padding:11px 13px 12px}
 .transfer-note small{color:#aaa;font-size:8px;letter-spacing:.7px}
 .transfer-note p{margin:0;color:#696969;font-size:10px;line-height:1.6;overflow-wrap:anywhere}
+.transfer-note-translation{display:block;margin-top:6px;padding-top:6px;border-top:1px solid #e7e7e7;color:#999;font-size:10px}
 .transfer-actions{display:flex;gap:12px;justify-content:flex-end;margin:0 13px;padding:9px 0 11px;border-top:1px solid #ededed}
 .transfer-actions button{padding:3px 0;border:0;background:none;color:#555;font:inherit;font-size:10px;letter-spacing:.4px;cursor:pointer}
 .transfer-actions button+button{color:#999}
@@ -1423,6 +1424,8 @@ input,textarea{scrollbar-width:thin}
 .api-profile-heading{flex-wrap:wrap}
 .api-profile-actions{flex-wrap:wrap;max-width:100%;gap:9px}
 .api-config-panel input,.api-config-panel select,.api-config-panel textarea{min-width:0;max-width:100%}
+.api-profile-editor-switch{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #eee;color:#888;font-size:9px;letter-spacing:.2px}
+.api-profile-editor-switch select{width:100%;padding:7px 20px 7px 2px;border:0;border-radius:0;background:transparent;color:#555;font-size:10px;outline:none}
 /* Theme choices sit directly under each heading, with horizontal swipe. */
 .reflection-choice-group{margin-top:18px}
 .reflection-choice-group h3{display:flex;align-items:center;gap:16px;margin:0 0 10px;color:#777;font-family:"KaiTi","STKaiti","Kaiti SC",serif;font-size:13px;font-weight:400}
@@ -2225,6 +2228,8 @@ textarea.offline-draft-cot-content{display:block;width:100%;min-height:280px;bor
 .beautify-workspace{display:grid;gap:17px;padding-bottom:24px}
 .beautify-workspace:has(.beautify-background-settings){gap:8px}
 .beautify-workspace:has([data-beautify-tab="forum"].is-active){gap:8px}
+.feature-page-topbar:has(.beautify-feature-brand) .feature-page-wordmark,.feature-page-topbar:has(.beautify-feature-brand) .feature-page-brand>small,.beautify-tabs button,.beautify-class-catalog>summary,.beautify-code-panel>span,.beautify-preview-panel>span{font-family:"Great Vibes","Noto Sans CJK SC","PingFang SC",sans-serif;font-style:normal}
+.feature-page-topbar:has(.beautify-feature-brand) .feature-page-wordmark{line-height:1.15}
 .beautify-tabs{position:sticky;top:0;z-index:2;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-bottom:1px solid #eee;background:#fff}
 .beautify-panel{display:grid;gap:17px;min-width:0}
 .beautify-tabs button{position:relative;min-height:42px;color:#999;font-size:11px;letter-spacing:.3px}
@@ -2669,3 +2674,7 @@ textarea.offline-draft-cot-content{display:block;width:100%;min-height:280px;bor
 #featureScreen .beautify-tabs{z-index:12}
 #featureScreen .beautify-tabs::before{position:absolute;right:0;bottom:calc(100% - 1px);left:0;height:calc(var(--beautify-header-gap,12px) + 2px);background:#fff;content:"";pointer-events:none}
 @media(max-width:480px){#featureScreen .feature-page-content:has(.beautify-workspace){--beautify-header-gap:10px}}
+
+/* Keep long API errors readable above the chat controls on narrow screens. */
+.toast{left:50%;bottom:max(112px,calc(96px + env(safe-area-inset-bottom)));width:min(calc(100% - 32px),620px);max-height:min(38dvh,300px);overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5;text-align:left;border-radius:16px}
+.toast.is-error{padding:13px 16px;box-shadow:0 8px 30px #0003}

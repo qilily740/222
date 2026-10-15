@@ -10,14 +10,14 @@
   "theme_color": "#ffffff",
   "icons": [
     {
-      "src": "iris-app-icon-192.png",
+      "src": "../assets/iris-app-icon-192.webp",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/webp"
     },
     {
-      "src": "iris-app-icon-512.png",
+      "src": "../assets/iris-app-icon-512.webp",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/webp",
       "purpose": "any maskable"
     }
   ]

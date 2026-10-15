@@ -1,7 +1,7 @@
 const assert=require('node:assert/strict');
 const fs=require('node:fs');const vm=require('node:vm');
 const context={window:{},Date,Math,Intl,Error,JSON,Number,String,Array,Object};
-vm.runInNewContext(fs.readFileSync(require.resolve('../market-core.js'),'utf8'),context);
+vm.runInNewContext(fs.readFileSync(require.resolve('../scripts/market-core.js'),'utf8'),context);
 const C=context.window.IrisMarketCore;
 const state={user:0,users:[{name:'甲'},{name:'乙'}],characters:[{name:'同名',chatSettings:{userIndex:0}},{name:'同名',chatSettings:{userIndex:1}}],messages:{}};C.normalize(state);
 const items=[{productId:'p-toy-bear',specId:'default',quantity:1}];
@@ -27,6 +27,6 @@ restored.characters.splice(0,1);C.syncGiftCards(restored,0);assert.match(restore
 const event=state.messages['0-0-chat'][0].marketEvent;assert.equal(C.giftOrder(state,{...event,userId:state.users[1].irisMarketId}),null);
 console.log('Gift ownership, delivery, decisions, idempotency and persistence checks passed');
 
-const app=fs.readFileSync(require.resolve('../app.js'),'utf8');
+const app=fs.readFileSync(require.resolve('../scripts/app.js'),'utf8');
 assert.match(app,/action\.type==='gift_reply'/);assert.match(app,/marketScope\.enabled===true&&!marketScope\.ephemeral/);assert.match(app,/giftReaction 为 accepted/);
-const ui=fs.readFileSync(require.resolve('../market.js'),'utf8');assert.doesNotMatch(ui,/receiveGift\(/);assert.match(ui,/requestId:giftDraft.requestId/);
+const ui=fs.readFileSync(require.resolve('../scripts/market.js'),'utf8');assert.doesNotMatch(ui,/receiveGift\(/);assert.match(ui,/requestId:giftDraft.requestId/);
