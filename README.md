@@ -17,5 +17,5 @@
 - `index.html` 和 `style.css` 是 GitHub Pages 的网页入口与样式。
 - `scripts/` 放应用模块与启动加载器。
 - `assets/` 放图片、字体和静态数据；界面图片优先使用 WebP。
-- `config/` 放 PWA 清单和版本信息。
+- `config/` 放 PWA 清单和当前版本信息；根目录的 `version.json` 为兼容已缓存旧版清单的手机保留。
 - `tests/` 放本地自动化检查。
