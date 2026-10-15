@@ -1428,7 +1428,7 @@ let offlineExtraSettingsTab='requirements';
 let offlineRegexDraft=null;
 let offlineRequirementDraftRole=null;
 let systemSettingsTab='api';
-const APP_VERSION='3.2.10';
+const APP_VERSION='3.2.11';
 const compareAppVersions=(left,right)=>{const a=String(left||'0').split('.').map(Number),b=String(right||'0').split('.').map(Number);for(let i=0;i<Math.max(a.length,b.length);i++){const delta=(a[i]||0)-(b[i]||0);if(delta)return Math.sign(delta)}return 0};
 let INSTALLED_APP_VERSION=APP_VERSION;
 try{const saved=localStorage.getItem('iris-installed-version'),requested=window.IRIS_RELEASE;if(saved&&compareAppVersions(saved,INSTALLED_APP_VERSION)>0)INSTALLED_APP_VERSION=saved;if(requested&&compareAppVersions(requested,INSTALLED_APP_VERSION)>=0){INSTALLED_APP_VERSION=requested;localStorage.setItem('iris-installed-version',requested)}else localStorage.setItem('iris-installed-version',INSTALLED_APP_VERSION)}catch{}
@@ -2340,7 +2340,7 @@ function bindSmsPage(){
   if(activeSmsMessageActionIndex!==null&&!target.closest('.sms-message-actions')){activeSmsMessageActionIndex=null;renderFeaturePage('sms')}
  });
 }
-function openFeaturePage(page){offlineExpandedStageFolds.clear();closeDockFeatures();closeSheet();$('#settingsScreen').hidden=true;activeFeaturePage=page;activeSmsThread=null;activeSmsMessageActionIndex=null;smsSelectionThreadKey='';smsSelectedMessageIndices.clear();smsClearMenuOpen=false;$('#featureScreen').hidden=false;renderFeaturePage(page);if(page==='sms')smsContacts().forEach(({roleIndex,userIndex})=>resumeBlockedProactiveSms(roleIndex,userIndex))}
+function openFeaturePage(page){offlineExpandedStageFolds.clear();closeDockFeatures();closeSheet();$('#settingsScreen').hidden=true;activeFeaturePage=page;activeSmsThread=null;activeSmsMessageActionIndex=null;smsSelectionThreadKey='';smsSelectedMessageIndices.clear();smsClearMenuOpen=false;$('#featureScreen').hidden=false;try{renderFeaturePage(page);if(page==='sms')smsContacts().forEach(({roleIndex,userIndex})=>resumeBlockedProactiveSms(roleIndex,userIndex))}catch(error){console.error(`Feature page failed to render: ${page}`,error);const title=$('#featurePageTitle'),content=$('#featurePageContent');title.innerHTML=`<button type="button" class="feature-page-brand" id="featureBack" aria-label="返回聊天"><span class="feature-page-wordmark">${page==='worldbook'?'World Book':page==='beautify'?'Beautify':page==='forum'?'Forum':page==='market'?'Market':'SMS'}</span><small>打开失败</small></button>`;$('#featureBack').onclick=closeFeaturePage;content.innerHTML='<section class="feature-load-error" role="alert"><strong>页面暂时无法打开</strong><p>可以返回聊天后再重试。</p><button type="button" data-feature-retry>重试</button></section>';content.querySelector('[data-feature-retry]').onclick=()=>openFeaturePage(page)}}
 function closeFeaturePage(){const wasSms=activeFeaturePage==='sms';$('#smsUserMenu')?.remove();if(wasSms){const boundUser=smsUserIndexForRole(state.char);if(Number.isInteger(boundUser))state.user=boundUser}activeFeaturePage=null;activeSmsThread=null;activeSmsMessageActionIndex=null;smsSelectionThreadKey='';smsSelectedMessageIndices.clear();smsClearMenuOpen=false;$('#featureScreen').hidden=true;if(wasSms){save();render()}}
 let activeBeautifyTab='online';
 const beautifyTabs=[['online','线上'],['offline','线下'],['forum','论坛'],['tutorial','教程']];
@@ -2429,9 +2429,10 @@ function renderFeaturePage(page){
  if(page!=='forum')$('#featureScreen').querySelector(':scope > .forum-dock')?.remove();
  const labels={worldbook:'World Book',beautify:'Beautify',forum:'Forum',market:'Market',business:'Business',sms:'SMS'};
  const smsRole=page==='sms'&&activeSmsThread?chars[activeSmsThread.roleIndex]:null;
- if(page==='forum')$('#featurePageTitle').querySelector('.feature-page-brand')?.insertAdjacentHTML('beforeend','<small class="forum-page-subtitle" hidden></small>');
- if(page==='market')$('#featurePageTitle').innerHTML='<button type="button" class="feature-page-brand market-feature-brand" id="featureBack" aria-label="返回聊天"><span class="feature-page-wordmark">Market</span><small class="market-page-subtitle">首页</small></button>';
- $('#featureBack').onclick=()=>{if(page==='market'&&window.IrisMarket?.back?.())return;if(page==='forum'&&window.IrisForum?.back?.())return;if(page==='sms'&&activeSmsThread){activeSmsThread=null;activeSmsMessageActionIndex=null;smsSelectionThreadKey='';smsSelectedMessageIndices.clear();smsClearMenuOpen=false;renderFeaturePage('sms')}else closeFeaturePage()};
+ const title=$('#featurePageTitle'),brandClass={worldbook:'worldbook-feature-brand',beautify:'beautify-feature-brand',forum:'forum-feature-brand',market:'market-feature-brand',sms:'sms-feature-brand'}[page]||'';
+ const subtitle=page==='forum'?'<small class="forum-page-subtitle" hidden></small>':page==='market'?'<small class="market-page-subtitle">首页</small>':`<small>${page==='worldbook'?'世界书':page==='beautify'?'美化':page==='sms'?'短信':''}</small>`;
+ title.innerHTML=`<button type="button" class="feature-page-brand ${brandClass}" id="featureBack" aria-label="返回聊天"><span class="feature-page-wordmark">${labels[page]||'Iris'}</span>${subtitle}</button>`;
+ const backButton=$('#featureBack');if(backButton)backButton.onclick=()=>{if(page==='market'&&window.IrisMarket?.back?.())return;if(page==='forum'&&window.IrisForum?.back?.())return;if(page==='sms'&&activeSmsThread){activeSmsThread=null;activeSmsMessageActionIndex=null;smsSelectionThreadKey='';smsSelectedMessageIndices.clear();smsClearMenuOpen=false;renderFeaturePage('sms')}else closeFeaturePage()};
  const content=$('#featurePageContent');
  if(page==='worldbook'){content.innerHTML=renderGlobalWorldBookPanel();bindGlobalWorldBookPanel()}
  else if(page==='beautify')renderBeautifyPage(content);
