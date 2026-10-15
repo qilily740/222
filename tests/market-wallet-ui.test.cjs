@@ -110,8 +110,8 @@ async function click(dataset) {
   assert.ok(generated.ledger.some(row=>row.amountCents<0));
   assert.match(content.innerHTML,/工作用品/);
   await click({ mWalletToggle: '' });
-  assert.match(content.innerHTML, /aria-expanded="false"/);
-  await click({ mWalletToggle: '' });
+  assert.match(content.innerHTML, /aria-expanded="true"/,'refreshing an existing wallet must keep its details visible');
+  assert.equal(apiCalls,2,'the wallet button refreshes an existing wallet instead of hiding it');
   selectedRoleIndex = 1;
   await click({mPickRole:'1'});
   assert.match(content.innerHTML, /同名角色的私人钱包/);
@@ -119,6 +119,11 @@ async function click(dataset) {
   assert.equal(apiCalls, 2);
   assert.equal(C.roleWallet(state,state.characters[1].irisMarketId,0).balanceCents,null);
   assert.equal(C.roleWallet(state,state.characters[0].irisMarketId,1).balanceCents,null);
+  await click({mPickRole:'0'});
+  assert.match(content.innerHTML,/aria-expanded="true"/,'switching back must restore the first role wallet');
+  assert.match(content.innerHTML,/¥8,520\.00/,'each role must keep its own saved wallet balance');
+  assert.equal(apiCalls,2,'switching roles must not request wallet data');
+  await click({mPickRole:'1'});
   apiFailure = true;
   await click({mWalletToggle:''});
   assert.equal(C.roleWallet(state,state.characters[1].irisMarketId,0).balanceCents,null);
@@ -127,7 +132,7 @@ async function click(dataset) {
   await click({mWalletToggle:''});
   apiFailure = false;
   await click({mWalletToggle:''});
-  assert.equal(apiCalls,4);
+  assert.equal(apiCalls,5);
   const wallet = C.roleWallet(state,state.characters[1].irisMarketId,0);
   const number = wallet.accountNumber;
   C.initializeRoleWallet(state,0,state.characters[1].irisMarketId,{balance:1,currency:'CNY',bankName:'另一个银行',accountStyle:'numeric'});
@@ -147,7 +152,7 @@ async function click(dataset) {
   assert.match(prompts.at(-1),/当前角色线下行动/);
   assert.doesNotMatch(prompts.at(-1),/其他角色私人信息|其他面具私人信息/);
   assert.equal(JSON.stringify(state.messages),savedMessages);
-  assert.equal(apiCalls,5,'each reopening requests one incremental wallet update');
+  assert.equal(apiCalls,7,'each refresh requests one incremental wallet update');
   assert.match(content.innerHTML,/≈ ¥61,344.00 人民币/);
   assert.equal(wallet.balanceCents,852000,'currency reference must not change funds');
   assert.equal(context.window.IrisMarket.back(),true);

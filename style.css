@@ -2171,6 +2171,8 @@ textarea.offline-draft-cot-content{display:block;width:100%;min-height:280px;bor
 .market-role-picker>button.is-selected>span:last-child{color:#111}
 .market-role-pay .market-wallet-toggle{display:grid;place-items:center;width:34px;height:34px;padding:6px;border:0!important;background:transparent}
 .market-wallet-toggle svg{width:23px;height:23px;stroke:#444;stroke-width:1.4}
+.market-wallet-toggle .market-wallet-refresh-glyph{transform-box:fill-box;transform-origin:center}
+.market-wallet-toggle.is-loading .market-wallet-refresh-glyph{animation:market-wallet-spin .8s linear infinite}
 .market-role-wallet.is-open{max-height:540px}
 .market-wallet{display:block;border:0;padding:0}
 .market-bank-card{position:relative;overflow:hidden;width:100%;padding:18px 20px;border:1px solid #ddd;border-radius:14px;background:linear-gradient(125deg,#fafafa,#eaeaea);color:#333;text-align:left}
@@ -2689,3 +2691,218 @@ textarea.offline-draft-cot-content{display:block;width:100%;min-height:280px;bor
 .backup-preview .backup-mode-options label{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:0;margin:0;padding:10px;border:1px solid #eee;border-radius:10px;background:#fff}
 .backup-preview .backup-mode-options label>span{display:flex;align-items:center;gap:6px;color:#555;font-size:9px}
 .backup-preview .backup-mode-options label small{margin:0;color:#999;font-size:8px;line-height:1.55}
+
+/* Private perfume archive: the same quiet paper, thin rules and capsule controls as Iris. */
+.feature-page-topbar:has(.business-feature-brand){padding-top:24px;padding-bottom:12px}
+.feature-page-topbar:has(.business-feature-brand){justify-content:space-between;gap:14px}
+.feature-page-topbar:has(.business-feature-brand) #featurePageTitle{flex:1 1 auto;min-width:0}
+.business-feature-brand{max-width:100%;transform:translateY(3px)}
+.business-feature-brand .feature-page-wordmark{line-height:1.15}
+.business-feature-brand .business-page-subtitle{margin-left:1px;color:#aaa;font-family:"LXGW WenKai","Iris Kai","Kaiti SC",serif;font-size:11px;font-style:normal;font-weight:400;letter-spacing:.4px;white-space:nowrap}
+.perfumery-topbar-user{position:relative;top:4px;z-index:15;flex:none}
+.perfumery-current-avatar,.perfumery-mask-avatar{display:grid;width:36px;height:36px;flex:none;place-items:center;overflow:hidden;border:1px solid #e8e8e5;border-radius:50%;background:#f7f7f5;color:#777;font-family:Georgia,"Songti SC",serif;font-size:13px}
+.perfumery-current-avatar{padding:0;cursor:pointer}
+.perfumery-current-avatar img,.perfumery-mask-avatar img{width:100%;height:100%;object-fit:cover}
+.perfumery-mask-menu{position:absolute;top:calc(100% + 8px);right:0;z-index:20;display:grid;min-width:190px;gap:2px;padding:6px;border:1px solid #ececea;border-radius:12px;background:#fff;box-shadow:0 8px 28px #00000012}
+.perfumery-mask-menu>button{display:flex;align-items:center;gap:9px;min-width:0;padding:7px;border:0;border-radius:8px;background:transparent;color:#666;text-align:left;font-size:10px;cursor:pointer}
+.perfumery-mask-menu>button:hover,.perfumery-mask-menu>button.is-current{background:#f7f7f5}
+.perfumery-mask-menu .perfumery-mask-avatar{width:29px;height:29px;font-size:11px}
+.perfumery-mask-menu>button>span:nth-child(2){flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.perfumery-mask-menu>button>i{color:#777;font-size:11px;font-style:normal}
+.feature-page-content:has(.iris-perfumery){padding-top:4px;padding-bottom:0}
+.toast{z-index:20}
+.iris-perfumery{display:flex;flex-direction:column;color:#555;font-size:12px;min-height:100%;padding-bottom:12px;--perfume-line:#ececea;--perfume-muted:#999}
+.iris-perfumery *{box-sizing:border-box}
+.iris-perfumery button,.iris-perfumery input,.iris-perfumery select,.iris-perfumery textarea{font:inherit;color:inherit}
+.iris-perfumery button:disabled{opacity:.45;cursor:default}
+.iris-perfumery button:focus-visible,.iris-perfumery input:focus-visible,.iris-perfumery select:focus-visible{outline:1px solid #999;outline-offset:3px}
+.perfumery-heading{padding:2px 0 0}
+.perfumery-heading>small{color:#a3a39e;font-family:Georgia,serif;font-size:8px;letter-spacing:2px}
+.perfumery-heading h2{font-family:"LXGW WenKai","Iris Kai","Kaiti SC",serif;font-size:27px;font-weight:400;letter-spacing:1px;margin:10px 0}
+.perfumery-heading p,.perfumery-muted{font-size:10px;color:#999;line-height:1.9;margin:8px 0 14px}
+.perfumery-heading>p{margin:1px 0 0;line-height:1.35}
+.perfumery-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;border-block:1px solid var(--perfume-line);padding:15px 0}
+.perfumery-stats>div{display:flex;flex-direction:column;gap:8px;min-width:0}
+.perfumery-stats small{font-size:9px;color:#999}
+.perfumery-stats strong{font-family:Georgia,"PingFang SC",serif;font-size:18px;font-weight:400;overflow-wrap:anywhere}
+.perfumery-stats em{font-size:10px;font-style:normal;color:#999}
+.perfumery-editorial{position:relative;min-height:250px;padding:8px 42% 20px 3px;border-bottom:1px solid var(--perfume-line);overflow:hidden}
+.perfumery-editorial>span{font-size:8px;letter-spacing:1.6px;color:#aaa}
+.perfumery-editorial h3{font-family:"LXGW WenKai","Iris Kai",serif;font-size:25px;font-weight:400;line-height:1.7;margin:17px 0 9px}
+.perfumery-editorial p{font-size:10px;line-height:2;color:#999}
+.perfumery-editorial>button{display:flex;justify-content:space-between;gap:20px;padding:10px 0;margin-top:14px;border-bottom:1px solid #ccc;font-size:11px}
+.perfumery-editorial>div{position:absolute;right:0;top:22px;width:40%;pointer-events:none}
+.perfumery-editorial .perfumery-bottle.is-large svg{height:195px}
+.perfumery-bottle{display:grid;place-items:center;min-width:0;background:linear-gradient(145deg,#f7f7f5,#fcfcfb);overflow:hidden}
+.perfumery-bottle svg{display:block;width:100%;height:170px;stroke-width:1;max-width:180px}
+.perfumery-bottle.is-large{background:transparent}
+.perfumery-bottle.is-large svg{height:230px;max-width:210px}
+.perfumery-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 14px;margin:20px 0 28px}
+.perfumery-item-card{display:flex;flex-direction:column;gap:7px;padding:0;text-align:left;min-width:0}
+.perfumery-item{min-width:0;display:flex;flex-direction:column}
+.perfumery-item>.perfumery-item-card{width:100%;flex:1}
+.perfumery-card-action{font-size:9px;color:#777;line-height:1.6}
+.perfumery-card-sale{display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;margin-top:10px;padding:8px 0;border-bottom:1px solid #d8d8d4;font-size:10px!important;text-align:left}
+.perfumery-sale-panel{padding:16px 0;border-block:1px solid var(--perfume-line)}
+.perfumery-sale-panel>.perfumery-primary{margin-top:12px}
+.perfumery-editorial>button+button{margin-top:4px}
+.perfumery-item-card .perfumery-bottle{width:100%;margin-bottom:5px;border-radius:3px}
+.perfumery-item-brand{color:#999;font-family:Georgia,serif;font-size:8px;letter-spacing:.6px;overflow-wrap:anywhere}
+.perfumery-item-card>strong{font-size:12px;font-weight:400;line-height:1.6;overflow-wrap:anywhere}
+.perfumery-item-card>small{color:#aaa;font-size:9px}
+.perfumery-card-foot{display:flex;justify-content:space-between;gap:6px;width:100%;font-size:8px;border-top:1px solid var(--perfume-line);padding-top:9px;color:#999}
+.perfumery-card-foot b{color:#666;font-family:Georgia,serif;font-size:11px;font-weight:400;white-space:nowrap}
+.perfumery-section-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:23px 0 14px}
+.perfumery-section-title h3,.perfumery-section>h3{font-size:12px;font-weight:400;margin:0}
+.perfumery-section-title>button,.perfumery-section-title>span{font-size:9px;color:#999}
+.perfumery-empty{display:flex;align-items:center;flex-direction:column;gap:10px;padding:34px 15px;text-align:center}
+.perfumery-empty>span{font-size:25px;color:#c1c1bb;font-weight:300}
+.perfumery-empty strong{font-size:12px;font-weight:400}
+.perfumery-empty p{font-size:10px;line-height:1.9;color:#aaa;max-width:300px;margin:0}
+.perfumery-workshop-link{display:flex;align-items:center;justify-content:space-between;width:100%;padding:20px 0;border-block:1px solid var(--perfume-line);text-align:left;margin:10px 0 24px}
+.perfumery-workshop-link span{display:grid;gap:10px}.perfumery-workshop-link small{font-size:8px;letter-spacing:1px;color:#aaa}.perfumery-workshop-link strong{font-weight:400;font-family:"LXGW WenKai","Iris Kai",serif;font-size:17px}.perfumery-workshop-link b{font-weight:400;color:#aaa}
+.perfumery-dock{position:fixed;left:50%;bottom:max(10px,env(safe-area-inset-bottom));z-index:16;display:flex;align-items:center;gap:14px;width:min(calc(100vw - 96px),430px);height:58px;margin:0;padding:0;background:transparent;transform:translateX(-50%);pointer-events:none}
+.iris-perfumery:has(.perfumery-dock){padding-bottom:calc(86px + env(safe-area-inset-bottom))}
+.perfumery-dock-capsule,.perfumery-dock-add{pointer-events:auto}
+.perfumery-dock-capsule{display:flex;align-items:center;flex:1;min-width:0;height:58px;padding:5px;border:1px solid #e5e5e5;border-radius:999px;background:#fafafa}
+.perfumery-dock-tab{display:flex;align-items:center;justify-content:center;gap:5px;flex:1;min-width:0;height:46px;padding:0 3px;border-radius:999px;background:transparent;color:#666;transition:background .18s,color .18s}
+.perfumery-dock-tab.is-active{background:#e9e9e9;color:#171717}
+.perfumery-dock-tab>svg{width:19px;height:19px;flex:none;stroke-width:1.4}
+.perfumery-dock-tab>span{font-size:9px;letter-spacing:.1px;white-space:nowrap}
+.perfumery-dock-add{display:grid;place-items:center;flex:none;width:58px;height:58px;padding:0;border:1px solid #e5e5e5;border-radius:50%;background:#fafafa;color:#171717}
+.perfumery-dock-add.is-active{background:#e9e9e9}
+.perfumery-dock-add>svg{width:26px;height:26px;stroke-width:1.5}
+.perfumery-dock-tab:hover,.perfumery-dock-add:hover{filter:none}
+@media(hover:hover){.perfumery-dock-tab:hover{background:#ededed}.perfumery-dock-tab.is-active:hover{background:#e9e9e9}.perfumery-dock-add:hover{background:#ededed}}
+@media(hover:none),(pointer:coarse){.perfumery-dock-tab:active,.perfumery-dock-add:active{background:#e3e3e3;transition-duration:0s}}
+@media(max-width:480px){.perfumery-dock{width:calc(100vw - 50px)}}
+@media(max-width:380px){.perfumery-dock{gap:9px;height:54px}.perfumery-dock-capsule{height:54px;padding:4px}.perfumery-dock-tab{height:44px;gap:3px;padding:0 1px}.perfumery-dock-tab>svg{width:17px;height:17px}.perfumery-dock-tab>span{font-size:8px}.perfumery-dock-add{width:54px;height:54px}}
+.perfumery-form{display:grid;gap:17px;margin:15px 0 22px;min-width:0}
+.perfumery-form label{display:block;min-width:0;font-size:10px;color:#888;line-height:1.6}
+.iris-perfumery input,.iris-perfumery select,.iris-perfumery textarea{display:block;width:100%;min-width:0;border:0;border-bottom:1px solid #e5e5e2;border-radius:0;background:transparent;padding:11px 1px;font-size:12px;line-height:1.7;outline:none}
+.iris-perfumery input::placeholder,.iris-perfumery textarea::placeholder{color:#b5b5af;font-size:10px}
+.iris-perfumery input[type=number]{appearance:textfield}
+.iris-perfumery input[type=radio]{width:auto;display:inline-block;padding:0}
+.iris-perfumery textarea{resize:vertical;max-height:180px;min-height:74px}
+.perfumery-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.perfumery-two>button{border:1px solid #e6e6e3;border-radius:18px;padding:10px 8px;font-size:10px}
+.iris-perfumery .perfumery-primary{display:flex;align-items:center;justify-content:center;gap:6px;align-self:end;justify-self:end;margin-left:auto;padding:9px 1px;width:max-content;max-width:100%;border:0;border-bottom:1px solid #777;background:transparent;border-radius:0;color:#333;font-size:11px;text-align:left}
+.perfumery-intro-art{display:flex;align-items:center;justify-content:center;gap:10px;padding:5px 0 20px;border-block:1px solid var(--perfume-line)}
+.perfumery-intro-art>span{font-family:Georgia,serif;color:#b3b3aa;font-size:13px;line-height:1.8;letter-spacing:1px}
+.perfumery-intro-art .perfumery-bottle{width:45%}
+.perfumery-notice,.perfumery-loading{font-size:10px;line-height:1.8;padding:10px 13px;background:#f5f5f2;margin-top:10px;border-radius:8px;color:#777;overflow-wrap:anywhere}
+.perfumery-loading{background:transparent;border-bottom:1px solid var(--perfume-line);border-radius:0;color:#999}
+.perfumery-back{font-size:9px;padding:17px 0 4px;color:#999!important}
+.perfumery-detail-hero{display:grid;grid-template-columns:48% minmax(0,1fr);align-items:center;gap:15px;padding:15px 0}
+.perfumery-detail-hero>div:last-child{min-width:0}
+.perfumery-detail-hero small{font-size:8px;color:#999;letter-spacing:.5px}
+.perfumery-detail-hero h2{font-family:"LXGW WenKai","Iris Kai",serif;font-size:25px;line-height:1.5;font-weight:400;margin:12px 0;overflow-wrap:anywhere}
+.perfumery-detail-hero p{font-size:10px;color:#999;line-height:1.9}
+.perfumery-detail-hero span{display:block;font-size:9px;color:#aaa;margin:16px 0 7px}
+.perfumery-detail-hero strong{font-size:21px;font-family:Georgia,serif;font-weight:400}
+.perfumery-notes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;border-block:1px solid var(--perfume-line);padding:15px 0;margin:0}
+.perfumery-notes dt{color:#aaa;font-size:9px;margin-bottom:7px}.perfumery-notes dd{margin:0;font-size:10px;line-height:1.8}
+.perfumery-section{padding:20px 0;border-bottom:1px solid var(--perfume-line)}
+.perfumery-section>.perfumery-section-title{margin-top:0}.perfumery-section>p{font-size:11px;line-height:1.9;color:#888}.perfumery-section>small{font-size:9px;color:#aaa}
+.perfumery-dialogue{background:#f8f8f5;border-radius:3px;padding:15px 16px;margin:15px 0}
+.perfumery-dialogue small{display:block;color:#999;font-size:9px;line-height:1.7}
+.perfumery-dialogue p{font-family:"LXGW WenKai","Iris Kai",serif;white-space:pre-wrap;font-size:13px;line-height:2;margin:9px 0 0;color:#666}
+.perfumery-dialogue>span{display:block;color:#999;font-size:10px;line-height:1.8;margin-top:10px;border-top:1px solid #e8e8e3;padding-top:9px}
+.perfumery-check-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.perfumery-check-grid button{display:flex;align-items:center;justify-content:space-between;gap:5px;border:1px solid #e9e9e5;padding:12px 9px;border-radius:3px;text-align:left;font-size:10px}
+.perfumery-check-grid small{font-size:9px;color:#aaa}
+.perfumery-clue{border-left:1px solid #cecec5;padding:3px 0 3px 13px;margin:15px 0}.perfumery-clue small{font-size:8px;color:#aaa}.perfumery-clue p{font-size:11px;line-height:1.85;margin:6px 0}
+.perfumery-inline-form{display:flex;align-items:center;gap:10px;margin:14px 0}
+.perfumery-inline-form>select,.perfumery-inline-form>input{flex:1;min-width:0}.perfumery-inline-form>button{flex:none;padding:9px 1px;border:0;border-bottom:1px solid #777;border-radius:0;background:transparent;font-size:10px;white-space:nowrap}
+.perfumery-certificate{border:1px solid #dcdcd3;padding:19px 17px;margin:20px 0;background:#fafaf6}
+.perfumery-certificate small{font-size:8px;color:#999;letter-spacing:1px}.perfumery-certificate h3{font-family:"LXGW WenKai","Iris Kai",serif;font-size:21px;font-weight:400;margin:13px 0}.perfumery-certificate p{font-size:11px;line-height:1.9}.perfumery-certificate>span{font-size:9px;color:#aaa}
+.perfumery-offers article,.perfumery-sale{border-bottom:1px solid var(--perfume-line);padding:15px 0}.perfumery-offers article:last-child{border:0}
+.perfumery-offers small,.perfumery-sale small{font-size:9px;color:#999;line-height:1.7}
+.perfumery-offers h4,.perfumery-sale h4{display:flex;justify-content:space-between;gap:10px;font-size:12px;font-weight:400;margin:10px 0;line-height:1.8}.perfumery-offers b,.perfumery-sale b{font-family:Georgia,serif;font-weight:400;white-space:nowrap}.perfumery-offers p{font-size:11px;line-height:1.9;color:#888}.perfumery-offers button{font-size:10px;padding:9px 1px;border:0;border-bottom:1px solid #777;border-radius:0;background:transparent}
+.perfumery-sale dl{display:grid;gap:8px;margin:12px 0 0}.perfumery-sale dl>div{display:flex;justify-content:space-between;gap:10px;font-size:10px}.perfumery-sale dt{color:#999}.perfumery-sale dd{margin:0}
+.perfumery-payout,.perfumery-ledger-line{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid var(--perfume-line);font-size:11px;line-height:1.6}
+.perfumery-partner-settings{display:flex;align-items:center;gap:15px;margin:0 0 16px;padding:7px 0;border-bottom:1px solid var(--perfume-line)}
+.perfumery-partner-settings>label{display:flex;align-items:center;flex:1;gap:10px;color:#999;font-size:9px}
+.perfumery-partner-settings .perfumery-select-wrap{position:relative;flex:1;max-width:190px;margin-left:auto}
+.perfumery-partner-settings .perfumery-select-wrap::after{position:absolute;top:50%;right:2px;color:#aaa;content:"⌄";font-size:12px;transform:translateY(-55%);pointer-events:none}
+.perfumery-partner-settings select{width:100%;min-width:0;appearance:none;padding:8px 20px 8px 2px;border:0;border-bottom:1px solid #deded9;border-radius:0;background:transparent;color:#666;font-size:10px}
+.perfumery-partner-settings>button{display:flex;align-items:center;gap:13px;flex:none;padding:8px 1px 7px;border:0;border-bottom:1px solid #cecec8;border-radius:0;background:transparent;color:#666;font-size:9px}
+.perfumery-payout small,.perfumery-ledger-line small{display:block;font-size:8px;color:#aaa;margin-top:5px}.perfumery-payout button{font-size:10px;border:1px solid #e5e5df;border-radius:15px;padding:7px 12px}.perfumery-ledger-line b{font-family:Georgia,serif;font-weight:400;white-space:nowrap}
+.perfumery-atelier-scene{position:relative;padding:12px 0 10px;background:transparent;border:0}
+
+.perfumery-scene-caption{font-family:Georgia,serif;font-size:7px;color:#aaa;letter-spacing:1.8px}
+.perfumery-workbench{position:relative;height:205px;margin-top:0;background:transparent;border:0;box-shadow:none}
+.perfumery-workbench .perfumery-bottle{width:100%;height:205px;background:transparent}.perfumery-workbench .perfumery-bottle svg{height:205px}
+
+
+.perfumery-companion{display:flex;align-items:center;justify-content:center;gap:7px;margin-top:4px;font-size:10px;color:#999}.perfumery-companion img,.perfumery-companion>span:first-child{width:27px;height:27px;border-radius:50%;object-fit:cover;display:grid;place-items:center;background:#e9e9e3;color:#aaa}
+.perfumery-note-selectors{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.perfumery-text-button{font-size:9px!important;color:#999!important;padding:8px 2px;text-align:left}
+@media(max-width:480px){.feature-page-topbar:has(.business-feature-brand){padding-top:var(--app-safe-top,env(safe-area-inset-top));padding-bottom:10px}.perfumery-stats strong{font-size:17px}.perfumery-editorial h3{font-size:22px}.perfumery-editorial{min-height:240px}.perfumery-bottle svg{height:155px}}
+@media(max-width:360px){.perfumery-detail-hero{gap:8px}.perfumery-detail-hero h2{font-size:21px}.perfumery-stats strong{font-size:15px}.perfumery-check-grid button{font-size:9px}.perfumery-grid{gap:18px 10px}}
+
+.iris-perfumery .perfumery-source-action{display:flex;align-items:center;justify-content:space-between;align-self:flex-start;gap:22px;min-width:138px;min-height:40px;margin:8px 0 0;padding:9px 1px 8px;border:0;border-bottom:1px solid #cecec8;border-radius:0;background:transparent;color:#555;font-size:10px;letter-spacing:.3px}
+.perfumery-source-action>svg{width:15px;height:15px;stroke-width:1.35}
+.perfumery-form[data-p-form="invite"]>.perfumery-primary{display:flex;align-items:center;justify-content:space-between;gap:20px;width:max-content;min-width:154px;min-height:42px;padding:9px 1px 8px;border:0;border-bottom:1px solid #cecec8;border-radius:0;background:transparent;color:#555;font-size:10px;letter-spacing:.3px}
+.iris-perfumery .perfumery-source-action,.iris-perfumery .perfumery-form[data-p-form="invite"]>.perfumery-primary{justify-content:center;align-self:flex-end;justify-self:end;gap:6px;min-width:0;width:max-content;max-width:100%;margin-left:auto;padding:9px 1px;border:0;border-bottom:1px solid #777;border-radius:0;background:transparent;font-size:10px}
+.perfumery-source-action>svg,.perfumery-form[data-p-form="invite"]>.perfumery-primary>svg{width:14px;height:14px;flex:none;stroke-width:1.3}
+.iris-perfumery .perfumery-partner-settings{gap:9px;padding:9px 0;margin-bottom:8px}
+.iris-perfumery .perfumery-partner-settings>label{min-width:0;gap:12px}
+.iris-perfumery .perfumery-partner-settings>label>span:first-child{white-space:nowrap;flex:none}
+.iris-perfumery .perfumery-partner-settings .perfumery-select-wrap{max-width:180px;min-width:0}
+.iris-perfumery .perfumery-partner-settings select{height:34px;max-width:100%;padding:5px 25px 5px 10px;border:1px solid #e9e9e9;border-radius:6px;background:#fafafa;font-size:10px;line-height:1.5;text-overflow:ellipsis}
+.iris-perfumery .perfumery-partner-settings .perfumery-select-wrap::after{right:10px}
+.iris-perfumery .perfumery-partner-settings>button{height:34px;display:flex;gap:4px;justify-content:center;padding:0 10px;border:1px solid #dedede;border-radius:6px;background:#fff;font-size:9px}
+.perfumery-partner-settings>button>svg{width:13px;height:13px;stroke-width:1.4}
+.perfumery-contract-entry{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:14px 0;border-block:1px solid #e8e8e6;text-align:left}
+.perfumery-contract-entry>span:first-child{display:grid;gap:5px}.perfumery-contract-entry small{font:7px Georgia,serif;letter-spacing:1.6px;color:#aaa}.perfumery-contract-entry strong{font-size:11px;font-weight:400}.perfumery-contract-entry>span:last-child{font-size:9px;color:#999}
+.perfumery-contract{margin:18px 0;padding:26px 22px 18px;border:1px solid #e8e7e1;background:#fdfdfb;color:#62625c;font-family:"LXGW WenKai","Iris Kai",serif}
+.perfumery-contract>header{text-align:center;padding-bottom:18px;border-bottom:1px solid #dcdcd6}.perfumery-contract>header small{font:7px Georgia,serif;letter-spacing:2px;color:#aaa}.perfumery-contract h2{margin:16px 0 8px;font-size:21px;font-weight:400;letter-spacing:3px}.perfumery-contract>header p{margin:0;font-size:10px;color:#999}
+.perfumery-contract dl{display:grid;gap:9px;padding:16px 0;margin:0;border-bottom:1px solid #e8e8e1}.perfumery-contract dl>div{display:flex;justify-content:space-between;gap:12px;font-size:11px}.perfumery-contract dt{color:#999}.perfumery-contract dd{margin:0;overflow-wrap:anywhere}
+.perfumery-contract section h3{font-size:12px;font-weight:400;margin:20px 0 8px}.perfumery-contract section p{font-size:11px;line-height:2;margin:0;overflow-wrap:anywhere}
+.perfumery-contract footer{margin-top:28px;text-align:right}.perfumery-contract footer>small{font-size:9px;color:#aaa}.perfumery-contract footer button{display:flex;align-items:center;justify-content:flex-end;gap:9px;width:100%;min-height:65px;border-bottom:1px solid #babab0;margin-top:8px;padding:8px 3px;font-family:"LXGW WenKai","Iris Kai",serif!important;font-size:22px!important}.perfumery-contract footer svg{width:17px;height:17px;color:#999}.perfumery-contract footer p{font-size:9px;color:#999;margin:9px 0}
+.perfumery-contract-signature{display:block;min-height:65px;margin-top:8px;padding:5px 7px 8px;border:0;color:#51445b;font-family:"Ma Shan Zheng",cursive;font-size:38px;line-height:1.35;transform:rotate(-2deg)}
+.perfumery-contract-close{display:block;margin:22px auto 0;padding:7px 2px;border:0;border-radius:0;background:transparent!important;color:#292929!important;font-size:10px!important;letter-spacing:.5px;text-decoration:underline;text-decoration-color:#292929;text-underline-offset:4px}
+.perfumery-editorial .perfumery-bottle.is-large svg{height:210px}.perfumery-editorial>div{width:43%;right:-2px;top:12px}
+
+#featureScreen:has(.perfumery-source-toolbar) .feature-page-topbar{padding-bottom:0}
+#featurePageContent:has(.perfumery-source-toolbar){padding-top:0;background:#fff}
+#featurePageContent>.iris-perfumery:has(>.perfumery-source-toolbar){margin-top:0;padding-top:0;gap:0}
+.perfumery-source-toolbar{position:sticky;top:0;z-index:3;display:flex;align-self:stretch;justify-content:flex-end;flex-shrink:0;margin:0;padding:0 0 12px;background:#fff;box-shadow:0 -12px 0 #fff}
+.iris-perfumery .perfumery-source-toolbar>.perfumery-source-action{min-height:28px;margin-top:0;padding-top:0;padding-bottom:5px}
+.iris-perfumery .experience-content-label{display:block;color:#777;font-size:11px}
+.iris-perfumery .experience-content-label>span{font-family:"Songti SC",serif;letter-spacing:1px}
+.iris-perfumery .experience-content-label textarea.perfumery-experience-input{display:block;width:100%;height:234px;min-height:234px;max-height:none;margin:20px 0 0;padding:0;border:0;border-radius:0;background:repeating-linear-gradient(to bottom,transparent 0,transparent 25px,#f0f0f0 25px,#f0f0f0 26px);color:#555;font-family:"Songti SC",serif;font-size:12px;line-height:26px;resize:vertical;scrollbar-width:thin}
+.iris-perfumery .experience-content-label textarea.perfumery-experience-input::placeholder{color:#bbb;font-size:11px}
+
+.perfumery-tools{display:block;width:100%;height:205px;fill:none;stroke-width:.8}
+.perfumery-workbench-preview{position:absolute;right:0;bottom:0;width:30%;height:205px}
+.perfumery-workbench:has(.perfumery-workbench-preview .perfumery-bottle)>.perfumery-tools{width:70%}
+.perfumery-bottle-picker{min-width:0;margin:0;padding:15px 0;border:0;border-block:1px solid #ececea}
+.perfumery-bottle-picker legend{padding:0 8px 0 0;color:#777;font-size:10px}
+.perfumery-bottle-picker>div{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px 8px}
+.perfumery-form .perfumery-bottle-option{position:relative;display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0;padding:7px 2px 9px;border:1px solid transparent;cursor:pointer;text-align:center;font-size:9px}
+.iris-perfumery .perfumery-bottle-option>input{position:absolute;width:1px;height:1px;padding:0;opacity:0}
+.perfumery-bottle-option:has(input:checked){border-color:#b5b6ad;background:#fafaf7}
+.perfumery-bottle-option:has(input:focus-visible){outline:1px solid #777;outline-offset:2px}
+.perfumery-bottle-option .perfumery-bottle{width:100%;background:transparent}
+.perfumery-bottle-option .perfumery-bottle svg{height:112px}
+.perfumery-bottle-option>span{line-height:1.5;color:#777}
+.iris-perfumery .perfumery-offer-form{display:flex;align-items:center;gap:12px}
+.iris-perfumery .perfumery-offer-form>input{height:38px;min-height:0;margin:0;padding:8px 1px;border:0;border-bottom:1px solid #cecec8;border-radius:0;background:#fff;box-shadow:none}
+.iris-perfumery .perfumery-offer-form>input::placeholder{color:#aaa}
+
+/* Shared white writing-paper treatment for perfume correspondence and records. */
+.iris-perfumery .perfumery-dialogue,.iris-perfumery .perfumery-certificate,.iris-perfumery .perfumery-clue{padding:22px 20px 18px;border:1px solid #e9e9e9;border-radius:0;background:#fff;box-shadow:none}
+.iris-perfumery .perfumery-dialogue p,.iris-perfumery .perfumery-certificate p,.iris-perfumery .perfumery-clue p{margin:15px 0 0;padding:0;white-space:pre-wrap;overflow-wrap:anywhere;color:#555;font:12px/26px "Songti SC",serif;background:repeating-linear-gradient(to bottom,#fff 0,#fff 25px,#f0f0f0 25px,#f0f0f0 26px)}
+.iris-perfumery .perfumery-experience-input{background-color:#fff!important}
+.perfumery-companion>span:first-child{width:auto;height:auto;border-radius:0;background:transparent}
+@media(max-width:380px){.iris-perfumery .perfumery-dialogue,.iris-perfumery .perfumery-certificate,.iris-perfumery .perfumery-clue{padding-right:14px;padding-left:14px}}
+.perfumery-daily-status{display:grid;gap:5px;margin:8px 0 13px;padding:10px 0;border-block:1px solid #efefec;color:#777}
+.perfumery-daily-status>span{color:#aaa;font:7px Georgia,serif;letter-spacing:1.4px}
+.perfumery-daily-status>strong{color:#555;font-size:11px;font-weight:400}
+.perfumery-daily-status>p{margin:0;color:#888;font-size:9px;line-height:1.65}
+.perfumery-daily-status>small{color:#aaa;font-size:8px}
+.perfumery-daily-status.is-loading>strong{color:#888}
+.perfumery-daily-status.is-error>strong{color:#916b68}
+.perfumery-daily-status.is-error>p{color:#a28c89}
