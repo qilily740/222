@@ -88,6 +88,7 @@ function drawProfileList() {
 function deleteProfileAt(index) {
   const user = profileDrafts[index];
   if (!confirm(`确定删除“${user.name.trim() || '未命名用户'}”吗？此操作无法撤销。`)) return;
+  window.IrisReadingCore?.removeIdentity(state,{userId:user.irisMarketId});
   profileDrafts.splice(index, 1);
   remapSmsThreadsForUserDeletion(index);
   state.users = profileDrafts.map(profile => ({...profile,name:profile.name.trim(),nickname:profile.nickname.trim()}));

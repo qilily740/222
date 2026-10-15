@@ -46,6 +46,7 @@ async function generateCharacterPhone(character) {
 function deleteCharacterAt(index) {
   const character=characterDrafts[index];
   if(!confirm(`确定删除“${character.name.trim()||'未命名角色'}”吗？该角色的聊天记录也会删除。此操作无法撤销。`))return;
+  window.IrisReadingCore?.removeIdentity(state,{roleId:character.irisMarketId});
   characterDrafts.splice(index,1);
   remapSmsThreadsForRoleDeletion(index);
   chars.splice(0,chars.length,...characterDrafts);

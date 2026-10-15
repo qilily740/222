@@ -113,10 +113,10 @@
    const filtered=items.filter(item=>item?.type==='call-summary'?chosen.has('videoCalls'):isOnline(key)?chosen.has('onlineChat'):isOffline(key)?chosen.has('offlineActive'):chosen.has('localFeatures'));
    return filtered.length?[[key,filtered]]:[];
   }));
-  data.users=chosen.has('userProfiles')?(source.users||[]):(source.users||[]).map(user=>typeof user==='string'?user:{name:user?.name||'',nickname:user?.nickname||''});
+  data.users=chosen.has('userProfiles')?(source.users||[]):(source.users||[]).map(user=>typeof user==='string'?user:{name:user?.name||'',nickname:user?.nickname||'',...(chosen.has('localFeatures')&&user?.irisMarketId?{irisMarketId:user.irisMarketId}:{})});
   data.characters=(source.characters||[]).map(character=>{
    const copy=chosen.has('characterProfiles')?{...character}:{name:character?.name||''},chat=character?.chatSettings||{},memory=chat.memory||{},offline=character?.offlineData||{};
-   for(const key of ['id','name','avatar','portrait','image'])if(character?.[key]!==undefined)copy[key]=character[key];
+   for(const key of ['id','name','avatar','portrait','image',...(chosen.has('localFeatures')?['irisMarketId']:[])])if(character?.[key]!==undefined)copy[key]=character[key];
    delete copy.chatSettings;delete copy.offlineData;delete copy.offlineMode;
    const chatSettings=chosen.has('onlineSettings')?Object.fromEntries(Object.entries(chat).filter(([key])=>key!=='memory')):{};
    if(chat.userIndex!==undefined)chatSettings.userIndex=chat.userIndex;
