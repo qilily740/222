@@ -46,7 +46,7 @@ async function authorized(request, env) {
   const cookies = request.headers.get('cookie') || '';
   const encoded = new RegExp(`(?:^|;\\s*)${COOKIE_NAME}=([^;]+)`).exec(cookies)?.[1] || '';
   const [expiresAt, supplied] = encoded.split('.');
-  if (!/^\d{10,13}$/.test(expiresAt || '') || !supplied || Number(expiresAt) <= Date.now() || !env.IRIS_222_SIGNING_KEY) return false;
+  if (!/^\d{10,13}$/.test(expiresAt || '') || !supplied || Number(expiresAt) * 1000 <= Date.now() || !env.IRIS_222_SIGNING_KEY) return false;
   try {
     const expected = await signature(expiresAt, env.IRIS_222_SIGNING_KEY);
     return equalBytes(fromBase64Url(supplied), fromBase64Url(expected));
