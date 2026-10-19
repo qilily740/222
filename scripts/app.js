@@ -1742,7 +1742,7 @@ let offlineExtraSettingsTab='requirements';
 let offlineRegexDraft=null;
 let offlineRequirementDraftRole=null;
 let systemSettingsTab='api';
-const APP_VERSION='5.6.11';
+const APP_VERSION='5.7.1';
 const compareAppVersions=(left,right)=>{const a=String(left||'0').split('.').map(Number),b=String(right||'0').split('.').map(Number);for(let i=0;i<Math.max(a.length,b.length);i++){const delta=(a[i]||0)-(b[i]||0);if(delta)return Math.sign(delta)}return 0};
 let INSTALLED_APP_VERSION=APP_VERSION;
 window.IRIS_CODE_VERSION=APP_VERSION;
@@ -3607,40 +3607,7 @@ $('#quickFeatures').addEventListener('click',event=>{const button=event.target.c
 $('#composer').onsubmit=e=>{e.preventDefault();submitMessage()};$('#messageInput').onkeydown=e=>{if(!state.offline&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();$('#composer').requestSubmit()}};$('#reply').onclick=()=>requestChatReply(key(),latestReplyTurn()?.activeReplies.length?'reroll':'normal');document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!videoCallActive)closeSheet()});updateComposerAction();render();
 Promise.resolve(window.IRIS_STYLES_READY).catch(()=>{}).then(async()=>{const startedAt=window.IRIS_BOOT_STARTED_AT||performance.now(),screen=document.getElementById('irisBootScreen'),images=[...document.querySelectorAll('#conversation img')].filter(image=>{const rect=image.getBoundingClientRect();return rect.bottom>0&&rect.top<innerHeight&&rect.width>0&&rect.height>0}),visibleImages=Promise.allSettled(images.map(image=>image.decode?image.decode():new Promise(resolve=>{image.addEventListener('load',resolve,{once:true});image.addEventListener('error',resolve,{once:true})}))),fonts=document.fonts?.ready||Promise.resolve();await Promise.race([Promise.all([visibleImages,fonts]),new Promise(resolve=>setTimeout(resolve,3500))]);await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));const remaining=Math.max(0,1500-(performance.now()-startedAt));setTimeout(()=>requestAnimationFrame(()=>{if(screen){screen.classList.add('is-ready');setTimeout(()=>screen.remove(),280)}}),remaining)});
 
-function showAuthorNoticeOnFirstOpen(){
- const dialog=$('#authorNoticeDialog');if(!dialog)return;
- try{if(localStorage.getItem('iris-author-notice-accepted-v1')==='yes')return}catch{}
- const pages=[
-  {title:'禁止倒卖',body:'<p class="author-notice-lead">Iris小手机供个人免费使用。</p><p class="author-notice-rule">请勿向他人收费提供本项目或其使用资格，包括转卖、收费转发、付费群发放、打包售卖和收费代搭建，也不得借Iris小手机名义获利。项目链接仅供个人获取和使用，请勿据此收费传播或转售。</p><p class="author-notice-refund"><strong>如果你是付费购买的，请联系售卖方申请退款。</strong></p><small>作者原创内容版权归作者所有；第三方内容归相应权利人所有。</small>'},
-  {title:'Iris小手机仅面向成年女性',body:'<label class="author-notice-confirm"><input type="checkbox" data-author-identity-confirm><span><span class="author-notice-lead">请确认您是<strong>成年女性</strong></span><span class="author-notice-qualification">（即<strong>18周岁以上</strong>&amp;<strong>生理性别为女的女性</strong>）</span></span></label>'},
-  {title:'',body:'<div class="author-notice-sharing"><p>自用发帖有人询问可以告知<strong>获取方式</strong></p><p><strong>禁止直接转发Iris小手机的链接</strong></p></div><p class="author-notice-lead">禁止在<strong>抖音快手宣传或引流</strong><span class="author-notice-detail">（包括视频、图文、直播、评论和私信）</span></p>'},
-  {title:'',body:'<p class="author-notice-rule">关于导入的任何文件请确认<strong>原作者允许导入</strong>，</p><p class="author-notice-rule">同时Iris小手机里一切内置的文字内容如若需要<strong>改动之后进行发布</strong>请联系作者进行<strong>授权</strong>。</p><p class="author-notice-rule"><strong>禁止导入并在Iris内使用触犯红线的内容</strong>（<strong>美化、教唆犯罪</strong>，<strong>消费现实案件受害者</strong>，或其他<strong>触犯法律红线</strong>的内容）。</p>'}
- ];let page=0,identityConfirmed=false,timer=null;
- const draw=()=>{
-  clearInterval(timer);
-  const current=pages[page],final=page===pages.length-1;
-  let remaining=5000,lastTick=performance.now(),wasVisible=!document.hidden;
-  dialog.innerHTML=`<section class="author-notice-card"><header class="author-notice-top"><span class="author-notice-brand">Iris<span>作者声明</span></span><span class="author-notice-pagination">${String(page+1).padStart(2,'0')}<i> / </i>04</span></header><div class="author-notice-steps" aria-label="第 ${page+1} 页，共 4 页">${pages.map((_,i)=>`<span class="${i<=page?'is-read':''}"></span>`).join('')}</div><div class="author-notice-content">${current.title?`<div class="author-notice-heading"><h2 tabindex="-1" id="authorNoticeHeading">${current.title}</h2></div>`:''}<div class="author-notice-copy">${current.body}</div></div><footer class="author-notice-footer"><div class="author-notice-actions"><button type="button" data-author-notice-back ${page===0?'hidden':''}>← 上一页</button><span data-author-notice-status>请阅读本页内容</span></div><button type="button" class="author-notice-next" data-author-notice-next disabled><span data-author-notice-label>请阅读 · 5s</span><span aria-hidden="true">↗</span></button></footer></section>`;
-  if(current.title)dialog.setAttribute('aria-labelledby','authorNoticeHeading');else dialog.removeAttribute('aria-labelledby');
-  const next=dialog.querySelector('[data-author-notice-next]'),label=dialog.querySelector('[data-author-notice-label]'),status=dialog.querySelector('[data-author-notice-status]'),confirm=dialog.querySelector('[data-author-identity-confirm]');
-  const update=()=>{
-   const waiting=remaining>0,needsConfirmation=page===1&&!identityConfirmed;
-   next.disabled=waiting||needsConfirmation;
-   label.textContent=waiting?`请阅读 · ${Math.ceil(remaining/1000)}s`:needsConfirmation?'请先勾选确认':final?'我已阅读，进入Iris':'继续阅读';
-   status.textContent=waiting?'请阅读本页内容':needsConfirmation?'请确认符合以上条件':'本页已阅读';
-   next.style.setProperty('--notice-progress',`${Math.min(100,(5000-remaining)/50)}%`);
-  };
-  if(confirm){confirm.checked=identityConfirmed;confirm.onchange=event=>{identityConfirmed=event.target.checked;update()}}
-  dialog.querySelector('[data-author-notice-back]').onclick=()=>{page=Math.max(0,page-1);draw()};
-  next.onclick=()=>{if(remaining>0||(page===1&&!identityConfirmed))return;clearInterval(timer);if(final){try{localStorage.setItem('iris-author-notice-accepted-v1','yes')}catch{}dialog.close();return}page++;draw()};
-  timer=setInterval(()=>{const now=performance.now(),visible=!document.hidden;if(visible&&wasVisible)remaining=Math.max(0,remaining-(now-lastTick));lastTick=now;wasVisible=visible;update();if(remaining===0)clearInterval(timer)},100);
-  update();const focusTarget=dialog.querySelector('#authorNoticeHeading')||dialog.querySelector('.author-notice-copy');focusTarget.tabIndex=-1;focusTarget.focus({preventScroll:true});
- };
- dialog.addEventListener('cancel',event=>event.preventDefault());
- dialog.addEventListener('close',()=>clearInterval(timer));
- draw();dialog.showModal();
-}
-showAuthorNoticeOnFirstOpen();
+
 
 
 // iOS pans the visual viewport as well as resizing it when the keyboard opens.
