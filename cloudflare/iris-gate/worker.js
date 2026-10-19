@@ -4,7 +4,7 @@ const SESSION_SECONDS = 60 * 60 * 24 * 3650;
 function response(body, status = 200, headers = {}) {
   return new Response(body, { status, headers: {
     'cache-control': 'no-store, no-cache, must-revalidate',
-    'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
+    'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
     'content-type': 'text/html; charset=utf-8',
     'x-content-type-options': 'nosniff',
     'referrer-policy': 'no-referrer',
