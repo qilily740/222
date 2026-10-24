@@ -133,7 +133,7 @@ function locationPlan(routes,cities){
  for(const r of routes)for(const end of ['from','to']){
   const confirmedAlias=String(r[end]||'').normalize('NFKC').trim()==='京市';
   const saved=r[end+'Place'],known=saved?.query===r[end]?byId.get(String(saved.id)):null;
-  if(known&&(!confirmedAlias||known[2]==='CN'&&(key(known[1])===key('Beijing')||(known[6]||[]).some(name=>key(name)===key('北京'))))){if(saved.latitude!==known[4]||saved.longitude!==known[5]||saved.country!==known[2]||saved.admin1!==known[3]||saved.displayName!==known[1])remember(r,end,known,saved.matchMethod||'saved-selection',saved.matchBasis||'保留原有城市选择，坐标取自GeoNames');continue}
+  if(known&&(saved.matchMethod==='user-confirmed-city-alias'||!confirmedAlias||known[2]==='CN'&&(key(known[1])===key('Beijing')||(known[6]||[]).some(name=>key(name)===key('北京'))))){if(saved.latitude!==known[4]||saved.longitude!==known[5]||saved.country!==known[2]||saved.admin1!==known[3]||saved.displayName!==known[1])remember(r,end,known,saved.matchMethod||'saved-selection',saved.matchBasis||'保留原有城市选择，坐标取自GeoNames');continue}
   let name=r[end],country=r[end+'Country']||'',qualified=String(name).match(/^(.*?)\s*[（(]([^()（）]+)[）)]$/);if(qualified&&countries.has(key(qualified[2]))){name=qualified[1];country=country||countries.get(key(qualified[2]))}
   if(confirmedAlias){name='北京';country='CN'}
   let candidates=index.get(key(name))||[],english=confirmedAlias?[]:index.get(key(r[end+'English']))||[];if(english.length)candidates=candidates.length?candidates.filter(c=>english.some(x=>String(x[0])===String(c[0]))):english;

@@ -5111,3 +5111,25 @@ body:has(.music-dialog[open]) .iris-guide-widget{visibility:hidden!important;poi
 .if-dream-list .if-dream-content { padding:2px 2px 12px; }
 #featurePageTitle:has(.if-story-settings) { position:relative; padding-right:36px; }
 .if-story-settings { position:absolute; right:4px; top:50%; transform:translateY(-50%); border:0; border-bottom:1px solid #aaa; padding:4px 2px; background:transparent; color:#777; font:inherit; font-size:11px; }
+
+/* Keep archive rows in normal flow; percentage SVG sizing must not set the grid row height. */
+.growth-detail-scroll .growth-form{display:block;margin:0 auto}
+.growth-detail-scroll .growth-form> :not([hidden])+ :not([hidden]){margin-top:14px}
+.growth-detail-scroll .growth-stage-header{position:relative;display:grid;align-items:start;grid-template-rows:auto;height:auto;min-height:0}
+.growth-stage-header .growth-photo-edit{align-self:start;min-width:0;box-sizing:border-box}
+.growth-stage-header .growth-photo-edit>.growth-detail-avatar{position:relative;height:auto;aspect-ratio:1;overflow:hidden}
+.growth-stage-header .growth-detail-avatar .growth-default-avatar{position:absolute;inset:0;width:100%;height:100%}
+.growth-stage-meta{position:static;align-self:start;min-height:0}
+.if-opening-picker .if-opening-preview,.if-custom-dialog [data-custom-cancel],.earth-snake [data-route-show]{-webkit-tap-highlight-color:transparent;outline:none!important;box-shadow:none!important}
+.if-opening-picker .if-opening-preview:focus,.if-opening-picker .if-opening-preview:active{outline:none!important;background:transparent}
+.if-custom-dialog header [data-custom-cancel]{border:0;border-radius:0;background:transparent;padding:0 4px;font:22px/1.4 serif}
+.earth-snake-segment:focus .earth-snake-line,.earth-snake-segment:hover .earth-snake-line,.earth-snake-segment.is-selected .earth-snake-line{stroke:#777;stroke-width:1;stroke-dasharray:3 4}
+.earth-snake-city:focus circle{stroke:none;stroke-width:0}
+.earth-city-choice{display:grid;gap:8px;padding:12px 0;border-bottom:1px solid #eee}
+.earth-city-choice input{width:100%;box-sizing:border-box}
+.earth-city-results{display:grid;max-height:150px;overflow-y:auto}
+.earth-city-results button{border:0!important;border-bottom:1px solid #eee!important;border-radius:0!important;text-align:left;font-size:11px!important}
+.earth-city-results button[aria-pressed=true]{color:#111;text-decoration:underline;text-underline-offset:4px}
+
+.if-opening-picker .if-opening-card{border:0;border-radius:0;box-shadow:none}
+.earth-snake{-webkit-tap-highlight-color:transparent}
