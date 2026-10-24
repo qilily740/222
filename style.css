@@ -5125,14 +5125,18 @@ body:has(.music-dialog[open]) .iris-guide-widget{visibility:hidden!important;poi
 .if-custom-dialog header [data-custom-cancel]{border:0;border-radius:0;background:transparent;padding:0 4px;font:22px/1.4 serif}
 .earth-snake-segment:focus .earth-snake-line,.earth-snake-segment:hover .earth-snake-line,.earth-snake-segment.is-selected .earth-snake-line{stroke:#777;stroke-width:1;stroke-dasharray:3 4}
 .earth-snake-city:focus circle{stroke:none;stroke-width:0}
-.earth-city-choice{display:grid;gap:8px;padding:12px 0;border-bottom:1px solid #eee}
-.earth-city-choice input{width:100%;box-sizing:border-box}
-.earth-city-results{display:grid;max-height:150px;overflow-y:auto}
-.earth-city-results button{border:0!important;border-bottom:1px solid #eee!important;border-radius:0!important;text-align:left;font-size:11px!important}
-.earth-city-results button[aria-pressed=true]{color:#111;text-decoration:underline;text-underline-offset:4px}
 
 .if-opening-picker .if-opening-card{border:0;border-radius:0;box-shadow:none}
 .earth-snake{-webkit-tap-highlight-color:transparent}
 
 /* Blend the camera print into the home-indicator area without a fractional-pixel seam. */
 .growth-camera-bottom::after{content:"";position:absolute;pointer-events:none;left:0;right:0;bottom:calc(0px - var(--app-safe-bottom,env(safe-area-inset-bottom,0px)));height:calc(var(--app-safe-bottom,env(safe-area-inset-bottom,0px)) + 1px);background:linear-gradient(to right,#101010,#080808)}
+
+.earth-city-field{display:flex;align-items:center;gap:10px;min-width:0}
+.earth-city-field>input{flex:1;width:0;min-width:0}
+.earth-city-field>[data-edit-map-end]{flex:none;padding:6px 0;border:0;border-bottom:1px solid #ddd;border-radius:0;background:transparent;font-size:10px;white-space:nowrap}
+.earth-city-mapping{display:grid;gap:8px;margin-top:8px;font-size:10px}
+.earth-city-mapping[hidden]{display:none}
+.earth-city-mapping-tools{display:flex;align-items:center;gap:12px}
+.earth-city-mapping-tools>button{flex:none;border:0;border-bottom:1px solid #ddd;border-radius:0;background:transparent;font-size:10px}
+.earth-city-mapping-tools>small{overflow-wrap:anywhere;color:#888}
