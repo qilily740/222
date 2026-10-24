@@ -4660,7 +4660,8 @@ body:has(.music-dialog[open]) .iris-guide-widget{visibility:hidden!important;poi
 .earth-ticket-dialog[open]{position:fixed;inset:0;display:block;box-sizing:border-box;height:min(560px,calc(var(--app-viewport-height,100dvh) * .75));min-height:0;max-height:calc(var(--app-viewport-height,100dvh) - 48px);margin:auto;overflow:hidden;overscroll-behavior:contain}
 .earth-ticket-dialog .earth-trip-sheet{display:flex;flex-direction:column;align-items:center;box-sizing:border-box;height:100%;min-height:0;padding:12px 0;overflow:hidden}
 .earth-panel .earth-ticket-dialog .earth-ticket{flex:none;width:min(100%,calc(var(--app-viewport-height,100dvh) * .85))}
-.earth-ticket-dialog .earth-ticket-info{display:flex;flex-direction:column;flex:1;min-height:0;height:0;max-height:420px;overflow:hidden}
+.earth-ticket-dialog .earth-ticket-info{display:flex;flex-direction:column;flex:0 1 auto;min-height:0;height:auto;max-height:420px;overflow:hidden}
+.earth-ticket-dialog .earth-ticket-info.is-reading-memory{flex:1;height:0}
 .earth-ticket-dialog .earth-ticket-info>header{flex:none}
 .earth-ticket-dialog [data-earth-ticket-front],.earth-ticket-dialog .earth-memory-page{flex:1;min-height:0;height:auto;max-height:none;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;box-sizing:border-box}
 .earth-memory-page h3{font-size:14px;font-weight:400}
