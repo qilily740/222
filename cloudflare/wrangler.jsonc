@@ -5,6 +5,16 @@
   "main": "worker.js",
   "compatibility_date": "2026-10-18",
   "workers_dev": true,
+  "preview_urls": true,
+  "routes": [
+    {
+      "pattern": "music-api.suri.us.ci",
+      "custom_domain": true
+    }
+  ],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "kv_namespaces": [
     {
       "binding": "MUSIC_STORE",
@@ -12,6 +22,11 @@
     }
   ],
   "vars": {
-    "APP_ORIGIN": "https://iris.suri.us.ci"
+    "APP_ORIGIN": "https://iris.suri.us.ci",
+    "FEEDBACK_FROM": "Iris <onboarding@resend.dev>",
+    "FEEDBACK_ALLOW_LOCAL_PREVIEW": "true",
+    "FEEDBACK_ALLOWED_ORIGINS": "https://qilily740.github.io,https://iris.suri.us.ci",
+    "FEEDBACK_QUOTA_MODE": "estimate",
+    "FEEDBACK_QUOTA_BASELINE": "{\"day\":\"2026-10-22\",\"month\":\"2026-10\",\"dailyUsed\":1,\"monthlyUsed\":1}"
   }
 }

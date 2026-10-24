@@ -58,7 +58,8 @@ function drawProfileList() {
     drawProfile();
     profileDialog.querySelector('[name="name"]').focus();
   };
-  profileDialog.querySelectorAll('[data-user-select]').forEach(button => button.onclick = () => {
+  profileDialog.querySelectorAll('[data-user-select]').forEach(button => button.onclick = (approved=false) => {
+    if(approved!==true&&activeFeaturePage==='experiences'&&window.IrisExperiences?.requestLeave?.(()=>button.onclick(true))===false)return;
     const index = Number(button.dataset.userSelect);
     if (!profileDrafts[index].name.trim()) { profilePage = index; drawProfile(); profileDialog.querySelector('[name="name"]').focus(); return; }
     state.users = profileDrafts.map(profile => ({...profile,name:profile.name.trim(),nickname:profile.nickname.trim()}));
@@ -88,31 +89,8 @@ function drawProfileList() {
 function deleteProfileAt(index) {
   const user = profileDrafts[index];
   if (!confirm(`确定删除“${user.name.trim() || '未命名用户'}”吗？此操作无法撤销。`)) return;
-  window.IrisReadingCore?.removeIdentity(state,{userId:user.irisMarketId});
-  profileDrafts.splice(index, 1);
-  remapSmsThreadsForUserDeletion(index);
-  state.users = profileDrafts.map(profile => ({...profile,name:profile.name.trim(),nickname:profile.nickname.trim()}));
-  if (state.user === index) state.user = state.users.length ? Math.min(index, state.users.length - 1) : -1;
-  else if (state.user > index) state.user--;
-  if (Number.isInteger(state.settings.onlineUserIndex)) {
-    if (state.settings.onlineUserIndex === index) state.settings.onlineUserIndex = null;
-    else if (state.settings.onlineUserIndex > index) state.settings.onlineUserIndex--;
-  }
-  for (const role of state.characters || []) {
-    const settings = role.chatSettings;
-    if (!settings || !Number.isInteger(settings.userIndex)) continue;
-    if (settings.userIndex === index) settings.userIndex = null;
-    else if (settings.userIndex > index) settings.userIndex--;
-  }
-  const remappedMessages = {};
-  for (const [messageKey, value] of Object.entries(state.messages || {})) {
-    const match = messageKey.match(/^(-?\d+)-(-?\d+)-(chat|offline)$/);
-    if (!match) { remappedMessages[messageKey] = value; continue; }
-    const userIndex = Number(match[2]);
-    if (userIndex === index) continue;
-    remappedMessages[`${match[1]}-${userIndex > index ? userIndex - 1 : userIndex}-${match[3]}`] = value;
-  }
-  state.messages = remappedMessages;
+  if(index<state.users.length)removeLocalIdentity('user',index);
+  profileDrafts.splice(index,1);
   profilePage = state.users.length ? Math.min(profilePage, state.users.length - 1) : 0;
   save();
   render();

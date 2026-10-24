@@ -15,7 +15,7 @@ function fixture(ios=true,safeBottom=0,metrics={}){
  const document={activeElement:null,documentElement:{style,setAttribute(){}},body:{append(){}},createElement:()=>({style:{},getBoundingClientRect(){return {height:this.style.height==='100vh'?(metrics.vh||0):this.style.cssText.includes('height:100dvh')?(metrics.dvh||0):safeBottom}},remove(){}}),addEventListener:(name,fn)=>add(documentEvents,name,fn)};
  const window={visualViewport:viewport,innerWidth:390,innerHeight:844,scrollX:0,scrollY:0,addEventListener:(name,fn)=>add(windowEvents,name,fn),scrollTo(x,y){scrolls.push([x,y]);this.scrollX=x;this.scrollY=y}};
  const input=new Textarea();
- const context=vm.createContext({document,window,navigator:{userAgent:ios?'iPhone':'Android',platform:'',maxTouchPoints:1},HTMLInputElement:Input,HTMLTextAreaElement:Textarea,matchMedia:()=>({matches:!!metrics.standalone}),requestAnimationFrame:fn=>(frames.push(fn),frames.length),cancelAnimationFrame(){},performance:{now:()=>0},setTimeout(){},getComputedStyle:()=>({overflowY:'visible',paddingBottom:safeBottom+'px'}),$:s=>s==='#conversation'?conversation:s==='#messageInput'?input:null,keepLatestChatMessageVisible(){},keepLatestSmsMessageVisible(){}});
+ const context=vm.createContext({document,window,navigator:{userAgent:ios?'iPhone':'Android',platform:'',maxTouchPoints:1},HTMLInputElement:Input,HTMLTextAreaElement:Textarea,matchMedia:()=>({matches:!!metrics.standalone}),requestAnimationFrame:fn=>(frames.push(fn),frames.length),cancelAnimationFrame(){},performance:{now:()=>0},setTimeout(){},getComputedStyle:()=>({overflowY:'visible',paddingBottom:safeBottom+'px'}),$:s=>s==='#conversation'?conversation:s==='#messageInput'?input:null,keepLatestChatMessageVisible(){},keepLatestSmsMessageVisible(){},positionIrisGuideOrb(){}});
  vm.runInContext(source,context);
  for(const frame of frames.splice(0))frame();
  const emit=(map,type,event={})=>{event.type=type;for(const fn of map[type]||[])fn(event)};
@@ -98,6 +98,7 @@ test('the app declares viewport-fit once so the layout can cover the iOS safe ar
  assert.match(html.match(/<meta\s+name="viewport"[^>]*>/i)?.[0]||'',/width=device-width/);
  assert.match(html.match(/<meta\s+name="viewport"[^>]*>/i)?.[0]||'',/viewport-fit=cover/);
 });
+
 
 for(const vh of [844,810])test(`installed iOS fills the full viewport when CSS or visual viewport omits the home area (${vh})`,()=>{
  const metrics={standalone:true,vh,dvh:810},f=fixture(true,34,metrics);

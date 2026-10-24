@@ -38,3 +38,25 @@ test('222 retains TXT and DOCX character imports',async()=>{
  const docx=storedDocx('<w:document><w:body><w:p><w:r><w:t>姓名：文档角色</w:t></w:r></w:p></w:body></w:document>');
  const result=await Import.parse(file('角色.docx',docx));assert.equal(result.character.name,'文档角色');
 });
+
+test('222 imports standalone JSON worldbooks in supported layouts and rejects invalid JSON',async()=>{
+ const vm=require('node:vm'),source=read('scripts/app.js');
+ const parser=source.slice(source.indexOf('async function parseGlobalWorldBookFile('),source.indexOf('function bindGlobalWorldBookPanel('));
+ const context=vm.createContext({CharacterImport:Import,Uint8Array,TextDecoder});
+ vm.runInContext(parser,context);
+ const entries=[{keys:['目的地'],content:'世界书正文'}];
+ for(const raw of [entries,{entries},{entries:{a:entries[0]}},{character_book:{entries}},card]){
+  const result=await context.parseGlobalWorldBookFile(file('世界书.json',JSON.stringify(raw)));
+  assert.equal(result.length,1);assert.ok(result[0].content);
+ }
+ await assert.rejects(context.parseGlobalWorldBookFile(file('损坏.json','{')),/JSON 格式无效/);
+ assert.ok(source.includes('accept=".json,.txt,.docx,application/json'));
+});
+test('222 release metadata is consistent and startup notice entry points are absent',()=>{
+ const version=JSON.parse(read('version.json'));
+ assert.equal(version.release,'5.8.0-222-r1');
+ assert.deepEqual(JSON.parse(read('config/version.json')),version);
+ for(const name of ['scripts/app.js','scripts/storage-bootstrap.js','index.html'])assert.ok(read(name).includes(version.release),name);
+ assert.doesNotMatch(read('scripts/app.js'),/function showAuthorNoticeOnFirstOpen|function showReleaseNoticeOnFirstOpen/);
+ assert.doesNotMatch(read('index.html'),/id="authorNoticeDialog"/);
+});

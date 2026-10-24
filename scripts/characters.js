@@ -46,23 +46,9 @@ async function generateCharacterPhone(character) {
 function deleteCharacterAt(index) {
   const character=characterDrafts[index];
   if(!confirm(`确定删除“${character.name.trim()||'未命名角色'}”吗？该角色的聊天记录也会删除。此操作无法撤销。`))return;
-  window.IrisReadingCore?.removeIdentity(state,{roleId:character.irisMarketId});
+  if(index<chars.length)removeLocalIdentity('role',index);
   characterDrafts.splice(index,1);
-  remapSmsThreadsForRoleDeletion(index);
-  chars.splice(0,chars.length,...characterDrafts);
-  state.characters=chars;
-  if(state.char===index)state.char=chars.length?Math.min(index,chars.length-1):-1;
-  else if(state.char>index)state.char--;
-  const remapped={};
-  for(const [messageKey,value] of Object.entries(state.messages||{})){
-    const match=messageKey.match(/^(-?\d+)-(-?\d+)-(chat|offline)$/);
-    if(!match){remapped[messageKey]=value;continue}
-    const roleIndex=Number(match[1]);
-    if(roleIndex===index)continue;
-    remapped[`${roleIndex>index?roleIndex-1:roleIndex}-${match[2]}-${match[3]}`]=value;
-  }
-  state.messages=remapped;
-  save();render();drawCharacterList();
+  drawCharacterList();
 }
 function characterHeader(title) {
   return `<header class="profile-heading"><span class="profile-eyebrow">IRIS / CHAR</span><button type="button" class="profile-close" aria-label="关闭角色面板">×</button></header><div class="profile-title-row"><h2 id="characterTitle">${title}</h2><button type="button" class="character-back" id="characterBack">返回列表</button></div>`;
@@ -74,7 +60,7 @@ function drawCharacterList(scrollTop=characterDialog.querySelector('.character-l
     <div class="character-import-actions"><button type="button" id="importCharacter">${icon('plus')}<span>导入角色</span></button><button type="button" id="newCharacter">手动新建</button></div>
     <button type="button" class="character-header-arrange" id="arrangeHeaderAvatars">编辑顶部头像排列</button>
     <input id="characterFile" type="file" accept=".json,.png,.txt,.docx" hidden>
-    <p class="character-formats">JSON / PNG / TXT / DOCX</p><p class="character-feedback" role="status">${esc(characterImportNote||'选择角色，确认后切换')}</p>`;
+    <p class="character-formats">TXT / DOCX</p><p class="character-feedback" role="status">${esc(characterImportNote||'选择角色，确认后切换')}</p>`;
   bindCharacterClose();
   document.querySelector('.character-list').scrollTop=scrollTop;
   document.getElementById('characterBack').hidden=true;
@@ -104,12 +90,9 @@ function drawCharacterList(scrollTop=characterDialog.querySelector('.character-l
       const imported=await CharacterImport.parse(file);
       if(characterDrafts!==session)return;
       const sameName=characterDrafts.findIndex(role=>(role.name||'').trim().toLocaleLowerCase()===(imported.character.name||'').trim().toLocaleLowerCase());
-      if(imported.character.worldBook?.length&&sameName>=0&&!(characterDrafts[sameName].worldBook?.length)){
-        characterDrafts[sameName].worldBook=imported.character.worldBook;
-        characterImportNote=imported.note||'世界书条目已同步到已有角色。';drawCharacterEditor(sameName);
-      }else{
-        characterDrafts.push(imported.character);characterImportNote=imported.note||'资料已识别，可补充或修改后确认。';drawCharacterEditor(characterDrafts.length-1);
-      }
+      if(imported.character.worldBook?.length&&sameName>=0&&!(characterDrafts[sameName].worldBook?.length)&&!characterDrafts[sameName].worldBooks?.some(book=>book.entries?.length)){
+        characterDrafts[sameName].worldBook=imported.character.worldBook;characterImportNote=imported.note||'世界书条目已同步到已有角色。';drawCharacterEditor(sameName);
+      }else{characterDrafts.push(imported.character);characterImportNote=imported.note||'资料已识别，可补充或修改后确认。';drawCharacterEditor(characterDrafts.length-1);}
     }catch(error){if(characterDrafts===session)characterNotice(error.message||'文件无法读取，请检查格式')}
     finally{characterPending--;button.disabled=false;event.target.value=''}
   };
@@ -145,11 +128,15 @@ function drawCharacterEditor(index) {
   bindProfileDetailsAutoGrow(form.querySelector('[name="details"]'));
   form.oninput=event=>{if(['name','nickname','gender','birthday','details'].includes(event.target.name)){c[event.target.name]=event.target.value;if(['name','nickname'].includes(event.target.name))refreshCharacterPortrait()}};
   form.onsubmit=event=>{
-    event.preventDefault();if(characterPending){characterNotice('文件处理中，请稍候');return}
+    event.preventDefault();if(!event.irisApproved&&activeFeaturePage==='experiences'&&window.IrisExperiences?.requestLeave?.(()=>form.onsubmit({preventDefault(){},irisApproved:true}))===false)return;if(characterPending){characterNotice('文件处理中，请稍候');return}
     const unnamed=characterDrafts.findIndex(role=>!role.name.trim());
     if(unnamed>=0){drawCharacterEditor(unnamed);characterNotice('请先填写角色名字');characterDialog.querySelector('[name=name]').focus();return}
     for(const role of characterDrafts){role.name=role.name.trim();role.initial=role.initial||role.name.slice(0,1);role.birthday=CharacterImport.normalizeDate(role.birthday)}
-    const activeMode=Boolean(state.offline);chars.splice(0,chars.length,...characterDrafts);state.characters=chars;state.char=index;chars[index].offlineMode=activeMode;state.offline=activeMode;const boundUser=chars[index]?.chatSettings?.userIndex;if(Number.isInteger(boundUser)&&state.users[boundUser])state.user=boundUser;save();render();characterDialog.close();
+    const activeMode=Boolean(state.offline);
+    chars.splice(0,chars.length,...characterDrafts);state.characters=chars;
+    state.char=index;chars[index].offlineMode=activeMode;state.offline=activeMode;
+    const boundUser=chars[index]?.chatSettings?.userIndex;if(Number.isInteger(boundUser)&&state.users[boundUser])state.user=boundUser;
+    save();render();characterDialog.close();
   };
   document.getElementById('characterPortrait').onclick=()=>document.getElementById('characterPortraitFile').click();
   document.getElementById('removeCharacterPortrait').onclick=()=>{c.avatar='';refreshCharacterPortrait()};
