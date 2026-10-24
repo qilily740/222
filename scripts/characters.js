@@ -60,7 +60,7 @@ function drawCharacterList(scrollTop=characterDialog.querySelector('.character-l
     <div class="character-import-actions"><button type="button" id="importCharacter">${icon('plus')}<span>导入角色</span></button><button type="button" id="newCharacter">手动新建</button></div>
     <button type="button" class="character-header-arrange" id="arrangeHeaderAvatars">编辑顶部头像排列</button>
     <input id="characterFile" type="file" accept=".json,.png,.txt,.docx" hidden>
-    <p class="character-formats">TXT / DOCX</p><p class="character-feedback" role="status">${esc(characterImportNote||'选择角色，确认后切换')}</p>`;
+    <p class="character-formats">TXT / DOCX / JSON / PNG</p><p class="character-feedback" role="status">${esc(characterImportNote||'选择角色，确认后切换')}</p>`;
   bindCharacterClose();
   document.querySelector('.character-list').scrollTop=scrollTop;
   document.getElementById('characterBack').hidden=true;
