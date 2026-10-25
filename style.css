@@ -5140,3 +5140,6 @@ body:has(.music-dialog[open]) .iris-guide-widget{visibility:hidden!important;poi
 .earth-city-mapping-tools{display:flex;align-items:center;gap:12px}
 .earth-city-mapping-tools>button{flex:none;border:0;border-bottom:1px solid #ddd;border-radius:0;background:transparent;font-size:10px}
 .earth-city-mapping-tools>small{overflow-wrap:anywhere;color:#888}
+
+/* The font dialog close icon stays unboxed after modal autofocus and mobile taps. */
+.travel-font-dialog [data-font-close],.travel-font-dialog [data-font-close]:focus,.travel-font-dialog [data-font-close]:focus-visible,.travel-font-dialog [data-font-close]:active{appearance:none;-webkit-appearance:none;outline:none!important;box-shadow:none!important;border:0;border-radius:0;background:transparent;-webkit-tap-highlight-color:transparent}
