@@ -4809,7 +4809,7 @@ body:has(.music-dialog[open]) .iris-guide-widget{visibility:hidden!important;poi
 .travel-map-scroll [data-map-confirm]>strong{grid-column:1/-1;font-size:11px;line-height:1.7;font-weight:400}
 .travel-map-scroll [data-map-confirm] label{display:grid;gap:5px}
 .travel-map-scroll [data-map-confirm]>button{grid-column:1/-1;background:#303030;color:#fff;border:0}
-.travel-map-scroll [data-map-places]>article{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #eee;font-size:10px}
+.travel-map-scroll [data-map-places]>article{display:block;padding:10px 0;border-bottom:1px solid #eee;font-size:10px}
 .travel-map-scroll [data-place-focus]{flex:1;display:flex;align-items:flex-start;gap:8px;min-width:0;text-align:left;border:0;padding:0;background:transparent;font-size:11px}
 .travel-map-scroll [data-place-focus]>span{min-width:0;overflow-wrap:anywhere}
 .travel-map-scroll [data-place-focus] b{display:grid;place-items:center;flex:none;width:18px;height:18px;background:#333;color:#fff;border-radius:50%;font-size:9px;font-weight:400}
@@ -5140,3 +5140,10 @@ body:has(.music-dialog[open]) .iris-guide-widget{visibility:hidden!important;poi
 
 /* The font dialog close icon stays unboxed after modal autofocus and mobile taps. */
 .travel-font-dialog [data-font-close],.travel-font-dialog [data-font-close]:focus,.travel-font-dialog [data-font-close]:focus-visible,.travel-font-dialog [data-font-close]:active{appearance:none;-webkit-appearance:none;outline:none!important;box-shadow:none!important;border:0;border-radius:0;background:transparent;-webkit-tap-highlight-color:transparent}
+
+.travel-map-scroll .travel-place-row{display:flex;align-items:center;gap:8px;min-width:0;width:100%}
+.travel-map-scroll .travel-place-row>small,.travel-map-scroll .travel-place-row>a,.travel-map-scroll .travel-place-row>button:not([data-place-focus]){flex:none;white-space:nowrap}
+.travel-map-scroll .travel-place-schedule{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;align-items:end;gap:8px;width:100%;margin:6px 0}
+.travel-map-scroll .travel-place-schedule label{display:grid;gap:4px;font-size:10px;min-width:0}
+.travel-map-scroll .travel-place-schedule input,.travel-map-scroll .travel-place-schedule select{box-sizing:border-box;width:100%;height:30px;min-height:30px;margin:0;padding:4px 6px;border:0;border-bottom:1px solid #ddd;border-radius:0;background:#fff;font-size:11px}
+.travel-map-scroll .travel-place-schedule button{flex:none;height:30px;padding:4px 6px;font-size:10px}

@@ -658,19 +658,16 @@ test('accepting a new destination and duration invalidates old places and select
  const f=boot(saved);try{
   const before=f.w.eval('JSON.stringify(messages())'),save=f.w.IrisStorage.save;f.w.IrisStorage.save=async()=>{throw Error('磁盘满')};await assert.rejects(f.w.commitTravelUserEvent('0-0-chat','joint-1','confirm-proposal',3),/保存失败/);assert.equal(f.w.eval('JSON.stringify(messages())'),before);
   f.w.IrisStorage.save=save;await f.w.commitTravelUserEvent('0-0-chat','joint-1','confirm-proposal',3);assert.equal(f.w.eval("travelState(messages(),'joint-1').destination"),'巴黎');assert.equal(f.w.eval("travelState(messages(),'joint-1').placeProposals.length"),0);assert.equal(f.w.eval('messages()[0].travelPlaces.confirmed.length'),0);assert.equal(f.w.eval('Object.keys(messages()[0].travelBookings.selections).length'),0);
-  await assert.rejects(f.w.commitTravelUserEvent('0-0-chat','joint-1','confirm-plan',4),/具体地点/);
+  await f.w.commitTravelUserEvent('0-0-chat','joint-1','confirm-plan',4);assert.equal(f.w.eval("travelState(messages(),'joint-1').planConfirmed"),true);
   f.w.eval("messages()[0].travelPlaces={revision:9,confirmed:[{planned:true,proposalId:'old',name:'浅草寺',day:5,period:'午后'}],dismissed:[]}");assert.equal(f.w.eval("IrisTravelMap.read(messages()[0],travelState(messages(),'joint-1')).confirmed.length"),0);assert.deepEqual(f.errors,[]);
  }finally{f.w.close()}
 });
 
-test('confirming an itinerary rejects unlocated places, undecided periods and out-of-range days before unlocking booking',{skip:!JSDOM},async()=>{
- const saved=billingFixture();saved.messages['0-0-chat'].splice(2);const f=boot(saved);try{
-  for(const patch of [{planned:true,proposalId:'p',lat:undefined,lon:undefined},{period:'待商量'},{day:3}]){
-   f.w.__point={id:'p',name:'西湖',osmType:'node',osmId:'1234',lat:30.2,lon:120.1,day:1,period:'午后',...patch};f.w.eval('messages()[0].travelPlaces={revision:1,confirmed:[__point],dismissed:[]}');
-   await assert.rejects(f.w.commitTravelUserEvent('0-0-chat','joint-1','confirm-plan',1),/未定位|具体地点/);assert.equal(f.w.eval("travelState(messages(),'joint-1').planConfirmed"),false);
-  }
-  f.w.eval("messages()[0].travelPlaces={revision:1,confirmed:[{id:'p',name:'西湖',osmType:'node',osmId:'1234',lat:30.2,lon:120.1,day:1,period:'午后'}],dismissed:[]}");await f.w.commitTravelUserEvent('0-0-chat','joint-1','confirm-plan',1);assert.equal(f.w.eval("travelState(messages(),'joint-1').planConfirmed"),true);
- }finally{f.w.close()}
+test('confirming an itinerary accepts missing periods or out-of-range days without blocking booking',{skip:!JSDOM},async()=>{
+ for(const patch of [{period:'待商量'},{day:3}]){
+  const saved=billingFixture();saved.messages['0-0-chat'].splice(2);saved.messages['0-0-chat'][0].travelPlaces={revision:1,confirmed:[{id:'p',name:'西湖',osmType:'node',osmId:'1234',lat:30.2,lon:120.1,day:1,period:'午后',...patch}],dismissed:[]};const f=boot(saved);
+  try{await f.w.commitTravelUserEvent('0-0-chat','joint-1','confirm-plan',1);assert.equal(f.w.eval("travelState(messages(),'joint-1').planConfirmed"),true);f.w.openTravelDetail('joint-1');assert.ok(f.w.document.querySelector('[data-travel-booking="flight"]'));assert.ok(f.w.document.querySelector('[data-travel-booking="hotel"]'));assert.deepEqual(f.errors,[])}finally{f.w.close()}
+ }
 });
 
 test('new airport charges remain billable while explicit included-booking costs and exact duplicate costs are omitted',{skip:!JSDOM},()=>{
@@ -681,4 +678,137 @@ test('new airport charges remain billable while explicit included-booking costs 
   assert.equal(f.w.IrisTravelBilling.sceneDraft(rt,source,[{...fee,includedBookingId:'flight-a'}],meta),null);
   assert.equal(f.w.IrisTravelBilling.sceneDraft(rt,source,[{...fee,description:'原机场起降费',unitPrice:100}],meta),null);
  }finally{f.w.close()}
+});
+
+test('a natural chat invitation accepted by the role creates one accepted trip and opens its panel with extracted destination',{skip:!JSDOM},()=>{
+ const f=boot({char:0,user:0,users:[{name:'小林'}],characters:[{name:'甲'}],messages:{'0-0-chat':[{mine:true,text:'我们一起去东京旅行吧，明年一月一日出发玩三天。'}]},settings:{}});
+ try{
+  f.w.__action={type:'travel_agree',destination:'东京',departure:'2027-01-01T10:00',days:3,userQuote:'我们一起去东京旅行吧'};
+  f.w.eval("const parsedTrip=parseRoleActions('[[IRIS_ACTION '+JSON.stringify(__action)+' ]]',messages(),[],{},{enabled:true,roleIndex:0,userIndex:0});messages().push(...parsedTrip.actions)");
+  const trip=f.w.eval("travelState(messages(),messages().find(m=>m.travelInvitation).travelInvitation.id)");assert.equal(trip.destination,'东京');assert.equal(trip.status,'accepted');assert.equal(trip.days,3);
+  f.w.eval("render();openNewChatTravelAgreement(key(),chars[0],state.users[0])");assert.match(f.w.document.querySelector('.travel-detail').textContent,/东京/);assert.equal(f.w.eval('state.offline'),false);
+  assert.equal(f.w.eval("parseRoleActions('[[IRIS_ACTION '+JSON.stringify(__action)+' ]]',messages(),[],{},{enabled:true,roleIndex:0,userIndex:0}).actions.length"),0);
+  assert.match(f.w.onlineTravelInvitationContext(f.w.eval('chars[0]'),[]),/缺少时留空或null/);
+ }finally{f.dom.window.close()}
+});
+test('chat travel acceptance leaves missing schedule editable and rejects unsupported or non-chat actions',{skip:!JSDOM},async()=>{
+ const f=boot({char:0,user:0,users:[{name:'小林'}],characters:[{name:'甲'}],messages:{'0-0-chat':[{mine:true,text:'我们一起去东京旅行吧'}]},settings:{}});
+ try{
+  f.w.__action={type:'travel_agree',destination:'东京',departure:'',days:null,userQuote:'我们一起去东京旅行吧'};
+  assert.equal(f.w.eval("parseRoleActions('[[IRIS_ACTION '+JSON.stringify(__action)+' ]]',messages(),[],{},{enabled:false}).actions.length"),0);
+  f.w.eval("__action.userQuote='我们一起去巴黎旅行吧'");assert.equal(f.w.eval("parseRoleActions('[[IRIS_ACTION '+JSON.stringify(__action)+' ]]',messages(),[],{},{enabled:true}).actions.length"),0);f.w.eval("__action.userQuote='我们一起去东京旅行吧'");
+  f.w.eval("messages().push(...parseRoleActions('[[IRIS_ACTION '+JSON.stringify(__action)+' ]]',messages(),[],{},{enabled:true,roleIndex:0,userIndex:0}).actions);render();openNewChatTravelAgreement(key(),chars[0],state.users[0])");
+  const form=f.w.document.querySelector('[data-travel-chat-schedule]');assert.ok(form);assert.equal(form.elements.destination.value,'东京');assert.equal(form.elements.departure.value,'');assert.equal(form.elements.days.value,'');assert.equal(f.w.document.querySelector('[data-travel-map]'),null);
+  form.elements.departure.value='2027-01-01T10:00';form.elements.days.value='3';form.dispatchEvent(new f.w.Event('submit',{cancelable:true}));await flush();assert.equal(f.w.document.querySelector('[data-travel-chat-schedule]'),null);assert.ok(f.w.document.querySelector('[data-travel-map]'));assert.equal(f.w.eval("travelState(messages(),messages().find(m=>m.travelInvitation).travelInvitation.id).status"),'accepted');
+ }finally{f.dom.window.close()}
+});
+
+test('normal chat reply commits the agreement before opening an enabled together panel',{skip:!JSDOM},async()=>{
+ const saved={char:0,user:0,users:[{name:'小林'}],characters:[{name:'甲',chatSettings:{userIndex:0}}],messages:{'0-0-chat':[{mine:true,text:'我们一起去东京旅行吧',createdAt:Date.now()}]},settings:{apiConfigs:[{id:'chat',url:'https://chat.invalid/v1',key:'test-only',model:'chat-model',models:['chat-model']}],apiFeatureRoutes:{onlineChat:'chat'},apiFeatureModels:{onlineChat:'chat-model'}}};
+ const f=boot(saved,async()=>completion({messages:[{text:'好，我们一起去东京。'},{text:'时间再商量。'}],actions:[],travelDecision:{decision:'accept',destination:'东京',departure:'',days:null,userQuote:'我们一起去东京旅行吧'},invitation:null}));
+ try{
+  let release;const timer=f.w.setTimeout.bind(f.w);f.w.setTimeout=(fn,ms,...args)=>ms===3000?(release=()=>fn(...args),1):timer(fn,ms,...args);
+  const request=f.w.requestChatReply('0-0-chat');await flush();assert.ok(release);assert.equal(f.w.document.querySelector('.travel-detail'),null);release();await request;await flush();
+  assert.ok(f.w.document.querySelector('.travel-detail'));
+  assert.equal(f.w.document.querySelector('[data-travel-do="cancel"]').disabled,false);
+  assert.equal(f.w.eval("messages().filter(m=>m.travelInvitation).length"),1);
+  assert.equal(f.w.eval("travelState(messages(),messages().find(m=>m.travelInvitation).travelInvitation.id).status"),'accepted');
+  assert.deepEqual(f.errors,[]);
+ }finally{f.dom.window.close()}
+});
+
+test('short contextual invitation and plain acceptance in screenshot create a trip without action markers or another API call',{skip:!JSDOM},async()=>{
+ const f=boot({char:0,user:0,users:[{name:'用户'}],characters:[{name:'甲'}],messages:{'0-0-chat':[{mine:true,text:'最近想去福州旅游'},{mine:false,text:'福州有什么好玩的？'},{mine:true,text:'去吗去吗'}]},settings:{}});
+ try{
+  const replies=[{mine:false,text:'福州？'},{mine:false,text:'不过既然你这么诚心诚意地邀请了，那本大帅哥勉为其难腾个档期陪你走一趟呗。'},{mine:false,text:'今晚九点直接出发？'},{mine:false,text:'行，我这就去收拾行李，顺便把机票和酒店订了。'}];
+  await f.w.ensureChatTravelAgreement(f.w.eval('messages()'),replies,{enabled:true,roleIndex:0,userIndex:0});
+  assert.equal(replies.filter(m=>m.travelInvitation).length,1);assert.equal(replies.find(m=>m.travelInvitation).travelInvitation.destination,'福州');assert.equal(replies.at(-1).travelEvent.event,'accept');
+  f.w.__replies=replies;f.w.eval('messages().push(...__replies);render();openNewChatTravelAgreement(key(),chars[0],state.users[0])');assert.ok(f.w.document.querySelector('.travel-detail'));assert.match(f.w.document.querySelector('.travel-detail').textContent,/福州/);assert.deepEqual(f.errors,[]);
+ }finally{f.w.close()}
+});
+test('travel agreement fallback ignores refusal and generic discussion, and explicit markers allow short user invitations',{skip:!JSDOM},async()=>{
+ const f=boot({char:0,user:0,users:[{name:'用户'}],characters:[{name:'甲'}],messages:{'0-0-chat':[{mine:true,text:'想去福州旅行'},{mine:true,text:'去吗去吗'}]},settings:{}});
+ try{
+  for(const text of ['我没空，不能去，你自己玩吧。','福州适合旅游，订机票可以比较一下。']){const replies=[{mine:false,text}];await f.w.ensureChatTravelAgreement(f.w.eval('messages()'),replies,{enabled:true});assert.equal(replies.length,1)}
+  f.w.__action={type:'travel_agree',destination:'福州',departure:'',days:null,userQuote:'去吗去吗'};const parsed=f.w.eval("parseRoleActions('[[IRIS_ACTION '+JSON.stringify(__action)+']]',messages(),[],{},{enabled:true}).actions");assert.equal(parsed.length,2);
+ }finally{f.w.close()}
+});
+
+test('hidden travel decisions accept without keyword matching and stay out of chat text',{skip:!JSDOM},async()=>{
+ const f=boot({char:0,user:0,users:[{name:'用户'}],characters:[{name:'甲'}],messages:{'0-0-chat':[{mine:true,text:'福州好不好？'}]},settings:{}});
+ try{
+  f.w.__payload={messages:[{text:'好啊，算我一个。'}],actions:[],invitation:{intent:'普通见面'},travelDecision:{decision:'accept',destination:'福州',departure:'',days:null,userQuote:'引用略有不同'}};
+  f.w.eval("messages().push(...decodeOnlineReply(JSON.stringify(__payload),messages(),[],{},{enabled:true,roleIndex:0,userIndex:0}));render();openNewChatTravelAgreement(key(),chars[0],state.users[0])");
+  assert.ok(f.w.document.querySelector('.travel-detail'));assert.equal(f.w.eval('messages().some(m=>m.invitationProposal)'),false);assert.equal(f.w.eval("messages().filter(m=>m.travelInvitation).length"),1);assert.doesNotMatch(f.w.document.querySelector('#conversation').textContent,/travelDecision|userQuote|\baccept\b/);
+ }finally{f.w.close()}
+});
+test('hidden rejection or undecided takes priority over textual fallback and conflicting actions',{skip:!JSDOM},async()=>{
+ for(const decision of ['decline','undecided']){
+  const f=boot({char:0,user:0,users:[{name:'用户'}],characters:[{name:'甲'}],messages:{'0-0-chat':[{mine:true,text:'我们一起去福州旅行吧'}]},settings:{}});
+  try{
+   f.w.__payload={messages:[{text:'一起去福州？我再想想。'}],actions:[{type:'travel_agree',destination:'福州',departure:'',days:null,userQuote:'我们一起去福州旅行吧'}],travelDecision:{decision}};
+   const replies=f.w.decodeOnlineReply(JSON.stringify(f.w.__payload),f.w.eval('messages()'),[],{},{enabled:true,roleIndex:0,userIndex:0});await f.w.ensureChatTravelAgreement(f.w.eval('messages()'),replies,{enabled:true});assert.equal(replies.some(m=>m.travelInvitation),false);assert.equal(replies.at(-1).travelDecision.decision,decision);assert.equal(f.w.document.querySelector('.travel-detail'),null);
+  }finally{f.w.close()}
+ }
+});
+test('an accepted trip waits for another open sheet to close instead of losing its popup',{skip:!JSDOM},async()=>{
+ const f=boot({char:0,user:0,users:[{name:'用户'}],characters:[{name:'甲'}],messages:{'0-0-chat':[{mine:true,text:'去福州吗'}]},settings:{}});
+ try{
+  f.w.__payload={messages:[{text:'好，我们去。'}],actions:[],travelDecision:{decision:'accept',destination:'福州',departure:'',days:null,userQuote:'去福州吗'}};
+  f.w.eval("messages().push(...decodeOnlineReply(JSON.stringify(__payload),messages(),[],{},{enabled:true,roleIndex:0,userIndex:0}));render();sheet('其他面板','','<p>内容</p>');openNewChatTravelAgreement(key(),chars[0],state.users[0])");assert.equal(f.w.document.querySelector('.travel-detail'),null);f.w.closeSheet();await flush();assert.ok(f.w.document.querySelector('.travel-detail'));
+ }finally{f.w.close()}
+});
+
+test('online composer keeps Enter sending after opening and closing an accepted travel panel, including mobile line-break input',{skip:!JSDOM},async()=>{
+ const saved=billingFixture();saved.characters[0].chatSettings={...saved.characters[0].chatSettings,userIndex:0};const f=boot(saved);
+ try{
+  f.w.openTravelDetail('joint-1');f.w.document.querySelector('[data-travel-chat]').click();const field=f.w.document.querySelector('.phone > .bottom #messageInput');assert.equal(field.getAttribute('enterkeyhint'),'send');
+  let count=f.w.eval('messages().length');field.value='线上回车发送';const key=new f.w.KeyboardEvent('keydown',{key:'Enter',bubbles:true,cancelable:true});field.dispatchEvent(key);await flush();assert.equal(key.defaultPrevented,true);assert.equal(f.w.eval('messages().length'),count+1);assert.equal(field.value,'');
+  count=f.w.eval('messages().length');field.value='手机发送';const mobile=new f.w.InputEvent('beforeinput',{inputType:'insertLineBreak',bubbles:true,cancelable:true});field.dispatchEvent(mobile);await flush();assert.equal(mobile.defaultPrevented,true);assert.equal(f.w.eval('messages().length'),count+1);assert.equal(f.w.eval('state.offline'),false);
+ }finally{f.w.close()}
+});
+test('composer preserves Shift Enter, IME confirmation, and offline line breaks',{skip:!JSDOM},()=>{
+ const f=boot({char:0,user:0,users:[{name:'用户'}],characters:[{name:'甲',chatSettings:{userIndex:0}}],messages:{},settings:{}});
+ try{
+  const field=f.w.document.querySelector('.phone > .bottom #messageInput');field.value='不应发送';
+  const shifted=new f.w.KeyboardEvent('keydown',{key:'Enter',shiftKey:true,bubbles:true,cancelable:true});field.dispatchEvent(shifted);const line=new f.w.InputEvent('beforeinput',{inputType:'insertLineBreak',bubbles:true,cancelable:true});field.dispatchEvent(line);assert.equal(shifted.defaultPrevented,false);assert.equal(line.defaultPrevented,false);
+  field.dispatchEvent(new f.w.CompositionEvent('compositionstart',{bubbles:true}));const ime=new f.w.KeyboardEvent('keydown',{key:'Enter',bubbles:true,cancelable:true});field.dispatchEvent(ime);const imeLine=new f.w.InputEvent('beforeinput',{inputType:'insertParagraph',bubbles:true,cancelable:true});field.dispatchEvent(imeLine);assert.equal(ime.defaultPrevented,false);assert.equal(imeLine.defaultPrevented,false);field.dispatchEvent(new f.w.CompositionEvent('compositionend',{bubbles:true}));
+  f.w.eval('state.offline=true;chars[0].offlineMode=true;render()');assert.equal(field.getAttribute('enterkeyhint'),'enter');const offline=new f.w.KeyboardEvent('keydown',{key:'Enter',bubbles:true,cancelable:true});field.dispatchEvent(offline);assert.equal(offline.defaultPrevented,false);assert.equal(f.w.eval('messages().length'),0);
+ }finally{f.w.close()}
+});
+
+test('transport and lodging arrangements do not become proposed itinerary places while actual visits remain',{skip:!JSDOM},()=>{
+ const f=boot(billingFixture());
+ try{
+  for(const name of ['私人飞机','丽江私人别院','入住四季酒店','商务舱往返机票']){f.w.__place={name,city:'丽江',day:1,period:'午后'};assert.equal(f.w.eval("parseRoleActions('[[IRIS_ACTION '+JSON.stringify({type:'travel_update',id:'joint-1',baseRevision:travelState(messages(),'joint-1').revision,event:'place',places:[__place]})+']]',messages(),[],{},{enabled:true}).actions.length"),0)}
+  f.w.__places=[{name:'私人飞机',city:'丽江',day:1,period:'午后'},{name:'丽江古城',city:'丽江',day:1,period:'午后'},{name:'酒店内的餐厅用餐',city:'丽江',day:1,period:'夜间',purpose:'visit'}];
+  const result=f.w.eval("parseRoleActions('[[IRIS_ACTION '+JSON.stringify({type:'travel_update',id:'joint-1',baseRevision:travelState(messages(),'joint-1').revision,event:'place',places:__places})+']]',messages(),[],{},{enabled:true}).actions");assert.equal(result.length,1);assert.deepEqual(Array.from(result[0].travelEvent.places,p=>p.name),['丽江古城','酒店内的餐厅用餐']);
+ }finally{f.w.close()}
+});
+
+test('a located itinerary place can fix its day and period directly without another map search',{skip:!JSDOM},async()=>{
+ const saved=billingFixture();saved.messages['0-0-chat'][0].travelPlaces={revision:1,confirmed:[{id:'fix-me',name:'西湖',osmType:'node',osmId:'42',lat:30.2,lon:120.1,day:9,period:'待商量'}],dismissed:[]};const calls=[],f=boot(saved,async url=>{calls.push(String(url));throw Error('no external services')});
+ try{
+  await f.w.openTravelMap('joint-1',null,true);await flush();const editor=f.w.document.querySelector('[data-place-schedule="fix-me"]');assert.ok(editor);assert.match(editor.parentElement.textContent,/超出本次|时段待确定/);editor.elements.day.value='1';editor.elements.period.value='上午';editor.dispatchEvent(new f.w.Event('submit',{cancelable:true}));await flush();
+  const place=f.w.eval('messages()[0].travelPlaces.confirmed[0]');assert.equal(place.day,1);assert.equal(place.period,'上午');assert.equal(place.lat,30.2);assert.equal(place.lon,120.1);assert.equal(f.w.IrisTravelMap.readyPlace(place,2),true);assert.equal(calls.filter(url=>url.includes('photon')||url.includes('/chat/completions')).length,0);assert.deepEqual(f.errors,[]);
+ }finally{f.w.close()}
+});
+
+test('a named scheduled place without map coordinates can confirm the itinerary and unlock transport and lodging',{skip:!JSDOM},async()=>{
+ const saved=billingFixture();saved.messages['0-0-chat'].splice(2);saved.messages['0-0-chat'][0].travelPlaces={revision:1,confirmed:[{id:'unmapped',proposalId:'suggestion-unmapped',planned:true,name:'约好的买手店',city:'东京',day:1,period:'午后'}],dismissed:[]};const f=boot(saved);
+ try{
+  assert.equal(f.w.eval("IrisTravelMap.readyPlace(messages()[0].travelPlaces.confirmed[0],2)"),false);
+  await f.w.commitTravelUserEvent('0-0-chat','joint-1','confirm-plan',1);assert.equal(f.w.eval("travelState(messages(),'joint-1').planConfirmed"),true);
+  f.w.openTravelDetail('joint-1');assert.ok(f.w.document.querySelector('[data-travel-booking="flight"]'));assert.ok(f.w.document.querySelector('[data-travel-booking="hotel"]'));assert.equal(f.w.eval('messages()[0].travelPlaces.confirmed[0].lat'),undefined);assert.equal(f.w.eval('messages()[0].travelPlaces.confirmed[0].planned'),true);
+  f.w.eval('render()');assert.equal(f.w.eval("travelState(messages(),'joint-1').planConfirmed"),true);assert.deepEqual(f.errors,[]);
+ }finally{f.w.close()}
+});
+
+test('map confirmation advances directly with undecided times or even no map places',{skip:!JSDOM},async()=>{
+ for(const confirmed of [[],[{id:'a',proposalId:'a',planned:true,name:'三坊七巷',day:1,period:'待商量'},{id:'b',proposalId:'b',planned:true,name:'爱心树',day:1,period:'待商量'}]]){
+  const saved=billingFixture();saved.messages['0-0-chat'].splice(2);saved.messages['0-0-chat'][0].travelPlaces={revision:1,confirmed,dismissed:[]};const f=boot(saved);
+  try{
+   await f.w.openTravelMap('joint-1',null,true);await flush();const button=f.w.document.querySelector('[data-map-confirm-plan]');assert.ok(button);assert.equal(button.disabled,false);button.click();await flush();assert.ok(f.w.document.querySelector('[data-travel-booking="flight"]'));assert.ok(f.w.document.querySelector('[data-travel-booking="hotel"]'));assert.equal(f.w.eval("travelState(messages(),'joint-1').planConfirmed"),true);f.w.eval('render()');assert.equal(f.w.eval("travelState(messages(),'joint-1').planConfirmed"),true);assert.deepEqual(f.errors,[]);
+  }finally{f.w.close()}
+ }
 });
