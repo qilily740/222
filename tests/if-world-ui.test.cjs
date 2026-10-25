@@ -39,7 +39,7 @@ test('IF seal keeps an independent full archive, all entry paths are read-only a
 test('IF delete removes only its branch, retains dreams, and returns to index',{skip:!JSDOM},async()=>{const f=await messageFixture();try{f.role.ifWorld.dreams=[{id:'saved-dream',roleId:'r',content:'保留梦境'}];f.role.ifWorld.branches.push({...JSON.parse(JSON.stringify(f.role.ifWorld.branches[0])),id:'keep'});f.role.ifWorld.lastBranchId='b';const source=JSON.stringify(f.role.lifeTimeline);clickStoryTool(f,'delete');await flush();assert.deepEqual(Array.from(f.role.ifWorld.branches,b=>b.id),['keep']);assert.equal(f.role.ifWorld.dreams[0].content,'保留梦境');assert.equal(f.role.ifWorld.lastBranchId,undefined);assert.equal(JSON.stringify(f.role.lifeTimeline),source);assert.ok(f.host.querySelector('.if-index'))}finally{f.dom.window.close()}});
 test('IF sealing that finishes after a role switch saves to its original role only',{skip:!JSDOM},async()=>{const f=await messageFixture();try{let finish;f.options.analyze=()=>new Promise(resolve=>finish=resolve);clickStoryTool(f,'seal');const other={experienceCharacterId:'other',name:'乙',lifeTimeline:{entries:[]}};f.options.state.characters.push(other);f.options.state.char=1;f.w.IrisIfWorld.mount(f.options,f.host);finish('原角色封存');await flush();assert.equal(f.role.ifWorld.archives[0].content,'原角色封存');assert.equal(other.ifWorld,undefined);assert.ok(!f.host.textContent.includes('原角色封存'))}finally{f.dom.window.close()}});
 
-test('entering an IF branch starts at the top while redraws preserve a reader away from the bottom',{skip:!JSDOM},async()=>{const f=fixture();try{Object.defineProperty(f.w.HTMLElement.prototype,'scrollHeight',{configurable:true,get(){return this.classList.contains('if-story-body')?1200:0}});Object.defineProperty(f.w.HTMLElement.prototype,'clientHeight',{configurable:true,get(){return 300}});f.role.ifWorld.branches[0].messages=[{mine:false,text:'开场'},{mine:true,text:'后续'},{mine:false,text:'更后面的正文'}];f.host.scrollTop=240;f.host.closest('.experiences-page').scrollTop=180;await f.w.IrisIfWorld.openFromNode(f.options,f.host,'n');assert.equal(f.host.scrollTop,0);assert.equal(f.host.closest('.experiences-page').scrollTop,0);assert.equal(f.host.querySelector('.if-story-body').scrollTop,0);f.host.querySelector('.if-story-body').scrollTop=100;contextIfMessage(f,0);assert.equal(f.host.querySelector('.if-story-body').scrollTop,100);f.w.IrisIfWorld.back();f.host.querySelector('[data-if-node]').click();f.host.querySelector('[data-if-open]').click();assert.equal(f.host.querySelector('.if-story-body').scrollTop,0)}finally{f.dom.window.close()}});
+test('entering an existing IF opening shows the latest content while redraws preserve a reader away from the bottom',{skip:!JSDOM},async()=>{const f=fixture();try{Object.defineProperty(f.w.HTMLElement.prototype,'scrollHeight',{configurable:true,get(){return this.classList.contains('if-story-body')?1200:0}});Object.defineProperty(f.w.HTMLElement.prototype,'clientHeight',{configurable:true,get(){return 300}});f.role.ifWorld.branches[0].messages=[{mine:false,text:'开场'},{mine:true,text:'后续'},{mine:false,text:'更后面的正文'}];f.host.scrollTop=240;f.host.closest('.experiences-page').scrollTop=180;await f.w.IrisIfWorld.openFromNode(f.options,f.host,'n');assert.equal(f.host.scrollTop,0);assert.equal(f.host.closest('.experiences-page').scrollTop,0);assert.equal(f.host.querySelector('.if-story-body').scrollTop,1200);f.host.querySelector('.if-story-body').scrollTop=100;contextIfMessage(f,0);assert.equal(f.host.querySelector('.if-story-body').scrollTop,100);f.w.IrisIfWorld.back();f.host.querySelector('[data-if-node]').click();f.host.querySelector('[data-if-open]').click();assert.equal(f.host.querySelector('.if-story-body').scrollTop,1200)}finally{f.dom.window.close()}});
 test('legacy IF original-world snapshots are refreshed once for scoped worldbooks without changing story history',{skip:!JSDOM},async()=>{const f=fixture();try{f.options.ifScopedGlobalWorldbooks=true;f.role.ifWorld.branches[0].originalWorld='旧快照里的全局私密设定';f.role.ifWorld.branches[0].messages=[{mine:false,text:'原有剧情'},{mine:true,text:'继续眼前的事'}];f.options.analyze=async prompt=>{assert.ok(!prompt.includes('旧快照里的全局私密设定'));assert.ok(prompt.includes('原世界的城镇与学校设定'));return'新的剧情'};await f.w.IrisIfWorld.openFromNode(f.options,f.host,'n');f.host.querySelector('[data-if-reply]').click();await flush();assert.equal(f.role.ifWorld.branches[0].worldbookScopeVersion,1);assert.equal(f.role.ifWorld.branches[0].messages[0].text,'原有剧情')}finally{f.dom.window.close()}});
 
 const adaptedIdentity=()=>({summary:'少年药铺学徒',occupation:'跟随药师学习辨认药草',socialPosition:'凡俗小镇的普通学徒',background:'保留既有家庭关系，以师授学习对应原有求学',resources:'靠学徒生活供给与基础辨药技能，不拥有成年后的资产',relationships:'沿用已经确认的重要人物关系',eventAdaptation:'入学对应进入药铺学习，不改变该节点的成长意义',coreTraits:'克制认真，保留原有表达方式与价值观'});
@@ -148,4 +148,26 @@ test('legacy branch archives migrate without losing transcript when the branch i
 
 test('IF composer starts at the offline single-line height, grows for text and shrinks after clearing',{skip:!JSDOM},async()=>{
  const f=await messageFixture();try{const field=f.host.querySelector('.message-input');Object.defineProperty(field,'scrollHeight',{configurable:true,get(){return this.value?66:180}});field.value='';field.dispatchEvent(new f.w.Event('input'));assert.equal(field.style.height,'22px');field.value='第一行\n第二行\n第三行';field.dispatchEvent(new f.w.Event('input'));assert.equal(field.style.height,'66px');field.value='';field.dispatchEvent(new f.w.Event('input'));assert.equal(field.style.height,'22px')}finally{f.dom.window.close()}
+});
+
+test('each IF request ends with the current independent perspectives without rewriting dialogue or adding calls',{skip:!JSDOM},async()=>{
+ for(const perspective of ['second','first','third']){
+  const f=fixture(),requests=[],story='他望向你。\n\n“林小姐，我来拿。”';
+  try{
+   f.options.ifOutputRequirements=()=> '档案与旧文参考：她走进房间。';
+   f.options.analyze=async prompt=>{requests.push(prompt);return story};
+   f.role.ifWorld.branches[0].settings.userPerspective=perspective;
+   f.role.ifWorld.branches[0].settings.rolePerspective='third';
+   f.host.querySelector('.if-compose textarea').value='继续';
+   f.host.querySelector('.if-compose').dispatchEvent(new f.w.Event('submit',{cancelable:true}));
+   await flush();
+   assert.equal(requests.length,1);
+   const tail=requests[0].split('【本轮叙述人称硬性约束】').at(-1);
+   assert.match(tail,new RegExp('用户叙述严格使用'+({second:'第二',first:'第一',third:'第三'})[perspective]+'人称'));
+   assert.match(tail,/角色叙述严格使用第三人称/);
+   assert.match(tail,/不把其他人物的他／她误判成用户/);
+   assert.ok(requests[0].indexOf('【本轮叙述人称硬性约束】')>requests[0].indexOf('档案与旧文参考'));
+   assert.equal(f.role.ifWorld.branches[0].messages.at(-1).text,story);
+  }finally{f.dom.window.close()}
+ }
 });

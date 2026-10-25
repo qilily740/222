@@ -2078,7 +2078,7 @@ let offlineRegexDraft=null;
 let offlineRequirementDraftRole=null;
 let systemSettingsTab='api';
 const APP_VERSION='5.8.0';
-const APP_RELEASE='5.8.0-222-r11';
+const APP_RELEASE='5.8.0-222-r12';
 const APP_RELEASE_NOTES={"date": "2026-10-24", "changes": ["同步新版共用功能，保留 222 导入能力与独立界面"], "noticeId": "222-5.8.0-r1"};
 const APP_RELEASE_HISTORY=[{version:APP_VERSION,...APP_RELEASE_NOTES},{version:'5.7.9',...{"date": "2026-10-22", "changes": ["新增功能按钮名称中英文切换，入口：主页面加号菜单底部「中 / EN」；选择会自动记住。", "新增「联系作者」。入口：教程悬浮圆形按键 → 联系作者。", "统一角色币种识别，修复私人钱包、代付、转账、购物、退款及经营分红的币种校验。"], "noticeId": "5.7.9-menu-language"}},{version:'5.7.8',...{"date": "2026-10-21", "changes": ["线上聊天第一条消息长按后，操作面板显示在消息下方，避免顶部裁切，保持原有消息间距。", "心声与本轮回复一起准备，提前生成 X、备忘录、GPT 和当前自定义面板，打开即可查看。"]}},{version:'5.7.7',...{"date": "2026-10-21", "changes": ["普通聊天支持照片与表情读图，可在线上设置的“更多”中启用图片输入。", "优化真实图片展示：移除外层气泡，修正连续发消息后尺寸变化；多选时点击图片直接选中。", "修正心声面板打开后缺少内容的问题，生成失败时可查看错误并重试。", "将“事情有后续”移到线上设置的“更多”，整理开关与事项列表。", "新增版本更新提示，同一版本关闭后不再提醒。"]}},{version:'5.7.6',date:'2026-10-21',changes:['普通聊天支持照片与表情读图，可在线上设置的“更多”中启用图片输入。','优化真实图片展示：移除外层气泡，修正连续发消息后尺寸变化；多选时点击图片直接选中。','修正心声面板打开后缺少内容的问题，生成失败时可查看错误并重试。','将“事情有后续”移到线上设置的“更多”，整理开关与事项列表。','新增版本更新提示，同一版本关闭后不再提醒。']}];
 const compareAppVersions=(left,right)=>{const a=String(left||'0').split('.').map(Number),b=String(right||'0').split('.').map(Number);for(let i=0;i<Math.max(a.length,b.length);i++){const delta=(a[i]||0)-(b[i]||0);if(delta)return Math.sign(delta)}return 0};
@@ -3702,7 +3702,7 @@ function buildIfNarrativePrompt(role,branch,thread,branchRules){
   .replace('不要用提问、催促或空泛感情总结来制造所谓开放结尾；是否描写用户后续反应，遵循用户参与方式设置。','不要用作者式提问、催促或空泛感情总结制造开放结尾。角色可以在现场自然发问，但不必每轮以问句结束；最后一个可回应的变化不替用户接完回应，是否描写此前普通反应遵循用户参与方式设置。')
   .replace('线上聊天背景：','分支隔离说明：').replace('线下已经发生：','本 IF 已经发生：')
   .replace('逐段预演按附加的 HTML 注释规则输出。','检查只在内部完成，不输出预演、HTML 注释或检查记录。');
- return resolvePromptVariables(template,values)+'\n\n【人物原设参考｜只保留年龄相容的人格核心】\n'+JSON.stringify({name:role.name||'',profile:role.details||role.desc||''})+'\n\n【本分支用户资料｜真名与独立初识】\n'+JSON.stringify({name:String(user.name||'').trim(),profile:user.details||''})+'\n每条 IF 默认双方是陌生人；当前分支明确指定或已经建立的关系优先。旁白使用真名，不代表初见角色无需介绍就知道姓名。\n\n【IF 分支资料与约束】\n'+branchRules+'\n\n【当前 IF 世界可读取的全局世界书】\n'+world.global_worldbook+'\n只使用本次提供且读取范围包含 IF 世界的全局世界书；所选世界与本分支身份优先，不从其他模式补出设定。';
+ return resolvePromptVariables(template,values)+'\n\n【人物原设参考｜只保留年龄相容的人格核心】\n'+JSON.stringify({name:role.name||'',profile:role.details||role.desc||''})+'\n\n【本分支用户资料｜真名与独立初识】\n'+JSON.stringify({name:String(user.name||'').trim(),profile:user.details||''})+'\n每条 IF 默认双方是陌生人；当前分支明确指定或已经建立的关系优先。旁白严格遵守本轮用户与角色的人称设置；用户设为第一、第二人称时，不用真实姓名或第三人称代称替换旁白中的用户。对白中确需介绍或称呼姓名时使用真名，但初见角色仍须经介绍才知道姓名。\n\n【IF 分支资料与约束】\n'+branchRules+'\n\n【当前 IF 世界可读取的全局世界书】\n'+world.global_worldbook+'\n只使用本次提供且读取范围包含 IF 世界的全局世界书；所选世界与本分支身份优先，不从其他模式补出设定。';
 }
 function narrativeUserAgencyInstruction(settings,ifContext=false){return !ifContext&&settings.userAgency==='takeover'?'抢话（当前已开启，优先于提示词中的一般用户描写限制）：回复时主动让用户角色参与当前事件，通常至少补写一项符合现场的用户动作、台词、反应或心理；需要推动互动时，应直接代写用户的行动与说话，不要只写角色单方面反应。以用户本轮明确给出的内容和既有事实为准，不得改写、否认或覆盖它们；不把剧情补写当成用户现实中的事实。':'不抢话（当前已开启，优先于提示词中的一般要求）：严禁替用户补写或决定台词、动作、反应、感受、心理和选择。只描写角色及环境，并仅引用用户已经明确提供的行为。'}
 function offlineStoryInstructions({threadKey=key(),threadItems=messages(),roleIndex=state.char,userIndex=null,invitationContext='',ifContext=null,settingsOverride=null}={}){
