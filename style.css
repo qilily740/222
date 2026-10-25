@@ -1691,8 +1691,8 @@ input,textarea{scrollbar-width:thin}
 .iris-keepalive-audio{display:none!important}.keepalive-card{position:relative;display:flex;align-items:center;justify-content:space-between;gap:16px;margin:8px 0 20px;padding:16px 0;border-top:1px solid #eee;border-bottom:1px solid #eee;cursor:pointer}.keepalive-copy{display:grid;gap:6px;min-width:0}.keepalive-card strong{color:#555;font-size:12px;font-weight:400}.keepalive-card small{max-width:420px;color:#999;font-size:9px;line-height:1.7}.keepalive-card input{position:absolute;opacity:0;pointer-events:none}.keepalive-switch{position:relative;flex:none;width:34px;height:19px;border-radius:12px;background:#ddd;transition:background .18s}.keepalive-switch:after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #0002;transition:transform .18s}.keepalive-card input:checked+.keepalive-switch{background:#555}.keepalive-card input:checked+.keepalive-switch:after{transform:translateX(15px)}.keepalive-status{color:#888;font-size:9px;white-space:nowrap}.is-system-settings .keepalive-card{border-top:0}
 
 /* Offline story composition uses Enter for line breaks and grows for multiline drafts. */
-.phone:has(.conversation.is-offline-story) .composer .input-wrap{height:auto;min-height:40px;max-height:106px;padding:8px 12px 8px 17px}
-.phone:has(.conversation.is-offline-story) .composer .input-wrap textarea{height:auto;min-height:22px;max-height:88px;align-self:stretch;overflow-x:hidden;overflow-y:auto;white-space:pre-wrap;line-height:22px}
+.phone:has(.conversation.is-offline-story) .composer .input-wrap,.if-story-page>.if-chat-composer .input-wrap{height:auto;min-height:40px;max-height:106px;padding:8px 12px 8px 17px}
+.phone:has(.conversation.is-offline-story) .composer .input-wrap textarea,.if-story-page>.if-chat-composer .input-wrap textarea{height:auto;min-height:22px;max-height:88px;align-self:stretch;overflow-x:hidden;overflow-y:auto;white-space:pre-wrap;line-height:22px}
 .conversation.is-offline-story>.offline-prose-entry{flex-shrink:0}
 .conversation.is-offline-story>.offline-prose-entry.has-next-same-speaker{margin-bottom:0}
 .conversation.is-offline-story>.offline-prose-entry.is-continuation{margin-top:0}
@@ -4517,7 +4517,6 @@ body:has(.music-dialog[open]) .iris-guide-widget{visibility:hidden!important;poi
 .if-interaction-active .if-setting-tabs{top:39px}
 .if-setting-tabs{grid-template-columns:repeat(4,minmax(0,1fr))}
 .if-story-page>.if-chat-composer{display:flex;flex:none;align-items:center;gap:9px;min-height:0;margin:0;padding:10px 0 calc(8px + env(safe-area-inset-bottom));border:0;background:#fff}
-.if-chat-composer .input-wrap{height:auto;min-height:40px;max-height:106px;padding:8px 12px 8px 17px}
 .if-story-page>.if-chat-composer textarea{display:block;flex:1;box-sizing:border-box;width:100%;height:22px;min-height:22px;max-height:88px;margin:0;padding:0;border:0;border-radius:0;background:transparent;align-self:stretch;overflow-x:hidden;overflow-y:auto;white-space:pre-wrap;font-family:inherit;font-size:13px;line-height:22px;resize:none}
 .if-chat-composer textarea::placeholder{color:#adadad;font-size:inherit}
 .if-world .if-chat-composer button{display:grid;place-items:center;flex-shrink:0;padding:0;border:0;background:var(--surface,#f2f2f2);color:#676767;border-radius:50%}
@@ -5109,8 +5108,6 @@ body:has(.music-dialog[open]) .iris-guide-widget{visibility:hidden!important;poi
 .if-dream-list .if-dream-entry[open]>summary::after { content:"−"; }
 .if-dream-list .if-dream-entry>summary>small { margin-left:auto; color:#aaa; font-size:10px; }
 .if-dream-list .if-dream-content { padding:2px 2px 12px; }
-#featurePageTitle:has(.if-story-settings) { position:relative; padding-right:36px; }
-.if-story-settings { position:absolute; right:4px; top:50%; transform:translateY(-50%); border:0; border-bottom:1px solid #aaa; padding:4px 2px; background:transparent; color:#777; font:inherit; font-size:11px; }
 
 /* Keep archive rows in normal flow; percentage SVG sizing must not set the grid row height. */
 .growth-detail-scroll .growth-form{display:block;margin:0 auto}

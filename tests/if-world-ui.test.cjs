@@ -131,14 +131,11 @@ test('dream update syncs without API and summary reads all latest content in one
  }finally{f.dom.window.close()}
 });
 
-test('existing IF stories expose settings and long-lived characters can save age 500 and a new word count',{skip:!JSDOM},async()=>{
- const f=await messageFixture();try{
-  f.host.parentElement.insertBefore(f.w.document.querySelector('#title'),f.host);
-  const entry=f.w.document.querySelector('[data-if-open-settings]');assert.ok(entry);entry.click();assert.ok(f.host.querySelector('[data-if-settings]'));
-  const form=f.host.querySelector('[data-if-settings]');form.elements.ifAge.value='500';form.elements.ifAge.dispatchEvent(new f.w.Event('input'));form.elements.ifGrowthStage.value='s';form.elements.wordCount.value='2000';
-  f.options.ifGrowthBinding=(role,age,stageId)=>({roleId:'r',age,stageId,stageSnapshot:{阶段:'修行期'}});
-  form.dispatchEvent(new f.w.Event('submit',{cancelable:true}));await flush();assert.equal(f.role.ifWorld.branches[0].growthBinding.age,500);assert.equal(Number(f.role.ifWorld.branches[0].settings.wordCount),2000);
-  f.host.querySelector('[data-if-view="story"]').click();assert.ok(f.host.querySelector('.if-story-page'));assert.equal(f.role.ifWorld.branches[0].messages.length,3);
+test('IF story top bar has no settings button while setup retains age and narrative settings',{skip:!JSDOM},async()=>{
+ const f=fixture();try{
+  f.host.querySelector('[data-if-view="settings"]').click();const form=f.host.querySelector('[data-if-settings]');form.elements.ifAge.value='500';form.elements.ifAge.dispatchEvent(new f.w.Event('input'));form.elements.ifGrowthStage.value='s';form.elements.wordCount.value='2000';
+  f.options.ifGrowthBinding=(role,age,stageId)=>({roleId:'r',age,stageId,stageSnapshot:{阶段:'修行期'}});form.dispatchEvent(new f.w.Event('submit',{cancelable:true}));await flush();assert.equal(f.role.ifWorld.branches[0].growthBinding.age,500);assert.equal(Number(f.role.ifWorld.branches[0].settings.wordCount),2000);
+  f.role.ifWorld.branches[0].messages=[{mine:false,text:'已有开场'}];await f.w.IrisIfWorld.openFromNode(f.options,f.host,'n');assert.ok(f.host.querySelector('.if-story-page'));assert.equal(f.w.document.querySelector('[data-if-open-settings]'),null);assert.equal(f.w.document.querySelector('.if-story-settings'),null);
  }finally{f.dom.window.close()}
 });
 
@@ -147,4 +144,8 @@ test('legacy branch archives migrate without losing transcript when the branch i
   f.role.ifWorld.branches[0].messages=[{mine:false,text:'旧版完整故事'}];f.role.ifWorld.branches[0].archives=[{id:'old-archive',content:'旧版摘要',createdAt:1}];
   f.w.IrisIfWorld.back();f.host.querySelector('[data-if-node]').click();f.host.querySelector('[data-if-delete-opening]').click();await flush();assert.equal(f.role.ifWorld.branches.length,0);assert.equal(f.role.ifWorld.archives[0].messages[0].text,'旧版完整故事');
  }finally{f.dom.window.close()}
+});
+
+test('IF composer starts at the offline single-line height, grows for text and shrinks after clearing',{skip:!JSDOM},async()=>{
+ const f=await messageFixture();try{const field=f.host.querySelector('.message-input');Object.defineProperty(field,'scrollHeight',{configurable:true,get(){return this.value?66:180}});field.value='';field.dispatchEvent(new f.w.Event('input'));assert.equal(field.style.height,'22px');field.value='第一行\n第二行\n第三行';field.dispatchEvent(new f.w.Event('input'));assert.equal(field.style.height,'66px');field.value='';field.dispatchEvent(new f.w.Event('input'));assert.equal(field.style.height,'22px')}finally{f.dom.window.close()}
 });
