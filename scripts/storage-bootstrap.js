@@ -1,5 +1,5 @@
 (() => {
-  const query = window.IRIS_RELEASE ? `?iris-release=${encodeURIComponent(window.IRIS_RELEASE)}` : '?v=5.8.0-222-r13';
+  const query = window.IRIS_RELEASE ? `?iris-release=${encodeURIComponent(window.IRIS_RELEASE)}` : '?v=5.8.0-222-r14';
   const legacyKey = 'iris-v1';
   const databaseName = 'iris-local-data';
   const storeName = 'app-state';
