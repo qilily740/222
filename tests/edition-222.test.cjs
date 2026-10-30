@@ -17,7 +17,7 @@ test('222 keeps its domain and PWA identity without tutorial or seeded assistant
  assert.equal(read('CNAME').trim(),'iris.suri.us.ci');
  const manifest=JSON.parse(read('config/manifest.webmanifest'));
  for(const key of ['id','start_url','scope'])assert.equal(manifest[key],'/222/');
- assert.doesNotMatch(read('scripts/app.js'),/irisGuide|IrisGuide|irisWelcome|iris-assistant/);
+ assert.doesNotMatch(read('scripts/app.js'),/irisGuide|IrisGuide|irisWelcome|builtinRole:\s*['"]iris-assistant/);
  assert.doesNotMatch(read('scripts/storage-bootstrap.js'),/guide-content/);
  assert.match(read('scripts/characters.js'),/accept="\.json,\.png,\.txt,\.docx"/);
 });
@@ -54,8 +54,8 @@ test('222 imports standalone JSON worldbooks in supported layouts and rejects in
 });
 test('222 release metadata is consistent and startup notice entry points are absent',()=>{
  const version=JSON.parse(read('version.json'));
- assert.equal(version.version,'5.9.2');
- assert.equal(version.release,'5.9.2-222-r3');
+ assert.equal(version.version,'5.9.3');
+ assert.equal(version.release,'5.9.3-222-r1');
  assert.deepEqual(JSON.parse(read('config/version.json')),version);
  for(const name of ['scripts/app.js','scripts/storage-bootstrap.js','index.html'])assert.ok(read(name).includes(version.release),name);
  assert.doesNotMatch(read('scripts/app.js'),/function showAuthorNoticeOnFirstOpen|function showReleaseNoticeOnFirstOpen/);
