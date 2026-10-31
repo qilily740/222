@@ -55,7 +55,7 @@ test('222 imports standalone JSON worldbooks in supported layouts and rejects in
 test('222 release metadata is consistent and startup notice entry points are absent',()=>{
  const version=JSON.parse(read('version.json'));
  assert.equal(version.version,'5.9.3');
- assert.equal(version.release,'5.9.3-222-r1');
+ assert.equal(version.release,'5.9.3-222-r2');
  assert.deepEqual(JSON.parse(read('config/version.json')),version);
  for(const name of ['scripts/app.js','scripts/storage-bootstrap.js','index.html'])assert.ok(read(name).includes(version.release),name);
  assert.doesNotMatch(read('scripts/app.js'),/function showAuthorNoticeOnFirstOpen|function showReleaseNoticeOnFirstOpen/);
