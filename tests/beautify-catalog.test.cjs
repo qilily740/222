@@ -31,3 +31,5 @@ test('listed shell selector targets the page root rather than a nested phone',()
  for(const selector of ['.phone','body .phone','html body .phone'])assert.equal(context.scopeBeautifySelector(selector,root,'offline'),root);
  assert.equal(context.scopeBeautifySelector('.phone .bottom',root,'offline'),root+' .bottom');
 });
+test('forum production markup and state classes have copyable catalog entries',()=>{const forum=fs.readFileSync(path.join(__dirname,'../scripts/forum.js'),'utf8');for(const name of staticClasses(forum))assert.ok(context.catalog.forum.includes(name),name);for(const name of ['is-on','feature-screen'])assert.ok(context.catalog.forum.includes(name));for(const tab of ['online','offline','forum']){assert.equal(new Set(context.catalog[tab]).size,context.catalog[tab].length);for(const name of context.catalog[tab])assert.ok(context.beautifyClassLocation(tab,name))}});
+test('travel rows have copyable catalog entries',()=>{for(const tab of ['online','offline'])assert.ok(context.catalog[tab].includes('travel-system-row'))});
