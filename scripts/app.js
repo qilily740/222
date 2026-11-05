@@ -2248,8 +2248,8 @@ let offlineRequirementDraftRole=null;
 let systemSettingsTab='api';
 let storageConnectionTab='local';
 const APP_VERSION='6.0';
-const APP_RELEASE='6.0-222-r5';
-const APP_RELEASE_NOTES={"date":"2026-11-05","changes":["同步完整美化管理更新，支持单独应用给角色或群聊。","新增仿 Discord 内置美化，支持角色私聊与群聊。","优化多图排列、引用、消息分组、时间戳与群聊顶栏。","修复联系作者输入时背后聊天底栏跳起的问题。","修复仿 Discord 首条与后续连续消息之间的间距不一致。","修复旧聊天消息首尾空行导致的 Discord 首条间距偏大。","优化 Discord 系统提示、语音胶囊与已保存美化的连续消息间距。"],"noticeId":"6.0-discord-transcript-r5"};
+const APP_RELEASE='6.0-222-r6';
+const APP_RELEASE_NOTES={"date":"2026-11-05","changes":["同步完整美化管理更新，支持单独应用给角色或群聊。","新增仿 Discord 内置美化，支持角色私聊与群聊。","优化多图排列、引用、消息分组、时间戳与群聊顶栏。","修复联系作者输入时背后聊天底栏跳起的问题。","修复仿 Discord 首条与后续连续消息之间的间距不一致。","修复旧聊天消息首尾空行导致的 Discord 首条间距偏大。","优化 Discord 系统提示、语音胶囊与已保存美化的连续消息间距。"],"noticeId":"6.0-discord-compact-r6"};
 const APP_RELEASE_HISTORY=[{version:APP_VERSION,...APP_RELEASE_NOTES},{"version":"5.9.3","date":"2026-10-30","changes":["优化世界书设置与角色挂载。","优化任务进度与错误反馈。","优化图片存储与备份。"],"noticeId":"5.9.3-optimization"},{"version":"5.9.2","date":"2026-10-29","changes":["修复旅行到期后未自动结束的问题。","修复旅行每日记录生成与机票面板显示问题。"],"noticeId":"5.9.2-travel-daily-records-hotfix"},{"version":"5.8.0","date":"2026-10-24","changes":["同步新版共用功能，保留 222 导入能力与独立界面"],"noticeId":"222-5.8.0-r1"},{version:'5.7.9',...{"date": "2026-10-22", "changes": ["新增功能按钮名称中英文切换，入口：主页面加号菜单底部「中 / EN」；选择会自动记住。", "新增「联系作者」。入口：教程悬浮圆形按键 → 联系作者。", "统一角色币种识别，修复私人钱包、代付、转账、购物、退款及经营分红的币种校验。"], "noticeId": "5.7.9-menu-language"}},{version:'5.7.8',...{"date": "2026-10-21", "changes": ["线上聊天第一条消息长按后，操作面板显示在消息下方，避免顶部裁切，保持原有消息间距。", "心声与本轮回复一起准备，提前生成 X、备忘录、GPT 和当前自定义面板，打开即可查看。"]}},{version:'5.7.7',...{"date": "2026-10-21", "changes": ["普通聊天支持照片与表情读图，可在线上设置的“更多”中启用图片输入。", "优化真实图片展示：移除外层气泡，修正连续发消息后尺寸变化；多选时点击图片直接选中。", "修正心声面板打开后缺少内容的问题，生成失败时可查看错误并重试。", "将“事情有后续”移到线上设置的“更多”，整理开关与事项列表。", "新增版本更新提示，同一版本关闭后不再提醒。"]}},{version:'5.7.6',date:'2026-10-21',changes:['普通聊天支持照片与表情读图，可在线上设置的“更多”中启用图片输入。','优化真实图片展示：移除外层气泡，修正连续发消息后尺寸变化；多选时点击图片直接选中。','修正心声面板打开后缺少内容的问题，生成失败时可查看错误并重试。','将“事情有后续”移到线上设置的“更多”，整理开关与事项列表。','新增版本更新提示，同一版本关闭后不再提醒。']}];
 const compareAppVersions=(left,right)=>{const a=String(left||'0').split('.').map(Number),b=String(right||'0').split('.').map(Number);for(let i=0;i<Math.max(a.length,b.length);i++){const delta=(a[i]||0)-(b[i]||0);if(delta)return Math.sign(delta)}return 0};
 const compareAppReleases=(left,right)=>{const parse=value=>{const match=String(value||'0').match(/^(.*?)(?:-r(\d+))?$/);return{version:match[1],revision:Number(match[2])||0}},a=parse(left),b=parse(right);return compareAppVersions(a.version,b.version)||Math.sign(a.revision-b.revision)};
@@ -3632,20 +3632,20 @@ function discordMessageDetailsCss(){return `
 .conversation .message:has(>.discord-reply-preview)>.avatar,.group-chat-thread .message:has(>.discord-reply-preview)>.avatar{position:static;margin:0 0 -42px!important}
 .conversation .message:has(>.discord-reply-preview)>.message-content,.group-chat-thread .message:has(>.discord-reply-preview)>.message-content{margin-left:0!important}
 .chat-pat-card,.group-chat-system,.travel-system-row>span,.travel-update-note{background:transparent!important;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;color:#747780;font-size:11px;font-weight:400;line-height:1.5}
-.voice-message-wrap,.mine .voice-message-wrap{align-items:flex-start;width:min(260px,100%)}
-.voice-message-card,.mine .voice-message-card,.voice-message-card:hover,.mine .voice-message-card:hover{display:flex;flex-direction:row;align-items:center;gap:12px;width:100%;min-height:58px;padding:9px 15px 9px 10px;border:0;border-radius:999px;background:#fff;color:#5b5b66;box-shadow:none}
-.voice-message-card .voice-mark{display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;margin:0;border:0;border-radius:50%;background:#6b65ff;color:#fff;transform:none}
+.voice-message-wrap,.mine .voice-message-wrap{align-items:flex-start;width:min(210px,100%)}
+.voice-message-card,.mine .voice-message-card,.voice-message-card:hover,.mine .voice-message-card:hover{display:flex;flex-direction:row;align-items:center;gap:9px;width:100%;min-height:46px;padding:8px 12px 8px 8px;border:0;border-radius:999px;background:#fff;color:#5b5b66;box-shadow:none}
+.voice-message-card .voice-mark{display:grid;place-items:center;flex:0 0 30px;width:30px;height:30px;margin:0;border:0;border-radius:50%;background:#6b65ff;color:#fff;transform:none}
 .voice-message-card .voice-mark svg{display:none}
-.voice-message-card .voice-mark::before{content:"";display:block;width:0;height:0;margin-left:3px;border-top:9px solid transparent;border-bottom:9px solid transparent;border-left:13px solid currentColor}
-.voice-message-card .voice-wave{display:flex;flex:1;align-items:center;justify-content:space-between;height:26px;min-width:0;gap:2px}
-.voice-message-card .voice-wave i{width:2px;border-radius:2px;background:currentColor}
+.voice-message-card .voice-mark::before{content:"";display:block;width:0;height:0;margin-left:3px;border-top:7px solid transparent;border-bottom:7px solid transparent;border-left:10px solid currentColor}
+.voice-message-card .voice-wave{display:flex;flex:1;align-items:center;justify-content:space-between;height:20px;min-width:0;gap:2px}
+.voice-message-card .voice-wave i{width:2px;max-height:20px;border-radius:2px;background:currentColor}
 .voice-message-card .voice-duration:not(.discord-voice-duration){display:none}
 .voice-message-card .discord-voice-duration{display:block}
-.voice-message-card .voice-duration{flex:none;margin:0;font-size:14px;font-variant-numeric:tabular-nums;color:inherit}
+.voice-message-card .voice-duration{flex:none;margin:0;font-size:12px;font-variant-numeric:tabular-nums;color:inherit}
 .voice-message-card .voice-toggle-mark{display:none}
 .voice-message-card.is-expanded,.mine .voice-message-card.is-expanded,.voice-message-card.is-expanded:hover{background:#605cf4;color:#fff}
 .voice-message-card.is-expanded .voice-mark{background:#fff;color:#605cf4}
-.voice-message-card.is-expanded .voice-mark::before{width:13px;height:18px;margin:0;border:0;border-left:5px solid currentColor;border-right:5px solid currentColor;box-sizing:border-box}
+.voice-message-card.is-expanded .voice-mark::before{width:11px;height:14px;margin:0;border:0;border-left:4px solid currentColor;border-right:4px solid currentColor;box-sizing:border-box}
 .voice-message-card.is-expanded .voice-wave i{background:currentColor;opacity:.45}
 .voice-message-card.is-expanded .voice-wave i:nth-child(3n){background:currentColor;opacity:1}
 .voice-message-wrap .voice-transcript,.mine .voice-message-wrap .voice-transcript{align-self:flex-start;box-sizing:border-box;width:fit-content;max-width:100%;margin:6px 0 0;padding:10px 16px;border:0;border-radius:22px;background:#605cf4;color:#fff;box-shadow:none;font-size:13px;line-height:1.5;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere}
