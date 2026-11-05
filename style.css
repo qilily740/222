@@ -5593,3 +5593,6 @@ body:has(.music-dialog[open]) .iris-guide-widget{visibility:hidden!important;poi
 .is-discord .beautify-theme-sample{background:#fafafa;border-color:#dfe0e4}.is-discord .beautify-theme-sample i{background:#dfe0e4;border:0;border-radius:2px}.is-discord .beautify-theme-sample i:nth-child(2){align-self:flex-start;background:#555862}.is-discord .beautify-theme-sample i:nth-child(3){background:#9b9da4}
 /* Keep contact-author input above the keyboard without moving chat docks. */
 .author-feedback-dialog[open]{position:fixed;inset-inline:0;top:var(--app-overlay-viewport-top,0px);bottom:calc(100% - var(--app-overlay-viewport-top,0px) - var(--app-overlay-viewport-height,100dvh));max-height:calc(var(--app-overlay-viewport-height,100dvh) - 24px);margin-block:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+
+/* Only Discord shows the clock-style voice duration. */
+.discord-voice-duration{display:none}

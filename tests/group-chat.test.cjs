@@ -129,7 +129,7 @@ test('Discord first messages have no extra gap before their consecutive private 
   const first=rows[0],second=rows[1],third=rows[2],firstStyle=w.getComputedStyle(first),secondStyle=w.getComputedStyle(second),thirdStyle=w.getComputedStyle(third),portrait=w.getComputedStyle(first.querySelector(':scope>.avatar'));
   assert.equal(firstStyle.paddingBottom,'0px');assert.equal(secondStyle.paddingTop,'0px');assert.equal(thirdStyle.paddingTop,'0px');
   assert.equal(secondStyle.paddingBottom,thirdStyle.paddingBottom);assert.equal(secondStyle.marginTop,thirdStyle.marginTop);
-  assert.equal(portrait.height,'42px');assert.equal(portrait.marginBottom,'-42px');
+  assert.equal(portrait.height,'42px');assert.equal(portrait.marginBottom,'0px');assert.equal(portrait.position,'absolute');
   assert.equal(w.getComputedStyle(second.querySelector(':scope>.avatar')).height,'0px');
   assert.equal(w.getComputedStyle(second.querySelector(':scope>.avatar')).marginBottom,'0px');
  };
@@ -156,5 +156,20 @@ test('Discord trims message-edge blank lines from old private and group history 
   createClicks(w);await flush();
   w.eval(`{const g=state.groupChats.items[0];g.settings||={};g.settings.onlineAppearanceId='discord';g.messages=[];const speaker=g.members.find(m=>m.type==='role').id;[window.fixtureFirst,'第二条',window.fixtureParagraphs].forEach(text=>IrisGroupChatCore.appendEvent(g,text,'text',speaker));window.IrisGroupChat.open(g.id);openFeaturePage('group-chat')}`);
   texts=w.document.querySelectorAll('.group-chat-thread .bubble-text');assert.equal(texts[0].textContent,'干嘛');assert.equal(texts[1].textContent,'第二条');assert.equal(texts[2].textContent,paragraphs);assert.equal(w.eval('state.groupChats.items[0].messages[0].text'),first);assert.deepEqual(f.errors,[]);
+ }finally{await flush();w.close()}
+});
+
+test('Discord saved schemes get compact layout and voice transcription toggles the capsule in private and group chats',async()=>{
+ const f=boot(),w=f.w;
+ const check=(host)=>{const button=host.querySelector('[data-voice-toggle]'),text=button.parentElement.querySelector('.voice-transcript');assert.equal(button.querySelector('.discord-voice-duration').textContent,'0:22');assert.equal(text.hidden,true);button.click();assert.equal(text.hidden,false);assert.equal(button.getAttribute('aria-expanded'),'true');assert.equal(w.getComputedStyle(button).backgroundColor,'rgb(96, 92, 244)');button.click();assert.equal(text.hidden,true);assert.equal(w.getComputedStyle(button).backgroundColor,'rgb(255, 255, 255)')};
+ try{
+  w.oldDiscord=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/beautify/legacy-discord-r3.json'),'utf8'));
+  w.eval(`state.char=0;state.offline=false;state.characters[0].offlineMode=false;state.characters[0].chatSettings.onlineAppearanceId='inherit';state.settings.beautifyCss.online=window.oldDiscord;state.settings.onlineBeautifyLibrary={active:'custom-discord',items:[]};messages().splice(0);messages().push({id:'voice-fixture',mine:false,type:'voice',duration:22,voiceText:'语音内容',createdAt:Date.now()});render()`);
+  check(w.document.querySelector('#conversation'));
+  assert.equal(w.getComputedStyle(w.document.querySelector('#conversation .message>.avatar')).position,'absolute');
+  const scoped=w.document.querySelector('#iris-beautify-online').textContent;assert.match(scoped,/travel-system-row>span/);assert.match(scoped,/background:transparent!important/);
+  createClicks(w);await flush();
+  w.eval(`{const g=state.groupChats.items[0];g.settings||={};g.settings.onlineAppearanceId='discord';g.messages=[];const speaker=g.members.find(m=>m.type==='role').id;IrisGroupChatCore.appendEvent(g,'语音','voice',speaker);Object.assign(g.messages.at(-1),{duration:22,voiceText:'群聊语音'});window.IrisGroupChat.open(g.id);openFeaturePage('group-chat')}`);
+  check(w.document.querySelector('.group-chat-thread'));assert.deepEqual(f.errors,[]);
  }finally{await flush();w.close()}
 });

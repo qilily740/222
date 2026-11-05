@@ -36,7 +36,7 @@ test('the smooth white border stays hollow at short, narrow and long bubble size
 test('iMessage transfer cards disable tails for both speakers',()=>{const f=fixture(),css=f.c.onlineChatThemeCss('imessage');assert.match(css,/\.transfer-message-card::after,\.mine \.transfer-message-card::after\{content:none;display:none\}/)});
 
 test('the previous bundled Discord default picks up compact spacing while customized CSS is preserved',()=>{
- const f=fixture(),updated=f.c.discordChatThemeCss(),previous=updated.replace('padding:9px 4px 0;gap:10px','padding:9px 4px;gap:10px').replace('margin:0 0 -42px!important','margin:0!important').replace('height:0;min-height:0;margin:0!important;visibility:hidden','height:0;min-height:0;visibility:hidden');
+ const f=fixture(),updated=f.c.discordChatThemeCss(),previous=JSON.parse(fs.readFileSync(require('node:path').join(__dirname,'fixtures/beautify/legacy-discord-r3.json'),'utf8'));
  assert.notEqual(previous,updated);f.state.settings.onlineBeautifyLibrary.active='discord';f.state.settings.beautifyCss.online=previous;f.c.refreshBundledIMessageCss();assert.equal(f.state.settings.beautifyCss.online,updated);
  const custom=previous+'\n.bubble{color:purple}';f.state.settings.beautifyCss.online=custom;f.c.refreshBundledIMessageCss();assert.equal(f.state.settings.beautifyCss.online,custom);
 });
