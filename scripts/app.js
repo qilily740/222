@@ -3303,6 +3303,7 @@ function splitBeautifySelectors(head){
  selectors.push(head.slice(start).trim());return selectors.filter(Boolean);
 }
 function scopeBeautifyCss(css,root,tab,baseCss=''){
+ if(tab==='online'&&/--iris-wechat-home-dock:\s*1\b/.test(css))css+=wechatTransferReturnIconCss();
  if(tab==='online'&&/--iris-discord-chat:\s*1\b/.test(css))css+=discordMessageDetailsCss();
  const source=String(css||'').replace(/<\/style/gi,'<\\/style').replace(/\/\*[\s\S]*?\*\//g,''),imports=[];
  const readRules=(text,topLevel=true)=>{let output='',index=0;
@@ -3503,6 +3504,9 @@ ${wechat?`.group-chat-shell .group-chat-thread .group-redpacket-card{display:gri
 .group-chat-sticker-panel .emoji-picker-toolbar,.group-chat-sticker-panel .emoji-picker-tabs{flex:none}
 .group-chat-sticker-panel .emoji-picker-grid{flex:0 1 var(--emoji-three-rows);height:var(--emoji-three-rows);min-height:0;max-height:var(--emoji-three-rows);grid-auto-rows:var(--emoji-row-height);row-gap:var(--emoji-row-gap);align-content:start;padding:0 1px;overflow-y:auto}
 `}
+function wechatTransferReturnIconCss(){return `
+.transfer-message-card[data-transfer-status="returned"] .transfer-symbol::before{content:"";display:block;width:23px;height:23px;margin:0;border:0;transform:none;background-image:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23fff'%20stroke-width='1.8'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M9%207%204%2012l5%205M4%2012h10a5%205%200%200%200%200-10h-2'/%3E%3C/svg%3E");background-position:center;background-size:contain;background-repeat:no-repeat}
+`}
 function wechatCardThemeCss(){return `
 .transfer-message-card::after,.mine .transfer-message-card::after,.location-message-card::after,.mine .location-message-card::after{content:none;display:none}
 .transfer-message-card{display:grid;grid-template-columns:42px minmax(0,1fr);grid-template-areas:"icon amount" "icon note" "exchange exchange" "brand actions";column-gap:10px;row-gap:0;padding:14px 13px 10px;min-height:104px;background:#f79d36}
@@ -3518,7 +3522,7 @@ function wechatCardThemeCss(){return `
 .transfer-message-card:is([data-transfer-status="accepted"],[data-transfer-status="returned"]) .transfer-note{display:none}
 .transfer-message-card:is([data-transfer-status="accepted"],[data-transfer-status="returned"]) .transfer-symbol svg{display:none}
 .transfer-message-card[data-transfer-status="accepted"] .transfer-symbol::before{content:"";width:10px;height:18px;margin-top:-3px;border-right:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(45deg)}
-.transfer-message-card[data-transfer-status="returned"] .transfer-symbol::before{content:"↩";color:#fff;font:400 28px/1 -apple-system,BlinkMacSystemFont,sans-serif}
+${wechatTransferReturnIconCss()}
 .voice-message-wrap{width:100%}
 .voice-message-card{width:min(calc((var(--voice-width,176px) - 140px)*.65 + 70px),100%)}
 .voice-message-card{min-height:40px;padding:0 12px;gap:10px}.voice-wave,.voice-toggle-mark{display:none}.voice-duration{margin-left:auto;font-size:12px;color:inherit}
