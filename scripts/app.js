@@ -2248,8 +2248,8 @@ let offlineRequirementDraftRole=null;
 let systemSettingsTab='api';
 let storageConnectionTab='local';
 const APP_VERSION='6.0';
-const APP_RELEASE='6.0-222-r6';
-const APP_RELEASE_NOTES={"date":"2026-11-05","changes":["同步完整美化管理更新，支持单独应用给角色或群聊。","新增仿 Discord 内置美化，支持角色私聊与群聊。","优化多图排列、引用、消息分组、时间戳与群聊顶栏。","修复联系作者输入时背后聊天底栏跳起的问题。","修复仿 Discord 首条与后续连续消息之间的间距不一致。","修复旧聊天消息首尾空行导致的 Discord 首条间距偏大。","优化 Discord 系统提示、语音胶囊与已保存美化的连续消息间距。"],"noticeId":"6.0-discord-compact-r6"};
+const APP_RELEASE='6.0-222-r7';
+const APP_RELEASE_NOTES={"date":"2026-11-05","changes":["同步完整美化管理更新，支持单独应用给角色或群聊。","新增仿 Discord 内置美化，支持角色私聊与群聊。","优化多图排列、引用、消息分组、时间戳与群聊顶栏。","修复联系作者输入时背后聊天底栏跳起的问题。","修复仿 Discord 首条与后续连续消息之间的间距不一致。","修复旧聊天消息首尾空行导致的 Discord 首条间距偏大。","优化 Discord 系统提示、语音胶囊与已保存美化的连续消息间距。"],"noticeId":"6.0-discord-group-r7"};
 const APP_RELEASE_HISTORY=[{version:APP_VERSION,...APP_RELEASE_NOTES},{"version":"5.9.3","date":"2026-10-30","changes":["优化世界书设置与角色挂载。","优化任务进度与错误反馈。","优化图片存储与备份。"],"noticeId":"5.9.3-optimization"},{"version":"5.9.2","date":"2026-10-29","changes":["修复旅行到期后未自动结束的问题。","修复旅行每日记录生成与机票面板显示问题。"],"noticeId":"5.9.2-travel-daily-records-hotfix"},{"version":"5.8.0","date":"2026-10-24","changes":["同步新版共用功能，保留 222 导入能力与独立界面"],"noticeId":"222-5.8.0-r1"},{version:'5.7.9',...{"date": "2026-10-22", "changes": ["新增功能按钮名称中英文切换，入口：主页面加号菜单底部「中 / EN」；选择会自动记住。", "新增「联系作者」。入口：教程悬浮圆形按键 → 联系作者。", "统一角色币种识别，修复私人钱包、代付、转账、购物、退款及经营分红的币种校验。"], "noticeId": "5.7.9-menu-language"}},{version:'5.7.8',...{"date": "2026-10-21", "changes": ["线上聊天第一条消息长按后，操作面板显示在消息下方，避免顶部裁切，保持原有消息间距。", "心声与本轮回复一起准备，提前生成 X、备忘录、GPT 和当前自定义面板，打开即可查看。"]}},{version:'5.7.7',...{"date": "2026-10-21", "changes": ["普通聊天支持照片与表情读图，可在线上设置的“更多”中启用图片输入。", "优化真实图片展示：移除外层气泡，修正连续发消息后尺寸变化；多选时点击图片直接选中。", "修正心声面板打开后缺少内容的问题，生成失败时可查看错误并重试。", "将“事情有后续”移到线上设置的“更多”，整理开关与事项列表。", "新增版本更新提示，同一版本关闭后不再提醒。"]}},{version:'5.7.6',date:'2026-10-21',changes:['普通聊天支持照片与表情读图，可在线上设置的“更多”中启用图片输入。','优化真实图片展示：移除外层气泡，修正连续发消息后尺寸变化；多选时点击图片直接选中。','修正心声面板打开后缺少内容的问题，生成失败时可查看错误并重试。','将“事情有后续”移到线上设置的“更多”，整理开关与事项列表。','新增版本更新提示，同一版本关闭后不再提醒。']}];
 const compareAppVersions=(left,right)=>{const a=String(left||'0').split('.').map(Number),b=String(right||'0').split('.').map(Number);for(let i=0;i<Math.max(a.length,b.length);i++){const delta=(a[i]||0)-(b[i]||0);if(delta)return Math.sign(delta)}return 0};
 const compareAppReleases=(left,right)=>{const parse=value=>{const match=String(value||'0').match(/^(.*?)(?:-r(\d+))?$/);return{version:match[1],revision:Number(match[2])||0}},a=parse(left),b=parse(right);return compareAppVersions(a.version,b.version)||Math.sign(a.revision-b.revision)};
@@ -3651,6 +3651,41 @@ function discordMessageDetailsCss(){return `
 .voice-message-wrap .voice-transcript,.mine .voice-message-wrap .voice-transcript{align-self:flex-start;box-sizing:border-box;width:fit-content;max-width:100%;margin:6px 0 0;padding:10px 16px;border:0;border-radius:22px;background:#605cf4;color:#fff;box-shadow:none;font-size:13px;line-height:1.5;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere}
 .voice-message-wrap .voice-transcript .voice-translation{color:#fff;border-top-color:rgba(255,255,255,.3);opacity:1}
 `}
+
+function discordGroupAppearanceCss(root){return `
+${root} .group-chat-thread .message{position:relative;min-height:0;padding-bottom:0}
+${root} .group-chat-thread .message>.avatar{position:absolute;left:4px;top:9px;margin:0!important}
+${root} .group-chat-thread .message>.message-content{margin-left:52px!important}
+${root} .group-chat-thread .message.discord-continuation{margin:0;padding-top:0;padding-bottom:0}
+${root} .group-chat-thread .message.discord-continuation>.avatar{top:0}
+${root} .group-chat-thread .message:has(>.discord-reply-preview)>.avatar{position:static;margin:0 0 -42px!important}
+${root} .group-chat-thread .message:has(>.discord-reply-preview)>.message-content{margin-left:0!important}
+${root} .group-chat-thread .voice-message-wrap,.${root} .group-chat-thread .mine .voice-message-wrap{align-items:flex-start;width:min(210px,100%)}
+${root} .group-chat-thread .voice-message-card,.${root} .group-chat-thread .mine .voice-message-card,.${root} .group-chat-thread .voice-message-card:hover,.${root} .group-chat-thread .mine .voice-message-card:hover{display:flex;flex-direction:row;align-items:center;gap:9px;width:100%;min-height:46px;padding:8px 12px 8px 8px;border:0;border-radius:999px;background:#fff;color:#5b5b66;box-shadow:none}
+${root} .group-chat-thread .voice-message-card .voice-mark{display:grid;place-items:center;flex:0 0 30px;width:30px;height:30px;margin:0;border:0;border-radius:50%;background:#6b65ff;color:#fff;transform:none}
+${root} .group-chat-thread .voice-message-card .voice-mark svg{display:none}
+${root} .group-chat-thread .voice-message-card .voice-mark::before{content:"";display:block;width:0;height:0;margin-left:3px;border-top:7px solid transparent;border-bottom:7px solid transparent;border-left:10px solid currentColor}
+${root} .group-chat-thread .voice-message-card .voice-wave{display:flex;flex:1;align-items:center;justify-content:space-between;height:20px;min-width:0;gap:2px}
+${root} .group-chat-thread .voice-message-card .voice-wave i{width:2px;max-height:20px;border-radius:2px;background:currentColor}
+${root} .group-chat-thread .voice-message-card .voice-duration:not(.discord-voice-duration){display:none}
+${root} .group-chat-thread .voice-message-card .discord-voice-duration{display:block}
+${root} .group-chat-thread .voice-message-card .voice-duration{flex:none;margin:0;font-size:12px;font-variant-numeric:tabular-nums;color:inherit}
+${root} .group-chat-thread .voice-message-card.is-expanded,.${root} .group-chat-thread .mine .voice-message-card.is-expanded,.${root} .group-chat-thread .voice-message-card.is-expanded:hover{background:#605cf4;color:#fff}
+${root} .group-chat-thread .voice-message-card.is-expanded .voice-mark{background:#fff;color:#605cf4}
+${root} .group-chat-thread .voice-transcript,.${root} .group-chat-thread .mine .voice-transcript{align-self:flex-start;box-sizing:border-box;width:fit-content;max-width:100%;margin:6px 0 0;padding:10px 16px;border:0;border-radius:22px;background:#605cf4;color:#fff;box-shadow:none;font-size:13px;line-height:1.5;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere}
+${root} .group-chat-thread .voice-transcript .voice-translation{color:#fff;border-top-color:rgba(255,255,255,.3);opacity:1}
+${root} .group-chat-thread .group-chat-system{margin:6px 18px;padding:0;border:0;border-radius:0;background:transparent;color:#747780;font-size:11px;line-height:1.5;box-shadow:none}
+${root} .group-chat-thread .group-redpacket-card,.${root} .group-chat-thread .group-redpacket-card:is([data-packet-status="accepted"],[data-packet-status="returned"]){display:block;box-sizing:border-box;width:max-content;max-width:100%;min-height:0;margin:5px 0;padding:0;border:0;border-radius:0;background:transparent;color:#747780;box-shadow:none;text-align:left}
+${root} .group-chat-thread .group-redpacket-card::before,${root} .group-chat-thread .group-redpacket-card::after{content:none;display:none}
+${root} .group-chat-thread .group-redpacket-card .transfer-card-head{display:flex;gap:6px;margin:0;padding:0;background:transparent;color:#747780}
+${root} .group-chat-thread .group-redpacket-card .group-redpacket-mark,${root} .group-chat-thread .group-redpacket-card .group-redpacket-label,${root} .group-chat-thread .group-redpacket-card .transfer-amount,${root} .group-chat-thread .group-redpacket-card .transfer-parties,${root} .group-chat-thread .group-redpacket-card .transfer-note>small,${root} .group-chat-thread .group-redpacket-card .group-redpacket-footer{display:none}
+${root} .group-chat-thread .group-redpacket-card .transfer-card-head>small{display:inline;margin:0;color:#747780;font-size:11px;line-height:1.5;opacity:1}
+${root} .group-chat-thread .group-redpacket-card .transfer-note{display:block;margin:2px 0 0;padding:0;border:0;background:transparent}
+${root} .group-chat-thread .group-redpacket-card .transfer-note p{margin:0;color:#747780;font-size:11px;line-height:1.5;white-space:normal}
+${root} .group-chat-thread .chat-image-grid{display:flex;flex-direction:column;gap:8px}
+${root} .group-chat-thread .chat-image-grid-row{column-gap:5px}
+${root} .group-chat-thread .chat-image-grid-triptych{gap:6px}
+`}
 function discordChatThemeCss(){return `
 .phone{--iris-discord-chat:1;--surface:#fafafa;--chat-surface:#fafafa;--chat-role:transparent;--chat-mine:transparent;--chat-mine-ink:#303136;background:#fafafa;color:#303136}
 .topbar{display:grid;grid-template-columns:36px minmax(0,1fr) 36px;align-items:center;gap:8px;min-height:58px;padding-top:max(20px,env(safe-area-inset-top));padding-bottom:12px;background:#fafafa;border-bottom:1px solid #e2e3e6}
@@ -3952,7 +3987,7 @@ function groupChatRuntime(){
   discordDateParts,discordDayDivider,discordDisplayText,
   expandReply:message=>expandOnlineReplyMessages([{...message,mine:false}]),
   expandVideoReply:expandGroupVideoReply,renderVideoText:renderGroupVideoText,
-  appearance:group=>{const appearance=look(group),root='#featureScreen.is-group-chat-conversation',radius=appearance.avatarShape==='square'?'5px':'50%',base=scopeBeautifyCss(groupChromeThemeCss('default'),root,'group')+`${root} .message>.avatar{border-radius:${radius}}${root} .message>.avatar img{border-radius:inherit}${root} .group-time-hidden{display:none}`+(appearance.background?`${root}{isolation:isolate}${root}::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background-image:url(${JSON.stringify(appearance.background)});background-position:center;background-size:cover}`:'');return scopeBeautifyCss(appearance.css,root,'group',base).replace(/#conversation\b/g,'.group-chat-thread').replace(/#inputFunctions\b/g,'[data-group-functions]').replace(/#messageInput\b/g,'[data-group-input]').replace(/#emoji\b/g,'[data-group-send]').replace(/#reply\b/g,'[data-group-reply]').replace(/#composer\b/g,'[data-group-composer]').replace(/#quickFeatures\b/g,'[data-group-tools]').replace(/<\/style/gi,'<\\/style')},
+  appearance:group=>{const appearance=look(group),root='#featureScreen.is-group-chat-conversation',radius=appearance.avatarShape==='square'?'5px':'50%',base=scopeBeautifyCss(groupChromeThemeCss('default'),root,'group')+`${root} .message>.avatar{border-radius:${radius}}${root} .message>.avatar img{border-radius:inherit}${root} .group-time-hidden{display:none}`+(appearance.background?`${root}{isolation:isolate}${root}::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background-image:url(${JSON.stringify(appearance.background)});background-position:center;background-size:cover}`:'');const scoped=scopeBeautifyCss(appearance.css,root,'group',base).replace(/#conversation\b/g,'.group-chat-thread').replace(/#inputFunctions\b/g,'[data-group-functions]').replace(/#messageInput\b/g,'[data-group-input]').replace(/#emoji\b/g,'[data-group-send]').replace(/#reply\b/g,'[data-group-reply]').replace(/#composer\b/g,'[data-group-composer]').replace(/#quickFeatures\b/g,'[data-group-tools]');return(scoped+(/--iris-discord-chat:\s*1\b/.test(appearance.css)?discordGroupAppearanceCss(root):'')).replace(/<\/style/gi,'<\\/style')},
   resetStickers:()=>{closeEmojiPicker();emojiPickerManaging=false;emojiPickerFormOpen=false},
   closeStickers:closeEmojiPicker,
   renderStickers:(panel,send,close,pickerState)=>{renderEmojiPickerPanel({panel,send,close,allGroups:true,state:pickerState})},
