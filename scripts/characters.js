@@ -6,6 +6,13 @@ let characterImportNote = '';
 let characterConversationTab = 'private';
 const characterPhonePending = new Set();
 
+function openCharacterActionPicker(title,roleIndices,onSelect) {
+  characterDrafts=chars.map(c=>({...c}));
+  characterDialog.innerHTML=characterHeader(title)+`<div class="character-list" aria-label="选择角色">${roleIndices.map(index=>{const role=chars[index];return `<div class="character-row"><button type="button" class="character-row-main" data-role-action="${index}">${avatar(role)}<span class="character-row-info"><strong><span class="roster-name">${esc(role.name||'未命名角色')}</span></strong><small>${esc([role.gender,role.birthday].filter(Boolean).join(' · ')||'选择此角色')}</small></span>${state.char===index?'<span class="character-current">当前</span>':icon('arrow')}</button></div>`}).join('')}</div><p class="character-feedback" role="status">选择一个角色继续</p>`;
+  bindCharacterClose();characterDialog.querySelector('#characterBack').hidden=true;
+  characterDialog.querySelectorAll('[data-role-action]').forEach(button=>button.onclick=()=>{const index=Number(button.dataset.roleAction);characterDialog.close();onSelect?.(index)});
+  if(!characterDialog.open)characterDialog.showModal();characterDialog.focus();$('#characters').setAttribute('aria-expanded','true');
+}
 function openCharacters() {
   if(window.IrisGroupChatCore){for(const user of state.users)window.IrisGroupChatCore.identity(user,'user');for(const role of chars)if(role.builtinRole!=='iris-assistant')window.IrisGroupChatCore.identity(role,'role')}
   characterDrafts = chars.map(c => ({...c}));
