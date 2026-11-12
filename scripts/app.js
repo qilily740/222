@@ -1571,13 +1571,13 @@ function incomingVideoInstruction(character,userIndex,thread){
  if(!canProposeIncomingVideoCall(roleIndex,userIndex,thread))return'【主动视频来电】本轮不可发起视频通话，不输出 video_call 动作，也不要声称已经拨打。';
  return`【主动视频来电】用户允许你根据人设、关系和当前话题主动邀请视频。来电频率偏好：${{occasional:'偶尔，仅在确实需要见面交流时',normal:'正常，只在话题自然适合时',frequent:'较频繁，但仍须符合当下情境'}[policy.frequency]}。想当面说话、解释事情或陪伴对方时，可在 actions 中加入一次 {"type":"video_call","reason":"简短的来电缘由"}；没有必要时不要使用。messages 仍须正常回应当前话题。此动作只表示拨打，尚未接通，不替用户决定接听，不假设能看见用户；不得同时发起线下邀约。用户拒接或未接的记录是事件事实，不代表用户的动机，不强迫解释、不连续重拨。`;
 }
-function incomingRingtoneSource(data){return data||'assets/audio/lightly.wav'}
+function incomingRingtoneSource(data){return data||window.IrisIncomingRingtone?.source||'assets/audio/lightly.m4a?v=2'}
 let incomingRingtonePreview=null;
 function previewIncomingRingtone(data){
  const previous=incomingRingtonePreview;if(previous){try{previous.audio?.pause();previous.audio.currentTime=0}catch{}}
  const preview={};incomingRingtonePreview=preview;
  const finish=()=>{if(incomingRingtonePreview===preview)incomingRingtonePreview=null};
- try{const audio=preview.audio=new Audio(incomingRingtoneSource(data));audio.volume=.55;audio.onended=finish;audio.onerror=()=>{if(incomingRingtonePreview===preview){finish();toast('铃声加载失败，请刷新后重试或导入其他音频')}};audio.play().catch(()=>{if(incomingRingtonePreview===preview){finish();toast('浏览器未能播放铃声，请检查声音权限或音频格式')}})}catch{finish();toast('无法播放铃声')}
+ try{const audio=preview.audio=new Audio(incomingRingtoneSource(data));audio.volume=.55;audio.onended=finish;audio.onerror=()=>{if(incomingRingtonePreview===preview){finish();toast(data?'导入的铃声无法读取，请重新导入音频':'内置铃声未能播放；若正在使用 VS Code 内置预览，请用系统浏览器打开 Iris 后试听')}};audio.play().catch(()=>{if(incomingRingtonePreview===preview){finish();toast('浏览器未能播放铃声，请检查声音权限或音频格式')}})}catch{finish();toast('无法播放铃声')}
 }
 function stopIncomingVideoSignal(call){
  clearTimeout(call.timeout);clearInterval(call.signalTimer);
@@ -2390,8 +2390,8 @@ let offlineRequirementDraftRole=null;
 let systemSettingsTab='api';
 let storageConnectionTab='local';
 const APP_VERSION='5.9.7';
-const APP_RELEASE='5.9.7-222-r9';
-const APP_RELEASE_NOTES={"date": "2026-11-12", "changes": ["优化消息过多时的卡顿问题", "增加小说、短剧和群聊功能", "增加聊天收藏功能"], "noticeId": "5.9.7-222-r9"};
+const APP_RELEASE='5.9.7-222-r10';
+const APP_RELEASE_NOTES={"date": "2026-11-12", "changes": ["优化消息过多时的卡顿问题", "增加小说、短剧和群聊功能", "增加聊天收藏功能"], "noticeId": "5.9.7-222-r10"};
 const APP_RELEASE_HISTORY=[{version:APP_VERSION,...APP_RELEASE_NOTES},{"version":"5.9.3","date":"2026-10-30","changes":["优化世界书设置与角色挂载。","优化任务进度与错误反馈。","优化图片存储与备份。"],"noticeId":"5.9.3-optimization"},{"version":"5.9.2","date":"2026-10-29","changes":["修复旅行到期后未自动结束的问题。","修复旅行每日记录生成与机票面板显示问题。"],"noticeId":"5.9.2-travel-daily-records-hotfix"},{"version":"5.8.0","date":"2026-10-24","changes":["同步新版共用功能，保留 222 导入能力与独立界面"],"noticeId":"222-5.8.0-r1"},{version:'5.7.9',...{"date": "2026-10-22", "changes": ["新增功能按钮名称中英文切换，入口：主页面加号菜单底部「中 / EN」；选择会自动记住。", "新增「联系作者」。入口：教程悬浮圆形按键 → 联系作者。", "统一角色币种识别，修复私人钱包、代付、转账、购物、退款及经营分红的币种校验。"], "noticeId": "5.7.9-menu-language"}},{version:'5.7.8',...{"date": "2026-10-21", "changes": ["线上聊天第一条消息长按后，操作面板显示在消息下方，避免顶部裁切，保持原有消息间距。", "心声与本轮回复一起准备，提前生成 X、备忘录、GPT 和当前自定义面板，打开即可查看。"]}},{version:'5.7.7',...{"date": "2026-10-21", "changes": ["普通聊天支持照片与表情读图，可在线上设置的“更多”中启用图片输入。", "优化真实图片展示：移除外层气泡，修正连续发消息后尺寸变化；多选时点击图片直接选中。", "修正心声面板打开后缺少内容的问题，生成失败时可查看错误并重试。", "将“事情有后续”移到线上设置的“更多”，整理开关与事项列表。", "新增版本更新提示，同一版本关闭后不再提醒。"]}},{version:'5.7.6',date:'2026-10-21',changes:['普通聊天支持照片与表情读图，可在线上设置的“更多”中启用图片输入。','优化真实图片展示：移除外层气泡，修正连续发消息后尺寸变化；多选时点击图片直接选中。','修正心声面板打开后缺少内容的问题，生成失败时可查看错误并重试。','将“事情有后续”移到线上设置的“更多”，整理开关与事项列表。','新增版本更新提示，同一版本关闭后不再提醒。']}];
 const compareAppVersions=(left,right)=>{const a=String(left||'0').split('.').map(Number),b=String(right||'0').split('.').map(Number);for(let i=0;i<Math.max(a.length,b.length);i++){const delta=(a[i]||0)-(b[i]||0);if(delta)return Math.sign(delta)}return 0};
 const compareAppReleases=(left,right)=>{const parse=value=>{const match=String(value||'0').match(/^(.*?)(?:-r(\d+))?$/);return{version:match[1],revision:Number(match[2])||0}},a=parse(left),b=parse(right);return compareAppVersions(a.version,b.version)||Math.sign(a.revision-b.revision)};
