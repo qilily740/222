@@ -6,22 +6,21 @@ const app=fs.readFileSync(require.resolve('../scripts/app.js'),'utf8');
 const source=app.slice(app.indexOf('(function bindAppViewport(){'),app.indexOf('// Restore an unfinished blocked-contact SMS'));
 function fixture(ios=true,safeBottom=0,metrics={}){
  const documentEvents={},windowEvents={},viewportEvents={},frames=[],properties={},focuses=[],scrolls=[];
- const style={setProperty(name,value){properties[name]=value}};
- let feedbackOpen=false;
+ let clock=0;const attributes={};const style={setProperty(name,value){properties[name]=value}};
  const conversation={scrollHeight:900,clientHeight:500,scrollTop:400,isConnected:true};
- class Input{constructor(type='text'){this.type=type;this.style={opacity:''};this.readOnly=false;this.disabled=false;this.isConnected=true;this.parentElement=null}closest(){return null}matches(){return false}focus(options){focuses.push({input:this,options,opacity:this.style.opacity,readOnly:this.readOnly});document.activeElement=this}blur(){if(document.activeElement===this)document.activeElement=null}}
+ class Input{constructor(type='text'){this.type=type;this.style={opacity:''};this.readOnly=false;this.disabled=false;this.isConnected=true;this.parentElement=null}closest(){return null}matches(selector){return Boolean(this.isChatComposer&&selector.includes('#messageInput'))}focus(options){focuses.push({input:this,options,opacity:this.style.opacity,readOnly:this.readOnly});document.activeElement=this}blur(){if(document.activeElement===this)document.activeElement=null}}
  class Textarea extends Input{}
  const add=(map,name,fn)=>(map[name]||=[]).push(fn);
  const viewport={height:844,offsetTop:0,addEventListener:(name,fn)=>add(viewportEvents,name,fn)};
- const document={activeElement:null,documentElement:{style,setAttribute(){}},body:{append(){}},createElement:()=>({style:{},getBoundingClientRect(){return {height:this.style.height==='100vh'?(metrics.vh||0):this.style.cssText.includes('height:100dvh')?(metrics.dvh||0):safeBottom}},remove(){}}),addEventListener:(name,fn)=>add(documentEvents,name,fn)};
+ const document={activeElement:null,documentElement:{style,setAttribute(){},toggleAttribute(name,value){attributes[name]=Boolean(value)}},body:{append(){}},createElement:()=>({style:{},getBoundingClientRect(){return {height:this.style.height==='100vh'?(metrics.vh||0):this.style.cssText.includes('height:100dvh')?(metrics.dvh||0):safeBottom}},remove(){}}),addEventListener:(name,fn)=>add(documentEvents,name,fn)};
  const window={visualViewport:viewport,innerWidth:390,innerHeight:844,scrollX:0,scrollY:0,addEventListener:(name,fn)=>add(windowEvents,name,fn),scrollTo(x,y){scrolls.push([x,y]);this.scrollX=x;this.scrollY=y}};
  const input=new Textarea();
- const context=vm.createContext({document,window,navigator:{userAgent:ios?'iPhone':'Android',platform:'',maxTouchPoints:1},HTMLInputElement:Input,HTMLTextAreaElement:Textarea,matchMedia:()=>({matches:!!metrics.standalone}),requestAnimationFrame:fn=>(frames.push(fn),frames.length),cancelAnimationFrame(){},performance:{now:()=>0},setTimeout(){},getComputedStyle:()=>({overflowY:'visible',paddingBottom:safeBottom+'px'}),$:s=>s==='#conversation'?conversation:s==='#messageInput'?input:s==='.author-feedback-dialog[open]'&&feedbackOpen?{}:null,keepLatestChatMessageVisible(){},keepLatestSmsMessageVisible(){},positionIrisGuideOrb(){}});
+ const context=vm.createContext({document,window,navigator:{userAgent:ios?'iPhone':'Android',platform:'',maxTouchPoints:1},HTMLInputElement:Input,HTMLTextAreaElement:Textarea,matchMedia:()=>({matches:!!metrics.standalone}),requestAnimationFrame:fn=>(frames.push(fn),frames.length),cancelAnimationFrame(){},performance:{now:()=>clock},setTimeout(){},getComputedStyle:()=>({overflowY:'visible',paddingBottom:safeBottom+'px'}),$:s=>s==='#conversation'?conversation:s==='#messageInput'?input:null,keepLatestChatMessageVisible(){},keepLatestSmsMessageVisible(){},positionIrisGuideOrb(){}});
  vm.runInContext(source,context);
  for(const frame of frames.splice(0))frame();
  const emit=(map,type,event={})=>{event.type=type;for(const fn of map[type]||[])fn(event)};
  const touch=(type,extra={})=>{const event={target:input,pointerType:'touch',pointerId:1,clientX:10,clientY:20,prevented:false,preventDefault(){this.prevented=true},stopImmediatePropagation(){this.stopped=true},...extra};emit(documentEvents,type,event);return event};
- return{document,window,viewport,input,frames,properties,focuses,scrolls,conversation,touch,openFeedback:()=>{feedbackOpen=true;emit(windowEvents,'resize')},closeFeedback:()=>{feedbackOpen=false;emit(windowEvents,'resize')},emitViewport:type=>emit(viewportEvents,type),emitWindow:type=>emit(windowEvents,type)};
+ return{document,window,viewport,input,frames,properties,attributes,focuses,scrolls,conversation,touch,advanceTime:ms=>clock+=ms,emitDocument:(type,event)=>emit(documentEvents,type,event),emitViewport:type=>emit(viewportEvents,type),emitWindow:type=>emit(windowEvents,type)};
 }
 test('iOS taps focus invisibly before native keyboard scrolling and restore the field after two frames',()=>{
  const f=fixture();assert.equal(f.touch('pointerdown').prevented,true);assert.equal(f.document.activeElement,null);assert.equal(f.input.readOnly,true);
@@ -100,6 +99,34 @@ test('the app declares viewport-fit once so the layout can cover the iOS safe ar
  assert.match(html.match(/<meta\s+name="viewport"[^>]*>/i)?.[0]||'',/viewport-fit=cover/);
 });
 
+test('Iris guide dragging uses the visual viewport and keeps the entire orb inside it',()=>{
+ const start=app.indexOf('function irisGuideViewportBounds(){'),end=app.indexOf('function irisGuideInfo(element)',start);
+ const handlers={},listeners={},view={offsetLeft:10,offsetTop:20,width:340,height:600,addEventListener(type,fn){listeners[type]=fn}};
+ const ball={style:{},offsetWidth:48,offsetHeight:48,addEventListener(type,fn){handlers[type]=fn},setPointerCapture(){},getBoundingClientRect(){return{left:Number.parseFloat(this.style.left)||40,top:Number.parseFloat(this.style.top)||50,width:48,height:48,right:(Number.parseFloat(this.style.left)||40)+48,bottom:(Number.parseFloat(this.style.top)||50)+48}}};
+ const root={hidden:false,dataset:{},querySelector(selector){if(selector==='.iris-guide-fab')return ball;return{hidden:true}},};
+ const context=vm.createContext({window:{visualViewport:view,innerWidth:390,innerHeight:844,addEventListener(type,fn){listeners['window:'+type]=fn}},document:{documentElement:{clientWidth:390,clientHeight:844},querySelector(){return root}},state:{irisGuidePosition:{edge:'right',y:1}},save(){},setTimeout(){}});
+ context.root=root;
+ vm.runInContext(app.slice(start,end),context);
+ vm.runInContext('bindIrisGuideDrag(root)',context);
+ vm.runInContext('positionIrisGuideOrb()',context);
+ assert.equal(ball.style.left,'294px');
+ assert.equal(ball.style.top,'564px');
+ handlers.pointerdown({button:0,pointerId:1,clientX:300,clientY:570});
+ handlers.pointermove({pointerId:1,clientX:300,clientY:900});
+ assert.equal(ball.style.top,'564px');
+ handlers.pointerup({pointerId:1});
+ assert.ok(context.state.irisGuidePosition.y<=1);
+ assert.equal(typeof listeners.resize,'function');
+ assert.equal(typeof listeners['window:resize'],'function');
+ context.window.IRIS_APP_VIEWPORT={offsetLeft:0,offsetTop:0,width:390,height:844};
+ context.state.irisGuidePosition={edge:'right',y:1};
+ vm.runInContext('positionIrisGuideOrb()',context);
+ assert.equal(ball.style.top,'788px');
+ assert.equal(ball.style.left,'334px');
+ context.window.IRIS_APP_VIEWPORT.height=510;
+ vm.runInContext('positionIrisGuideOrb()',context);
+ assert.equal(ball.style.top,'454px');
+});
 
 for(const vh of [844,810])test(`installed iOS fills the full viewport when CSS or visual viewport omits the home area (${vh})`,()=>{
  const metrics={standalone:true,vh,dvh:810},f=fixture(true,34,metrics);
@@ -124,25 +151,17 @@ test('installed iOS explicit shell and body heights override their fixed bottom 
  assert.match(css,/html\[data-ios-standalone\] \.phone\{bottom:auto;height:var\(--app-viewport-height,100vh\)\}/);
 });
 
-
-for(const ios of [true,false])for(const standalone of [true,false])test(`${ios?'iOS':'Android'} ${standalone?'standalone':'browser'} contact feedback keeps background chat docks stationary during keyboard resize`,()=>{
- const f=fixture(ios,34,{standalone});f.openFeedback();
- assert.equal(f.properties['--app-viewport-height'],'844px');
- f.document.activeElement=f.input;
- for(const [height,top] of [[680,18],[510,72],[480,96]]){
-  f.window.innerHeight=height;f.viewport.height=height;f.viewport.offsetTop=top;f.emitViewport('resize');f.emitViewport('scroll');
-  assert.equal(f.properties['--app-viewport-height'],'844px');
-  assert.equal(f.properties['--app-viewport-top'],'0px');
-  assert.equal(f.properties['--app-viewport-bottom'],'0px');
-  assert.match(f.properties['--app-bottom-gap'],/20px \+ var\(--app-safe-bottom/);
-  assert.equal(f.properties['--app-overlay-viewport-height'],height+'px');
-  assert.equal(f.properties['--app-overlay-viewport-top'],top+'px');
- }
- // Switching fields can briefly blur both inputs while the keyboard remains.
- f.document.activeElement=null;f.emitViewport('resize');assert.equal(f.properties['--app-viewport-height'],'844px');
- f.window.innerHeight=844;f.viewport.height=844;f.viewport.offsetTop=0;f.closeFeedback();
- assert.equal(f.properties['--app-viewport-height'],ios&&standalone?'844px':'100dvh');
- // Returning to actual chat input still follows the keyboard as before.
- f.document.activeElement=f.input;f.viewport.height=510;f.viewport.offsetTop=30;f.emitViewport('resize');
- assert.equal(f.properties['--app-viewport-height'],'510px');assert.equal(f.properties['--app-viewport-top'],'30px');
+for(const ios of [true,false])test(`${ios?'iOS':'Android'} chat footer is covered before keyboard movement and follows shallow opening and closing frames`,()=>{
+ const f=fixture(ios,34);f.input.isChatComposer=true;f.document.activeElement=f.input;f.emitDocument('focusin',{target:f.input});
+ assert.equal(f.attributes['data-chat-keyboard-open'],true);assert.equal(f.properties['--app-composer-bottom-gap'],'0px');
+ for(const height of [820,790,510]){f.viewport.height=height;f.emitViewport('resize');assert.equal(f.properties['--app-viewport-height'],height+'px');assert.equal(f.properties['--app-viewport-bottom'],(844-height)+'px');assert.equal(f.properties['--app-wallpaper-height'],'844px')}
+ f.document.activeElement=null;f.emitDocument('focusout',{target:f.input});
+ for(const height of [600,780,820]){f.viewport.height=height;f.emitViewport('resize');assert.equal(f.properties['--app-viewport-height'],height+'px');assert.equal(f.attributes['data-chat-keyboard-open'],true)}
+ f.viewport.height=844;f.emitViewport('resize');assert.equal(f.properties['--app-viewport-height'],'100dvh');assert.equal(f.properties['--app-viewport-bottom'],'0px');assert.equal(f.attributes['data-chat-keyboard-open'],false);
+});
+test('a stale visual viewport after chat blur is released at the end of the keyboard animation window',()=>{
+ const f=fixture();f.input.isChatComposer=true;f.document.activeElement=f.input;f.emitDocument('focusin',{target:f.input});f.viewport.height=510;f.emitViewport('resize');f.document.activeElement=null;f.emitDocument('focusout',{target:f.input});assert.equal(f.properties['--app-viewport-height'],'510px');f.advanceTime(701);f.emitViewport('resize');assert.equal(f.properties['--app-viewport-height'],'100dvh');assert.equal(f.attributes['data-chat-keyboard-open'],false);
+});
+test('focusing other editors does not enable the chat footer cover',()=>{
+ const f=fixture();f.document.activeElement=f.input;f.emitDocument('focusin',{target:f.input});f.viewport.height=510;f.emitViewport('resize');assert.equal(f.attributes['data-chat-keyboard-open'],false);assert.equal(f.properties['--app-composer-bottom-gap'],'max(10px, env(safe-area-inset-bottom, 0px))');
 });

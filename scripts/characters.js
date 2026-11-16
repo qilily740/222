@@ -86,11 +86,11 @@ function drawGroupChatEntry() {
 function drawCharacterList(scrollTop=characterDialog.querySelector('.character-list')?.scrollTop||0) {
   characterConversationTab='private';
   characterDialog.innerHTML=characterHeader('my characters')+characterConversationTabs()+`
-    <div class="character-list${characterDrafts.length?'':' is-empty'}" aria-label="角色列表">${characterDrafts.length?'':`<div class="empty-characters"><span>${icon('user')}</span><strong>还没有角色</strong><small>导入角色卡，或手动新建一个</small></div>`}${characterDrafts.map((c,i)=>`<div class="character-row"><button type="button" class="character-row-main" data-role="${i}">${avatar(c)}<span class="character-row-info"><strong><span class="roster-name">${esc(c.name||'未命名角色')}</span></strong><small>${esc([c.gender,c.birthday].filter(Boolean).join(' · ')||'点击查看角色资料')}</small>${c.phoneNumber?`<small class="roster-phone">${esc([c.phoneCarrier,c.phoneNumber].filter(Boolean).join(' '))}</small>`:''}</span>${state.char===i?'<span class="character-current">当前</span>':icon('arrow')}</button>${c.phoneNumber?'':`<button type="button" class="character-phone-action" data-character-phone="${i}" ${characterPhonePending.has(i)?'disabled':''}>${characterPhonePending.has(i)?'开通中…':'开通号码'}</button>`}<button type="button" class="character-row-delete" data-delete-role="${i}" aria-label="删除${esc(c.name||'未命名角色')}" ${characterPhonePending.size?'disabled':''}>删除</button></div>`).join('')}</div>
+    <div class="character-list${characterDrafts.length?'':' is-empty'}" aria-label="角色列表">${characterDrafts.length?'':`<div class="empty-characters"><span>${icon('user')}</span><strong>还没有角色</strong><small>手动新建一个角色</small></div>`}${characterDrafts.map((c,i)=>`<div class="character-row"><button type="button" class="character-row-main" data-role="${i}">${avatar(c)}<span class="character-row-info"><strong><span class="roster-name">${esc(c.name||'未命名角色')}</span></strong><small>${esc([c.gender,c.birthday].filter(Boolean).join(' · ')||'点击查看角色资料')}</small>${c.phoneNumber?`<small class="roster-phone">${esc([c.phoneCarrier,c.phoneNumber].filter(Boolean).join(' '))}</small>`:''}</span>${state.char===i?'<span class="character-current">当前</span>':icon('arrow')}</button>${c.builtinRole==='iris-assistant'?'<span class="character-current character-builtin-label">内置助手</span>':`${c.phoneNumber?'':`<button type="button" class="character-phone-action" data-character-phone="${i}" ${characterPhonePending.has(i)?'disabled':''}>${characterPhonePending.has(i)?'开通中…':'开通号码'}</button>`}<button type="button" class="character-row-delete" data-delete-role="${i}" aria-label="删除${esc(c.name||'未命名角色')}" ${characterPhonePending.size?'disabled':''}>删除</button>`}</div>`).join('')}</div>
     <div class="character-import-actions"><button type="button" id="importCharacter">${icon('plus')}<span>导入角色</span></button><button type="button" id="newCharacter">手动新建</button></div>
     <button type="button" class="character-header-arrange" id="arrangeHeaderAvatars">编辑顶部头像排列</button>
-    <input id="characterFile" type="file" accept=".json,.png,.txt,.docx" hidden>
-    <p class="character-formats">TXT / DOCX / JSON / PNG</p><p class="character-feedback" role="status">${esc(characterImportNote||'选择角色，确认后切换')}</p>`;
+    <input id="characterFile" type="file" accept=".txt,.docx" hidden>
+    <p class="character-formats">TXT / DOCX</p><p class="character-feedback" role="status">${esc(characterImportNote||'选择角色，确认后切换')}</p>`;
   bindCharacterClose();
   bindCharacterConversationTabs();
   document.querySelector('.character-list').scrollTop=scrollTop;
@@ -120,10 +120,7 @@ function drawCharacterList(scrollTop=characterDialog.querySelector('.character-l
     try{
       const imported=await CharacterImport.parse(file);
       if(characterDrafts!==session)return;
-      const sameName=characterDrafts.findIndex(role=>(role.name||'').trim().toLocaleLowerCase()===(imported.character.name||'').trim().toLocaleLowerCase());
-      if(imported.character.worldBook?.length&&sameName>=0&&!(characterDrafts[sameName].worldBook?.length)&&!characterDrafts[sameName].worldBooks?.some(book=>book.entries?.length)){
-        characterDrafts[sameName].worldBook=imported.character.worldBook;characterImportNote=imported.note||'世界书条目已同步到已有角色。';drawCharacterEditor(sameName);
-      }else{characterDrafts.push(imported.character);characterImportNote=imported.note||'资料已识别，可补充或修改后确认。';drawCharacterEditor(characterDrafts.length-1);}
+      characterDrafts.push(imported.character);characterImportNote='资料已识别，可补充或修改后确认。';drawCharacterEditor(characterDrafts.length-1);
     }catch(error){if(characterDrafts===session)characterNotice(error.message||'文件无法读取，请检查格式')}
     finally{characterPending--;button.disabled=false;event.target.value=''}
   };
@@ -143,14 +140,18 @@ function drawCharacterEditor(index) {
       <div class="profile-fields">
         <label class="name-paper">名字 <span>NAME</span><input name="name" maxlength="80" required value="${esc(c.name||'')}" placeholder="角色名字"></label>
         <label class="nickname-paper">网名 <span>NICKNAME</span><input name="nickname" maxlength="80" value="${esc(c.nickname||'')}"></label>
-        <label>性别 <span>GENDER</span><input name="gender" maxlength="40" value="${esc(c.gender||'')}" placeholder="填写性别"></label>
+        <label>性别 <span>GENDER</span><select name="gender" aria-label="角色性别"><option value="" ${c.gender?'':'selected'}>请选择</option><option value="Male" ${['Male','男','男性'].includes(c.gender)?'selected':''}>男</option><option value="Female" ${['Female','女','女性'].includes(c.gender)?'selected':''}>女</option><option value="其他" ${c.gender==='其他'?'selected':''}>其他</option>${c.gender&&!['Male','Female','男','女','男性','女性','其他'].includes(c.gender)?`<option value="${esc(c.gender)}" selected>${esc(c.gender)}</option>`:''}</select></label>
         <label>生日 <span>BIRTHDAY</span><input name="birthday" maxlength="40" value="${esc(c.birthday||'')}" placeholder="YYYY-MM-DD / MM-DD"></label>
         <label class="profile-wide details-note">具体信息 <span>ABOUT CHAR</span><textarea name="details" maxlength="100000" rows="3" placeholder="性格、背景和角色设定…">${esc(c.details||c.desc||'')}</textarea></label>
       </div>
       <div class="profile-pagination"><button type="button" id="previousCharacter" ${index===0?'disabled':''}>← 上一页</button><span>${String(index+1).padStart(2,'0')}<i>/</i>${String(characterDrafts.length).padStart(2,'0')}</span><button type="button" id="nextCharacter" ${index===characterDrafts.length-1?'disabled':''}>下一页 →</button></div>
-      <div class="profile-save-actions"><button type="button" class="profile-confirm profile-save-only" id="saveCharacterOnly">保存资料</button><button type="submit" class="profile-confirm">确认使用此角色 <span aria-hidden="true">↗</span></button></div>
-      <p class="character-feedback" role="status">${esc(characterImportNote||'确认后保存资料并切换角色')}</p>
+      <div class="profile-save-actions"><button type="button" class="profile-confirm profile-save-only" id="saveCharacterOnly">保存资料</button>${c.builtinRole==='iris-assistant'?'<button type="button" class="profile-confirm" id="openAssistantChat">开启聊天</button>':''}<button type="submit" class="profile-confirm">${c.builtinRole==='iris-assistant'?'开启悬浮助手':'确认使用此角色'} <span aria-hidden="true">↗</span></button></div>
+      <p class="character-feedback" role="status">${esc(characterImportNote||(c.builtinRole==='iris-assistant'?'开启伊里斯悬浮助手，保留当前聊天':'确认后保存资料并切换角色'))}</p>
     </form>`;
+  if(document.body.dataset.irisAppearance==='apple'){
+    const editor=document.getElementById('characterForm'),identity=editor?.querySelector('.profile-identity'),fields=editor?.querySelector('.profile-fields'),details=fields?.querySelector('.details-note');
+    if(identity&&fields){const top=document.createElement('div');top.className='ng-profile-editor-top';identity.before(top);top.append(identity,fields);if(details)top.after(details)}
+  }
   bindCharacterClose();refreshCharacterPortrait();
   document.getElementById('characterBack').onclick=drawCharacterList;
   document.getElementById('previousCharacter').onclick=()=>{drawCharacterEditor(index-1);document.getElementById('nextCharacter').focus()};
@@ -164,16 +165,24 @@ function drawCharacterEditor(index) {
     c.name=c.name.trim();c.initial=c.initial||c.name.slice(0,1);c.birthday=CharacterImport.normalizeDate(c.birthday);
     chars[index]=c;state.characters=chars;save();render();characterNotice('资料已保存');
   };
+  document.getElementById('openAssistantChat')?.addEventListener('click',()=>{if(characterPending){characterNotice('文件或头像处理中，请稍候');return}document.getElementById('saveCharacterOnly').click();characterDialog.close();openAssistantChat()});
   form.onsubmit=event=>{
     event.preventDefault();if(!event.irisApproved&&activeFeaturePage==='experiences'&&window.IrisExperiences?.requestLeave?.(()=>form.onsubmit({preventDefault(){},irisApproved:true}))===false)return;if(characterPending){characterNotice('文件处理中，请稍候');return}
     const unnamed=characterDrafts.findIndex(role=>!role.name.trim());
     if(unnamed>=0){drawCharacterEditor(unnamed);characterNotice('请先填写角色名字');characterDialog.querySelector('[name=name]').focus();return}
     for(const role of characterDrafts){role.name=role.name.trim();role.initial=role.initial||role.name.slice(0,1);role.birthday=CharacterImport.normalizeDate(role.birthday)}
-    const activeMode=Boolean(state.offline);
-    chars.splice(0,chars.length,...characterDrafts);state.characters=chars;
-    state.char=index;chars[index].offlineMode=activeMode;state.offline=activeMode;
-    const boundUser=chars[index]?.chatSettings?.userIndex;if(Number.isInteger(boundUser)&&state.users[boundUser])state.user=boundUser;
-    save();render();characterDialog.close();
+    const activeMode=Boolean(state.offline),enablingAssistant=characterDrafts[index]?.builtinRole==='iris-assistant';
+    if(enablingAssistant){for(let i=0;i<characterDrafts.length;i++){if(chars[i])Object.assign(chars[i],characterDrafts[i]);else chars.push(characterDrafts[i])}}
+    else chars.splice(0,chars.length,...characterDrafts);
+    state.characters=chars;
+    if(enablingAssistant){
+      state.irisWelcomeChoice='needed';state.irisGuideOrbHidden=false;state.irisGuideReminderDismissed=true;
+      irisGuidePanelOpen=false;irisGuideOpen=false;irisGuidePractice=false;
+    }else{
+      state.char=index;chars[index].offlineMode=activeMode;state.offline=activeMode;
+      const boundUser=chars[index]?.chatSettings?.userIndex;if(Number.isInteger(boundUser)&&state.users[boundUser])state.user=boundUser;
+    }
+    save();render();characterDialog.close();syncIrisGuideUI();
   };
   document.getElementById('characterPortrait').onclick=()=>document.getElementById('characterPortraitFile').click();
   document.getElementById('removeCharacterPortrait').onclick=()=>{c.avatar='';refreshCharacterPortrait()};

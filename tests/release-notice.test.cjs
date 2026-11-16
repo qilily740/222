@@ -1,0 +1,29 @@
+const {test}=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const vm=require('node:vm');const source=fs.readFileSync(require.resolve('../scripts/app.js'),'utf8');
+function fixture(stored='[]'){const storage=new Map([['iris-dismissed-release-notices',stored]]),nodes=new Map(),events={},buttons=[{},{}];let shown=0;const dialog={setAttribute(){},querySelectorAll:()=>buttons,addEventListener:(n,f)=>events[n]=f,showModal(){shown++},close(){},remove(){nodes.delete('irisReleaseNotice')}};const c={APP_VERSION:'5.7.7',APP_RELEASE_HISTORY:[{version:'5.7.7',date:'2026-10-21',changes:['测试更新']},{version:'5.7.6',date:'2026-10-21',changes:['旧版本更新']}],APP_RELEASE_NOTES:{date:'2026-10-21',changes:['测试更新']},esc:String,localStorage:{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)},document:{getElementById:id=>nodes.get(id),createElement:()=>dialog,body:{append:d=>nodes.set(d.id,d)},addEventListener:(n,f)=>events[n]=f}};vm.createContext(c);vm.runInContext(source.slice(source.indexOf('function showReleaseNotice('),source.indexOf('\nscheduleReleaseNotice();')),c);return{c,storage,nodes,events,buttons,dialog,shown:()=>shown}}
+test('release shows version, date and notes; acknowledgement persists across starts',()=>{const f=fixture();f.c.showReleaseNotice();assert.equal(f.shown(),1);assert.match(f.dialog.innerHTML,/5.7.7/);assert.match(f.dialog.innerHTML,/2026.10.21/);assert.match(f.dialog.innerHTML,/测试更新/);f.buttons[1].onclick();assert.deepEqual(JSON.parse(f.storage.get('iris-dismissed-release-notices')),['5.7.7']);const next=fixture(f.storage.get('iris-dismissed-release-notices'));next.c.showReleaseNotice();assert.equal(next.shown(),0)});
+test('new release still appears; Escape acknowledges without a duplicate dialog',()=>{const f=fixture('["5.7.6"]');f.c.showReleaseNotice();f.c.showReleaseNotice();assert.equal(f.shown(),1);let prevented=false;f.events.cancel({preventDefault(){prevented=true}});assert.equal(prevented,true);assert.deepEqual(JSON.parse(f.storage.get('iris-dismissed-release-notices')),['5.7.6','5.7.7'])});
+test('opening screen and author notice complete before the update appears',()=>{const f=fixture();f.nodes.set('irisBootScreen',{});const author={open:true,addEventListener:(n,fn)=>author[n]=fn};f.nodes.set('authorNoticeDialog',author);f.c.scheduleReleaseNotice();assert.equal(f.shown(),0);f.events['iris:boot-ready']();assert.equal(f.shown(),0);author.open=false;author.close();assert.equal(f.shown(),1)});
+test('bad acknowledgement storage does not break startup and bundled metadata agrees',()=>{const f=fixture('bad json');f.c.showReleaseNotice();assert.equal(f.shown(),1);for(const path of ['../version.json','../config/version.json']){const release=require(path);assert.deepEqual(release,require('../version.json'));assert.ok(source.includes("const APP_RELEASE='"+release.release+"'"));assert.ok(release.changes.length)}});
+
+test('contact-author entry is emphasized without rendering arbitrary update text as HTML',()=>{const f=fixture();f.c.esc=value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');f.c.APP_RELEASE_HISTORY[0].changes=['新增「联系作者」。入口：教程悬浮圆形按键 → 联系作者。','<img src=x onerror=bad()>'];f.c.showReleaseNotice();assert.match(f.dialog.innerHTML,/<strong class="release-entry-link">入口：教程悬浮圆形按键 → 联系作者<\/strong>/);assert.match(f.dialog.innerHTML,/&lt;img/);assert.doesNotMatch(f.dialog.innerHTML,/<img src=x/)});
+
+test('updated notes show once even when the same public version was already dismissed',()=>{const f=fixture('["5.7.7"]');f.c.APP_RELEASE_NOTES.noticeId='5.7.7-menu-language';f.c.showReleaseNotice();assert.equal(f.shown(),1);f.buttons[1].onclick();assert.deepEqual(JSON.parse(f.storage.get('iris-dismissed-release-notices')),['5.7.7','5.7.7-menu-language']);const next=fixture(f.storage.get('iris-dismissed-release-notices'));next.c.APP_RELEASE_NOTES.noticeId='5.7.7-menu-language';next.c.showReleaseNotice();assert.equal(next.shown(),0)});
+
+test('author words appear once below the latest changes and emphasize the selected phrases',()=>{
+ const f=fixture();f.c.APP_RELEASE_NOTES.authorWords=require('../version.json').authorWords;f.c.showReleaseNotice();
+ const html=f.dialog.innerHTML;
+ assert.ok(html.indexOf('class="release-author-note"')>html.indexOf('测试更新'));
+ assert.ok(html.indexOf('class="release-author-note"')<html.indexOf('旧版本更新'));
+ assert.equal((html.match(/class="release-author-note"/g)||[]).length,1);
+ assert.match(html,/<h3>作者的话<\/h3>/);
+ assert.equal(f.c.APP_RELEASE_NOTES.authorWords.length,1);
+ for(const phrase of ['Iris适合有小手机基础的群体玩'])assert.ok(html.includes(`<strong>${phrase}</strong>`));
+});
+
+test('author words remain text when a segment contains HTML',()=>{
+ const f=fixture();f.c.esc=value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+ f.c.APP_RELEASE_NOTES.authorWords=[[{text:'<img src=x onerror=bad()>',emphasis:true}]];f.c.showReleaseNotice();
+ assert.match(f.dialog.innerHTML,/<strong>&lt;img/);assert.doesNotMatch(f.dialog.innerHTML,/<img src=x/);
+});
+
+test('original update timeline and backup reminder remain visible',()=>{const f=fixture();f.c.showReleaseNotice();assert.match(f.dialog.innerHTML,/class="release-timeline"/);assert.match(f.dialog.innerHTML,/<h2 id="irisReleaseTitle">更新记录<\/h2>/);assert.match(f.dialog.innerHTML,/请经常备份，作者会不定期进行小幅更新。/);assert.doesNotMatch(f.dialog.innerHTML,/release-simple/)});
