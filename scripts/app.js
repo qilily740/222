@@ -1649,14 +1649,21 @@ function updateChatConversation(markup){
  const previousScroll=container.scrollTop,nearBottom=container.scrollHeight-container.clientHeight-previousScroll<48;
  const changedConversation=chatRenderedKey!==conversationKey;
  const template=document.createElement('template');template.innerHTML=markup;applyOfflineRedactionToTree(template.content);
- const incoming=Array.from(template.content.children),existing=Array.from(container.children);
- incoming.forEach((node,index)=>{
-  const previous=existing[index],signature=node.outerHTML;
-  if(!changedConversation&&previous&&chatNodeMarkup.get(previous)===signature)return;
-  chatNodeMarkup.set(node,signature);
-  if(previous){if(IrisMiniTheater.patchEntry(previous,node))chatNodeMarkup.set(previous,signature);else previous.replaceWith(node)}else container.append(node);
- });
- existing.slice(incoming.length).forEach(node=>node.remove());
+ const incoming=Array.from(template.content.children);
+ if(changedConversation){
+  // A different conversation cannot reuse the old rows. Mount the fragment once.
+  incoming.forEach(node=>chatNodeMarkup.set(node,node.outerHTML));
+  container.replaceChildren(template.content);
+ }else{
+  const existing=Array.from(container.children);
+  incoming.forEach((node,index)=>{
+   const previous=existing[index],signature=node.outerHTML;
+   if(previous&&chatNodeMarkup.get(previous)===signature)return;
+   chatNodeMarkup.set(node,signature);
+   if(previous){if(IrisMiniTheater.patchEntry(previous,node))chatNodeMarkup.set(previous,signature);else previous.replaceWith(node)}else container.append(node);
+  });
+  existing.slice(incoming.length).forEach(node=>node.remove());
+ }
  chatRenderedMarkup=markup;chatRenderedKey=conversationKey;
  if(!messages().some(item=>item.imageBatchId&&expandedImageBatches.has(item.imageBatchId)))container.querySelector(':scope > .chat-image-scroll-spacer')?.remove();
  bindConversationMedia();
@@ -1682,7 +1689,7 @@ function syncSharedFlightEarthRoutes(){if(sharedFlightEarthJob||!window.IrisTrav
 setInterval(()=>{if(!document.hidden)void syncSharedFlightEarthRoutes()},60000);
 setInterval(()=>{if(!document.hidden)void syncAutomaticTravelDepartures()},15000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){void syncSharedFlightEarthRoutes();void syncAutomaticTravelDepartures()}});
-function render(){queueMicrotask(()=>window.IrisBackgroundContact?.queue());queueMicrotask(syncAutomaticTravelDepartures);queueMicrotask(syncRoleIncomePayments);queueMicrotask(syncSharedFlightEarthRoutes);applyFunctionButtonLanguage();if(window.IrisMusic?.configure&&!window.IrisMusic.ready())renderMusicFeature($('#featurePageContent'),true);window.IrisMusic?.sync();queueMicrotask(syncLifeFollowUps);queueMicrotask(syncIncomingVideoCalls);queueMicrotask(syncGiftReactionCards);const c=chars[state.char];if(c){if(typeof c.offlineMode!=='boolean')c.offlineMode=false;state.offline=c.offlineMode;}if(!state.offline||offlineStageFoldStateThreadKey!==key()){offlineExpandedStageFolds.clear();offlineStageFoldStateThreadKey=state.offline?key():''}if(state.offline&&reconcileOfflineStageMemory(key(),messages())){const bound=currentRoleChatSettings().userIndex,userIndex=Number.isInteger(bound)?bound:state.user;void maybeUpdateOfflineStageMemory(state.char,userIndex,key(),messages())}if(messageSelectionMode&&messageSelectionThreadKey!==key()){messageSelectionMode=false;selectedMessageIndices.clear();messageSelectionThreadKey=key()}const roleSettings=currentRoleChatSettings(),boundIndex=roleSettings.userIndex,user=state.users[Number.isInteger(boundIndex)?boundIndex:state.user];renderHeaderAvatars();syncPrivateChatChrome();renderTravelQuickEntry();updateChatReplyIndicator();updateComposerAction();bindChatComposerKeyboard();$('#chatTitle').setAttribute('aria-label',state.offline?'Open offline settings':'Open chat settings');document.documentElement.style.setProperty('--surface',state.offline?state.settings.offlineSurface:'#ffffff');const modeButton=$('[data-nav="2"]');modeButton.innerHTML=icon(state.offline?'online':'dockStory')+`<span>${state.offline?'Online':'Offline'}</span>`;modeButton.setAttribute('aria-label',state.offline?'Switch to online':'Switch to offline');modeButton.title=state.offline?'Switch to online':'Switch to offline';modeButton.classList.toggle('is-current',state.offline);$('[data-nav="1"]').classList.toggle('is-current',!state.offline);$('#conversation').classList.toggle('is-offline-story',state.offline);applyBeautifyCss();updateChatConversation(renderConversation(user,c)+(chatReplyTyping.has(key())?replyTypingMarkup(c):'')+renderOfflineStreamingMarkup(c));if(!state.offline&&pendingReplyKeys.has(key())&&!chatReplyInFlight.has(key()))scheduleChatReply(false,key());if(!state.offline)resumeUnblockProactiveChat(state.char);if(videoCallActive)renderVideoCallMessages();if(activeFeaturePage==='experiences')window.IrisExperiences?.sync();}
+function render(){queueMicrotask(()=>window.IrisBackgroundContact?.queue());queueMicrotask(syncAutomaticTravelDepartures);queueMicrotask(syncRoleIncomePayments);queueMicrotask(syncSharedFlightEarthRoutes);applyFunctionButtonLanguage();if(window.IrisMusic?.configure&&!window.IrisMusic.ready())renderMusicFeature($('#featurePageContent'),true);window.IrisMusic?.sync();queueMicrotask(syncLifeFollowUps);queueMicrotask(syncIncomingVideoCalls);queueMicrotask(syncGiftReactionCards);const c=chars[state.char];if(c){if(typeof c.offlineMode!=='boolean')c.offlineMode=false;state.offline=c.offlineMode;}if(!state.offline||offlineStageFoldStateThreadKey!==key()){offlineExpandedStageFolds.clear();offlineStageFoldStateThreadKey=state.offline?key():''}if(state.offline&&reconcileOfflineStageMemory(key(),messages())){const bound=currentRoleChatSettings().userIndex,userIndex=Number.isInteger(bound)?bound:state.user;void maybeUpdateOfflineStageMemory(state.char,userIndex,key(),messages())}if(messageSelectionMode&&messageSelectionThreadKey!==key()){messageSelectionMode=false;selectedMessageIndices.clear();messageSelectionThreadKey=key()}const roleSettings=currentRoleChatSettings(),boundIndex=roleSettings.userIndex,user=state.users[Number.isInteger(boundIndex)?boundIndex:state.user];renderTravelQuickEntry();bindChatComposerKeyboard();$('#chatTitle').setAttribute('aria-label',state.offline?'Open offline settings':'Open chat settings');document.documentElement.style.setProperty('--surface',state.offline?state.settings.offlineSurface:'#ffffff');const modeButton=$('[data-nav="2"]');modeButton.innerHTML=icon(state.offline?'online':'dockStory')+`<span>${state.offline?'Online':'Offline'}</span>`;modeButton.setAttribute('aria-label',state.offline?'Switch to online':'Switch to offline');modeButton.title=state.offline?'Switch to online':'Switch to offline';modeButton.classList.toggle('is-current',state.offline);$('[data-nav="1"]').classList.toggle('is-current',!state.offline);$('#conversation').classList.toggle('is-offline-story',state.offline);applyBeautifyCss();updateChatConversation(renderConversation(user,c)+(chatReplyTyping.has(key())?replyTypingMarkup(c):'')+renderOfflineStreamingMarkup(c));if(!state.offline&&pendingReplyKeys.has(key())&&!chatReplyInFlight.has(key()))scheduleChatReply(false,key());if(!state.offline)resumeUnblockProactiveChat(state.char);if(videoCallActive)renderVideoCallMessages();if(activeFeaturePage==='experiences')window.IrisExperiences?.sync();}
 
 let irisGuideOpen=false,irisGuidePanelOpen=false,irisGuidePractice=false,irisGuideSteps=[],irisGuideStep=0,irisGuideObserver=null,irisGuideFrame=0;
 const irisGuideSeenKeys=new Set(Array.isArray(state.irisGuideSeenKeys)?state.irisGuideSeenKeys:[]);
@@ -3741,8 +3748,30 @@ function scopeBeautifyCss(css,root,tab,baseCss=''){
  };
  const rules=readRules(source);return [...new Set(imports)].join('\n')+'\n'+(baseCss?baseCss+'\n':'')+rules;
 }
-function setBeautifyCss(tab,css,background=state.settings.beautifyBackgrounds?.[tab]){const id=`iris-beautify-${tab}`,style=document.getElementById(id)||document.createElement('style');style.id=id;style.textContent=scopeBeautifyCss(css,beautifyRoots[tab],tab,beautifyBackgroundRule(tab,background));if(!style.isConnected)document.head.append(style);if(tab==='offline'){const fontStyle=document.getElementById('iris-if-prose-font')||document.createElement('style');fontStyle.id='iris-if-prose-font';fontStyle.textContent=scopeBeautifyCss(css,'#featureScreen .if-world','if-font');if(!fontStyle.isConnected)document.head.append(fontStyle)}}
-function syncPrivateChatChrome(){const c=chars[state.char];$('#settings').innerHTML=icon(!state.offline&&/--iris-discord-chat:\s*1\b/.test(privateOnlineAppearance().css)?'search':'arrow');$('#chatTitle').innerHTML=!state.offline&&/--iris-discord-chat:\s*1\b/.test(privateOnlineAppearance().css)?`<span class="discord-title-icon" aria-hidden="true">${icon("dockChat")}</span><span class="chat-character-name">${esc(c?.name||'聊天')}</span><span class="discord-title-chevron" aria-hidden="true">›</span>`:`${state.offline?'Offline':'Chat'}${c?.name?`<span class="chat-character-name">${esc(c.name)}</span>`:''}`;applyOfflineRedactionToTree($('#chatTitle'));updateChatReplyIndicator();updateComposerAction()}
+// Cache the last inputs per live style node; unchanged chat modes already use scoped selectors.
+const beautifyStyleInputs=new WeakMap();
+function setBeautifyCss(tab,css,background=state.settings.beautifyBackgrounds?.[tab]){
+ const id=`iris-beautify-${tab}`,style=document.getElementById(id)||document.createElement('style');style.id=id;
+ let cached=beautifyStyleInputs.get(style);
+ if(!cached||cached.css!==css||cached.background!==background){
+  cached={css,background,scoped:scopeBeautifyCss(css,beautifyRoots[tab],tab,beautifyBackgroundRule(tab,background)),fontScoped:tab==='offline'?scopeBeautifyCss(css,'#featureScreen .if-world','if-font'):''};
+  beautifyStyleInputs.set(style,cached);
+ }
+ if(style.textContent!==cached.scoped)style.textContent=cached.scoped;
+ if(!style.isConnected)document.head.append(style);
+ if(tab==='offline'){
+  const fontStyle=document.getElementById('iris-if-prose-font')||document.createElement('style');fontStyle.id='iris-if-prose-font';
+  if(fontStyle.textContent!==cached.fontScoped)fontStyle.textContent=cached.fontScoped;
+  if(!fontStyle.isConnected)document.head.append(fontStyle);
+ }
+}
+function syncPrivateChatChrome(){
+ const c=chars[state.char],discord=!state.offline&&/--iris-discord-chat:\s*1\b/.test(privateOnlineAppearance().css),settings=$('#settings'),title=$('#chatTitle');
+ const settingsMarkup=icon(discord?'search':'arrow'),titleMarkup=discord?`<span class="discord-title-icon" aria-hidden="true">${icon("dockChat")}</span><span class="chat-character-name">${esc(c?.name||'聊天')}</span><span class="discord-title-chevron" aria-hidden="true">›</span>`:`${state.offline?'Offline':'Chat'}${c?.name?`<span class="chat-character-name">${esc(c.name)}</span>`:''}`;
+ if(settings.innerHTML!==settingsMarkup)settings.innerHTML=settingsMarkup;
+ if(title.innerHTML!==titleMarkup)title.innerHTML=titleMarkup;
+ applyOfflineRedactionToTree(title);updateChatReplyIndicator();updateComposerAction();
+}
 function applyBeautifyCss(){refreshBundledIMessageCss();const current=privateOnlineAppearance();void window.IrisWallpaperContrast?.sync(document.querySelector('.phone'),current.background,!state.offline&&current.css.includes('/* 仿 iMessage */'));for(const tab of ['online','offline','forum'])setBeautifyCss(tab,tab==='online'?current.css:state.settings.beautifyCss?.[tab]||'',tab==='online'?current.background:state.settings.beautifyBackgrounds?.[tab]);renderHeaderAvatars();syncPrivateChatChrome();syncHomeDockAppearance()}
 function beautifyChatPreviewMarkup(tab,mode='dock',css=state.settings.beautifyCss?.[tab]||''){
  if(tab==='offline'&&mode==='emoji')mode='input';
