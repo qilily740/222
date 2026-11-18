@@ -9204,12 +9204,29 @@ body[data-iris-appearance="apple"] #featureScreen.feature-screen>.feature-page-t
  box-sizing:border-box;
  flex-shrink:0;
  height:auto;
- min-height:calc(60px + var(--app-safe-top,env(safe-area-inset-top,0px)));
- padding-top:calc(10px + var(--app-safe-top,env(safe-area-inset-top,0px)));
+ min-height:0;
+ padding-top:max(18px,var(--app-safe-top,env(safe-area-inset-top,0px)));
+ padding-bottom:15px;
+}
+/* 与设置页 18px / 1.4 的标题行一致，去掉功能页遗留的 40–44px 按钮高度。 */
+body[data-iris-appearance="apple"] #featureScreen.feature-screen>.feature-page-topbar :is(button,#featureBack){
+ box-sizing:border-box;
+ height:25.2px;
+ min-height:25.2px;
+ padding-top:0;
+ padding-bottom:0;
+}
+body[data-iris-appearance="apple"] #featureScreen.feature-screen>.feature-page-topbar .feature-page-brand{
+ line-height:25.2px;
+}
+/* 论坛居中的图标也必须相对标题行定位，不能相对含安全区的整个顶栏。 */
+body[data-iris-appearance="apple"] #featureScreen.apple-forum .ng-forum-mark{
+ top:calc(max(18px,var(--app-safe-top,env(safe-area-inset-top,0px))) + 12.6px);
 }
 /* 番外、经营的标题是顶栏伪元素，和按钮使用同一个安全区起点。 */
 body[data-iris-appearance="apple"] #featureScreen:is(.apple-extras,.apple-business)>.feature-page-topbar::after{
- top:calc(var(--app-safe-top,env(safe-area-inset-top,0px)) + 2px);
+ top:max(18px,var(--app-safe-top,env(safe-area-inset-top,0px)));
+ bottom:15px;
 }
 /* 一起聊会隐藏外层导航；全屏主题编辑器也有独立顶栏。 */
 body[data-iris-appearance="apple"] #featureScreen.apple-music .music-chat-page-header{
