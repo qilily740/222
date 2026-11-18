@@ -45,3 +45,24 @@ test('Ningguang standalone headers reserve space once and retain hidden music na
   assert.equal(style('.video-call-header').paddingTop,'12px');
  }finally{dom.window.close()}
 });
+test('forum account stays circular and the floating assistant keeps its style inside dialogs',{skip:!JSDOM},()=>{
+ const dom=fixture(44),d=dom.window.document,computed=node=>dom.window.getComputedStyle(node);
+ try{
+  const screen=d.querySelector('#featureScreen');screen.classList.add('apple-forum');
+  const account=d.createElement('button');account.className='ng-forum-account';
+  account.innerHTML='<img src="avatar.png" alt="用户">';screen.firstElementChild.append(account);
+  const avatar=computed(account);assert.equal(avatar.width,avatar.height);assert.equal(avatar.borderRadius,'50%');assert.equal(avatar.flexShrink,'0');
+  const widget=d.createElement('div');widget.className='iris-guide-widget';
+  widget.innerHTML='<button class="iris-guide-fab"><img src="assistant.png" alt=""></button>';d.body.append(widget);
+  const ball=widget.firstElementChild,properties=['width','height','minHeight','paddingTop','paddingRight','borderRadius','backgroundColor'];
+  const snapshot=()=>Object.fromEntries(properties.map(key=>[key,computed(ball)[key]])),before=snapshot();
+  assert.equal(before.width,before.height);assert.equal(before.borderRadius,'50%');assert.equal(before.paddingRight,'0px');
+  for(const name of ['author-feedback-dialog','iris-task-dialog','iris-assistant-role-dialog','gift-reaction-dialog']){
+   const dialog=d.createElement('dialog');dialog.className=name+' ng-unified-dialog';dialog.open=true;d.body.append(dialog);dialog.append(widget);
+   assert.deepEqual(snapshot(),before,name);
+   assert.equal(computed(ball.firstElementChild).objectFit,'cover');
+   const action=d.createElement('button');action.textContent='发送';dialog.append(action);assert.equal(computed(action).borderRadius,'16px');
+   d.body.append(widget);dialog.remove();
+  }
+ }finally{dom.window.close()}
+});
