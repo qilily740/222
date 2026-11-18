@@ -9198,3 +9198,29 @@ body[data-iris-appearance="apple"] #characterDialog>.character-conversation-tabs
 .release-repository-link{display:inline-block;margin:10px 0;font-family:inherit;font-size:12px;line-height:1.7;text-decoration:none;overflow-wrap:anywhere}
 body:not([data-iris-appearance="apple"]) .release-repository-link{color:#666;text-decoration:underline;text-underline-offset:3px}
 body[data-iris-appearance="apple"] .release-repository-link{color:#007aff}
+
+/* 凝光：最外层导航统一保留状态栏空间，覆盖各功能页的紧凑顶栏。 */
+body[data-iris-appearance="apple"] #featureScreen.feature-screen>.feature-page-topbar{
+ box-sizing:border-box;
+ flex-shrink:0;
+ height:auto;
+ min-height:calc(60px + var(--app-safe-top,env(safe-area-inset-top,0px)));
+ padding-top:calc(10px + var(--app-safe-top,env(safe-area-inset-top,0px)));
+}
+/* 番外、经营的标题是顶栏伪元素，和按钮使用同一个安全区起点。 */
+body[data-iris-appearance="apple"] #featureScreen:is(.apple-extras,.apple-business)>.feature-page-topbar::after{
+ top:calc(var(--app-safe-top,env(safe-area-inset-top,0px)) + 2px);
+}
+/* 一起聊会隐藏外层导航；全屏主题编辑器也有独立顶栏。 */
+body[data-iris-appearance="apple"] #featureScreen.apple-music .music-chat-page-header{
+ flex-shrink:0;
+ min-height:calc(64px + var(--app-safe-top,env(safe-area-inset-top,0px)));
+ padding-top:calc(10px + var(--app-safe-top,env(safe-area-inset-top,0px)));
+}
+body[data-iris-appearance="apple"] #sheet.ng-unified-sheet.is-reflection-editor-fullscreen .reflection-editor-topbar{
+ padding-top:calc(12px + var(--app-safe-top,env(safe-area-inset-top,0px)));
+}
+/* 通话容器已承担顶部留白，只补齐独立运行时的状态栏回退值。 */
+.video-call-screen.apple-video-call{
+ padding-top:var(--app-safe-top,env(safe-area-inset-top,0px));
+}
